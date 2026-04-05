@@ -1,0 +1,43 @@
+{
+  "name": "TP Dumpsters Manager",
+  "short_name": "TP Manager",
+  "description": "TP Dumpsters — Dashboard, Driver App, Booking & Quotes",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#dc2626",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/images/logo/TP.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "Dumpster inventory & map",
+      "icons": [{ "src": "/images/logo/TP.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Driver",
+      "url": "/driver",
+      "description": "Today's deliveries & pickups",
+      "icons": [{ "src": "/images/logo/TP.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "New Quote",
+      "url": "/internal/quote",
+      "description": "Create invoice & quote"
+    }
+  ]
+}

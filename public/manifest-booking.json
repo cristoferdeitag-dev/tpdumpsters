@@ -1,0 +1,26 @@
+{
+  "name": "TP Dumpsters",
+  "short_name": "TP Dumpsters",
+  "description": "Book a dumpster rental in the Bay Area — fast, easy, online",
+  "start_url": "/booking",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "orientation": "portrait",
+  "categories": ["business"],
+  "icons": [
+    {
+      "src": "/images/logo/TP.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo/TP.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

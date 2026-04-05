@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-poppins: var(--font-poppins);
+  --font-oswald: var(--font-oswald);
+  --font-red-hat: var(--font-red-hat);
+  --font-open-sans: var(--font-open-sans);
+
+  --color-tp-red: #E02B20;
+  --color-tp-red-dark: #c42219;
+  --color-tp-gold: #e7ac3c;
+  --color-tp-gold-dark: #d4a017;
+  --color-tp-green: #28a745;
+  --color-tp-star: #f5a623;
+}
+
+/* Smooth scroll offset for fixed header */
+html {
+  scroll-behavior: smooth;
+}
+
+/* FAQ answer transition */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 1.25rem;
+}
+
+.faq-item.active .faq-answer {
+  max-height: 600px;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.faq-item.active .faq-arrow {
+  transform: rotate(180deg);
+}
+
+/* Hero background blend */
+.hero-bg {
+  background-image: url('/images/hero/red-dumpster-construction.png'), radial-gradient(circle at bottom, #666666 0%, #000000 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-blend-mode: overlay;
+}
+
+/* Location section gradient */
+.location-bg {
+  background-image: radial-gradient(circle at bottom, #1d2329 40%, #000000 100%);
+}
+
+/* Truck animation */
+.truck-img {
+  will-change: transform;
+  transition: transform 0.05s linear;
+}
+
+/* Gallery item aspect ratio */
+.gallery-item {
+  aspect-ratio: 3/4.5;
+}
+
+/* Lightbox modal fade in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Mobile menu hamburger animation */
+.mobile-menu-btn.active span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.mobile-menu-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-btn.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* App bottom nav padding */
+.pb-nav {
+  padding-bottom: 5rem;
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+

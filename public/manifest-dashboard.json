@@ -1,0 +1,43 @@
+{
+  "name": "TP Dumpsters Manager",
+  "short_name": "TP Manager",
+  "description": "TP Dumpsters — Dashboard, Bookings, Customers & Quotes",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#dc2626",
+  "orientation": "portrait",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/images/logo/TP.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo/TP.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/images/logo/TP.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "New Quote",
+      "url": "/internal/quote",
+      "icons": [{ "src": "/images/logo/TP.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Customers",
+      "url": "/internal/customers",
+      "icons": [{ "src": "/images/logo/TP.png", "sizes": "192x192" }]
+    }
+  ]
+}

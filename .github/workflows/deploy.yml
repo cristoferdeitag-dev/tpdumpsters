@@ -1,0 +1,18 @@
+name: Deploy to Hostinger
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Deploy with rsync
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -p 65002 195.35.35.27 >> ~/.ssh/known_hosts
+        rsync -avz --delete --exclude '.git' --exclude '.github' --exclude 'node_modules' --exclude '.next' --exclude '.env' -e "ssh -p 65002 -i ~/.ssh/id_rsa" . u781187371@195.35.35.27:/home/u781187371/domains/tpdumpsters.com/nodejs/
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
