@@ -236,7 +236,7 @@ export default function LivermorePage() {
               With Livermore&apos;s downtown revitalization and new housing developments in areas like Cayetano Creek and Isabel, contractors and homeowners consistently need reliable waste hauling services. TP Dumpsters delivers 10, 20, and 30 yard containers to your Livermore location with same-day availability, transparent pricing, and no hidden fees for disposal or delivery.
             </p>
             <p>
-              Get your Livermore project started right — book online for a 5% discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free quote. We serve all of Livermore with fast delivery and bilingual customer support.
+              Get your Livermore project started right — book online for a $50 discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free quote. We serve all of Livermore with fast delivery and bilingual customer support.
             </p>
           </div>
         </div>

@@ -237,7 +237,7 @@ export default function QuoteView({ quoteId }: { quoteId: string }) {
           <div className="px-8 pb-5 print:hidden">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
               <p className="text-sm text-green-800 font-[var(--font-poppins)]">
-                💰 <strong>Save 5%</strong> when you book online — discount applied automatically!
+                💰 <strong>Save $50</strong> when you book online — discount applied automatically!
               </p>
               <a
                 href="/booking"

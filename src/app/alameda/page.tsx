@@ -237,7 +237,7 @@ export default function AlamedaPage() {
               The island&apos;s ongoing development at Alameda Point and Site A, along with steady residential remodeling throughout neighborhoods like Fernside and Bay Farm Island, creates consistent demand for reliable roll-off dumpster service. TP Dumpsters delivers 10, 20, and 30 yard containers right to your Alameda address with same-day availability and no hidden fees.
             </p>
             <p>
-              Ready to tackle your Alameda project? Book online for a 5% discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free quote. We proudly serve all of Alameda with fast delivery and bilingual customer support.
+              Ready to tackle your Alameda project? Book online for a $50 discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free quote. We proudly serve all of Alameda with fast delivery and bilingual customer support.
             </p>
           </div>
         </div>

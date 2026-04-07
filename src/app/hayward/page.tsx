@@ -223,7 +223,7 @@ export default function HaywardPage() {
               Hayward&apos;s growing downtown revitalization and new housing developments create steady demand for reliable waste management. From roofing tear-offs to estate cleanouts, TP Dumpsters delivers 10, 20, and 30 yard containers directly to your Hayward location with same-day availability and straightforward pricing that includes delivery, pickup, and disposal.
             </p>
             <p>
-              Start your Hayward project the right way — book your dumpster online and save 5%, or call us at <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free estimate. Bilingual support available in English and Spanish.
+              Start your Hayward project the right way — book your dumpster online and save $50, or call us at <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free estimate. Bilingual support available in English and Spanish.
             </p>
           </div>
         </div>

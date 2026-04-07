@@ -231,7 +231,7 @@ export default function FremontPage() {
               With Fremont&apos;s booming tech corridor and new residential developments in Warm Springs, there&apos;s always a need for efficient waste hauling. TP Dumpsters offers 10, 20, and 30 yard roll-off containers ideal for everything from small garage cleanouts to major demolition projects. Our containers are delivered on your schedule with transparent, all-inclusive pricing.
             </p>
             <p>
-              Book your Fremont dumpster rental online today and get an instant 5% discount, or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> to speak with our team. We offer same-day delivery and bilingual support throughout Fremont.
+              Book your Fremont dumpster rental online today and get an instant $50 discount, or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> to speak with our team. We offer same-day delivery and bilingual support throughout Fremont.
             </p>
           </div>
         </div>

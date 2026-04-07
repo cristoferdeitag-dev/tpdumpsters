@@ -30,9 +30,9 @@ interface ServiceCategory {
 
 /* ───────── Pricing data ───────── */
 const GENERAL_SIZES: SizeOption[] = [
-  { size: "10 Yard", price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 7 },
-  { size: "20 Yard", price: 649, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
-  { size: "30 Yard", price: 749, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
+  { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 7 },
+  { size: "20 Yard", price: 699, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
+  { size: "30 Yard", price: 799, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
 ];
 
 const services: ServiceCategory[] = [
@@ -74,7 +74,7 @@ const services: ServiceCategory[] = [
     description: "Must be 95% pure. No rocks, grass, gravel, mesh, wood, or garbage.",
     note: "⚠️ Extra fee: $125 if prohibited items are added",
     sizes: [
-      { size: "10 Yard", price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
+      { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
   {
@@ -83,7 +83,7 @@ const services: ServiceCategory[] = [
     description: "Must be 95% pure. No rebar, no garbage.",
     note: "⚠️ Extra fee: $125 if prohibited items are added",
     sizes: [
-      { size: "10 Yard", price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
+      { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
   {
@@ -92,7 +92,7 @@ const services: ServiceCategory[] = [
     description: "Clean soil, concrete & bricks mix. Must be 95% pure. No rocks, grass, gravel, mesh, wood, rebar, or garbage.",
     note: "⚠️ Extra fee: $150 if prohibited items are added",
     sizes: [
-      { size: "10 Yard", price: 749, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
+      { size: "10 Yard", price: 799, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
 ];

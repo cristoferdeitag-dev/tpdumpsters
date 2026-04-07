@@ -236,7 +236,7 @@ export default function AntiochPage() {
               With ongoing residential development and the BART extension bringing new investment to Antioch, renovation and construction projects are on the rise. TP Dumpsters offers affordable 10, 20, and 30 yard roll-off containers perfect for roofing jobs, garage cleanouts, landscaping overhauls, and full home demolitions throughout the Antioch area.
             </p>
             <p>
-              Book your Antioch dumpster rental online and save 5% instantly, or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for same-day delivery. Transparent pricing and bilingual support — that&apos;s the TP Dumpsters promise.
+              Book your Antioch dumpster rental online and save $50 instantly, or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for same-day delivery. Transparent pricing and bilingual support — that&apos;s the TP Dumpsters promise.
             </p>
           </div>
         </div>

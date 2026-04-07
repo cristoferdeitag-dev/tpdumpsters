@@ -87,7 +87,7 @@ const countyFaqs = [
     question: "How much does a dumpster rental cost in Santa Clara County?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Pricing starts at <strong>$600</strong> for a 10-yard dumpster (7-day rental, 1 ton included), <strong>$650</strong> for a 20-yard (2 tons), and <strong>$750</strong> for a 30-yard (3 tons). No hidden fees, no surprise charges. Book online and get an additional <strong>5% discount</strong>.
+        Pricing starts at <strong>$649</strong> for a 10-yard dumpster (7-day rental, 1 ton included), <strong>$699</strong> for a 20-yard (2 tons), and <strong>$799</strong> for a 30-yard (3 tons). No hidden fees, no surprise charges. Book online and get an additional <strong>$50 discount</strong>.
       </p>
     ),
   },
@@ -156,7 +156,7 @@ const countyFaqs = [
     question: "Can I book a dumpster online?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Absolutely! Book online at <a href="/booking" className="text-tp-red hover:underline font-semibold">tpdumpsters.com/booking</a> and receive an instant <strong>5% discount</strong>. You can also call us at <a href="tel:+15106502083" className="text-tp-red hover:underline font-semibold">(510) 650-2083</a> for personalized service.
+        Absolutely! Book online at <a href="/booking" className="text-tp-red hover:underline font-semibold">tpdumpsters.com/booking</a> and receive an instant <strong>$50 discount</strong>. You can also call us at <a href="tel:+15106502083" className="text-tp-red hover:underline font-semibold">(510) 650-2083</a> for personalized service.
       </p>
     ),
   },

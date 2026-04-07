@@ -238,7 +238,7 @@ export default function VallejoPage() {
               With Vallejo&apos;s affordable housing market attracting new buyers and investors, home renovation projects are more common than ever. From flooring removal to full property cleanouts, TP Dumpsters delivers 10, 20, and 30 yard roll-off containers to any Vallejo address with same-day service and all-inclusive pricing — no surprise fees at pickup.
             </p>
             <p>
-              Start your Vallejo project with confidence. Book your dumpster online for a 5% discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> today. Bilingual service available in English and Spanish.
+              Start your Vallejo project with confidence. Book your dumpster online for a $50 discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> today. Bilingual service available in English and Spanish.
             </p>
           </div>
         </div>

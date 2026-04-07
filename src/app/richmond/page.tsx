@@ -232,7 +232,7 @@ export default function RichmondPage() {
               From backyard cleanups in El Cerrito Hills to large-scale construction waste removal near Richmond Annex, homeowners and contractors throughout the area rely on convenient roll-off dumpster service. TP Dumpsters offers 10, 20, and 30 yard containers with transparent pricing, same-day delivery, and bilingual support to serve Richmond&apos;s diverse community.
             </p>
             <p>
-              Ready to get started on your Richmond project? Book online for an instant 5% discount or call us at <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free quote. We&apos;re proud to serve the Richmond community with affordable, hassle-free dumpster rentals.
+              Ready to get started on your Richmond project? Book online for an instant $50 discount or call us at <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free quote. We&apos;re proud to serve the Richmond community with affordable, hassle-free dumpster rentals.
             </p>
           </div>
         </div>

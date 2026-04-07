@@ -127,7 +127,7 @@ export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }:
           )}
           {booking.onlineDiscount > 0 && (
             <div className="flex justify-between text-green-400">
-              <span>💰 Online booking discount (5%)</span>
+              <span>💰 Online booking discount ($50 OFF)</span>
               <span>-${booking.onlineDiscount.toFixed(2)}</span>
             </div>
           )}

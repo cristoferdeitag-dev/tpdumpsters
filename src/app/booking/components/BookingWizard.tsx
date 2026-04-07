@@ -41,7 +41,7 @@ export interface BookingData {
 }
 
 const EXTRA_DAY_FEE = 49; // $49/day — updated 2026-03-20
-const ONLINE_DISCOUNT = 0.05; // 5% discount for online booking
+const ONLINE_DISCOUNT_FLAT = 50; // $50 flat discount for online booking
 
 const initialBooking: BookingData = {
   service: null,
@@ -84,7 +84,7 @@ export default function BookingWizard() {
       // Recalculate total price with 5% online discount
       if (updated.service) {
         const subtotal = updated.service.basePrice + updated.extraDays * updated.extraDayFee;
-        const discount = Math.round(subtotal * ONLINE_DISCOUNT * 100) / 100;
+        const discount = ONLINE_DISCOUNT_FLAT;
         updated.subtotal = subtotal;
         updated.onlineDiscount = discount;
         updated.totalPrice = Math.round((subtotal - discount) * 100) / 100;

@@ -30,21 +30,21 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 599,
+        price: 649,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "1 ton",
         rentalDays: "7 days",
       },
       {
         size: "20 Yard",
-        price: 649,
+        price: 699,
         dimensions: "16' L × 8' W × 4' H",
         weightLimit: "2 tons",
         rentalDays: "7 days",
       },
       {
         size: "30 Yard",
-        price: 749,
+        price: 799,
         dimensions: "16' L × 8' W × 6' H",
         weightLimit: "3 tons",
         rentalDays: "7 days",
@@ -58,7 +58,7 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 599,
+        price: 649,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",
@@ -72,7 +72,7 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 599,
+        price: 649,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",
@@ -86,7 +86,7 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 749,
+        price: 799,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",

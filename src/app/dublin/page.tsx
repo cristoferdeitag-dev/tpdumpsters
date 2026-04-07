@@ -234,7 +234,7 @@ export default function DublinPage() {
               Dublin&apos;s rapid growth and new developments like Boulevard and Dublin Crossing mean contractors and homeowners need efficient, reliable waste hauling. TP Dumpsters offers 10, 20, and 30 yard containers with transparent all-inclusive pricing, same-day delivery, and flexible rental periods — ideal for projects of any size from weekend cleanups to multi-week construction jobs.
             </p>
             <p>
-              Book your Dublin dumpster online today and save 5%, or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for personalized service. Same-day delivery and bilingual support available throughout Dublin.
+              Book your Dublin dumpster online today and save $50, or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for personalized service. Same-day delivery and bilingual support available throughout Dublin.
             </p>
           </div>
         </div>

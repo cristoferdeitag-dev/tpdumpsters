@@ -237,7 +237,7 @@ export default function SanLeandroPage() {
               San Leandro&apos;s proximity to Oakland and its own downtown revitalization efforts keep renovation activity high year-round. From kitchen and bathroom remodels to full estate cleanouts, TP Dumpsters delivers 10, 20, and 30 yard roll-off containers with same-day service, straightforward pricing, and no hidden fees — everything you need to keep your project on track.
             </p>
             <p>
-              Ready to start? Book your San Leandro dumpster online for a 5% discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free estimate. English and Spanish support available.
+              Ready to start? Book your San Leandro dumpster online for a $50 discount or call <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free estimate. English and Spanish support available.
             </p>
           </div>
         </div>
