@@ -42,7 +42,7 @@ const SERVICES: Record<string, Record<string, { price: number; dims: string; wei
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customerName, customerEmail, customerPhone, deliveryAddress, billingAddress, notes, extras } = body;
+    const { customerName, customerEmail, customerPhone, deliveryAddress, billingAddress, notes, extras, bookingId } = body;
 
     if (!customerName || !deliveryAddress) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -182,6 +182,17 @@ export async function POST(request: NextRequest) {
     );
     const termsNote = termsLines.join(" | ");
 
+    // Build invoice metadata. booking_id is what the Supabase webhook keys on
+    // to auto-mark the corresponding Dumpsterin booking as paid.
+    const invoiceMetadata: Record<string, string> = {
+      customer_name: customerName,
+      service_type: serviceType,
+      dumpster_size: size,
+      source: bookingId ? "dumpsterin_quote" : "quote_generator",
+    };
+    if (bookingId) invoiceMetadata.booking_id = bookingId;
+    if (customerPhone) invoiceMetadata.customer_phone = customerPhone;
+
     // Create invoice with detailed terms
     const invoiceParams: Record<string, unknown> = {
       customer: customer.id,
@@ -193,12 +204,19 @@ export async function POST(request: NextRequest) {
       ],
       footer: "Extra days: $49/day • Overweight: $125/ton • Mattresses: $60 • Appliances: $40 • Tires: $20\nKeep debris below fill line. No hazardous materials. 24h cancellation notice ($150 fee).\nZelle: TP PAVERS SERVICE INC — (510) 253-6230\n\nThanks for choosing TP Dumpsters!",
       pending_invoice_items_behavior: "include" as const,
+      metadata: invoiceMetadata,
     };
 
     if (billingAddress) {
       (invoiceParams.custom_fields as Array<{name: string; value: string}>).push({
         name: "Billing Address",
         value: billingAddress.substring(0, 40),
+      });
+    }
+    if (bookingId) {
+      (invoiceParams.custom_fields as Array<{name: string; value: string}>).push({
+        name: "Booking ID",
+        value: bookingId,
       });
     }
 
@@ -249,7 +267,8 @@ export async function POST(request: NextRequest) {
           customer_name: customerName,
           service_type: serviceType,
           dumpster_size: size,
-          source: "quote_generator",
+          source: bookingId ? "dumpsterin_quote" : "quote_generator",
+          ...(bookingId ? { booking_id: bookingId } : {}),
         },
         success_url: "https://tpdumpsters.com/booking/success?source=invoice",
         cancel_url: "https://tpdumpsters.com",
