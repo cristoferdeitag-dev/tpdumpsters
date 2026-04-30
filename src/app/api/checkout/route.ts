@@ -127,22 +127,25 @@ export async function POST(request: Request) {
       booking.onlineDiscount > 0 ? `5% online discount: -$${booking.onlineDiscount.toFixed(2)}` : null,
     ].filter(Boolean).join(" | ");
 
-    // Bulleted rental terms — same wording Asaí uses on her manual invoices.
+    // Bulleted rental terms for the ONLINE flow — customer is paying right
+    // now via Stripe Checkout, so we omit Zelle / pay-online / cancellation /
+    // payment-upon-arrival lines (none of them apply to online bookings).
     const sizeNum = booking.service.size?.replace(" Yard", "").replace("yd", "") || "?";
-    const weightLimit = ({ "10": "1 ton", "20": "2 tons", "30": "3 tons" } as Record<string, string>)[sizeNum] || "N/A";
+    const lightServices = ["Clean Soil", "Clean Concrete", "Mixed Materials"];
+    const isLight = lightServices.includes(booking.service.serviceType);
+    const rentalDays = isLight ? 3 : 7;
+    const weightLimit = isLight
+      ? "No weight limit"
+      : ({ "10": "1 ton", "20": "2 tons", "30": "3 tons" } as Record<string, string>)[sizeNum] || "N/A";
     const rentalTerms = [
       `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()}`,
-      `Rental includes 7 days — extra days: $49/day`,
+      `Rental includes ${rentalDays} days — extra days: $49/day`,
       `Weight limit: ${weightLimit}`,
-      `Overweight fee: $135 per extra ton (prorated)`,
+      ...(isLight ? [] : [`Overweight fee: $135 per extra ton (prorated)`]),
       `Mattresses / appliances / electronics: $60 each`,
       `Tires: $20 each`,
       `Do not exceed the marked fill line`,
       `No prohibited materials`,
-      `24h notice required — $150 cancellation fee`,
-      `Payment upon arrival`,
-      `Card: use the "pay online" link above`,
-      `Zelle: TP PAVERS SERVICE INC - 510 253 62 30`,
     ].map((line) => `• ${line}`).join("\n");
 
     // Create Stripe Checkout Session

@@ -176,21 +176,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build bulleted General Rental Terms — same format Asaí uses on her
-    // hand-crafted Stripe invoices. Pricing line lives in the bullets, not
-    // the footer, so it's easier for customers to scan.
+    // Bulleted General Rental Terms for the MANUAL flow — Asaí (or the
+    // Dumpsterin app sending a quote) bills a customer who hasn't paid yet,
+    // so we keep the full terms including Zelle / pay-online / cancellation
+    // / payment-upon-arrival.
     const itemBullets = items.map((item) => {
       const sizeNum = item.size.replace(" Yard", "");
       return `${sizeNum}-yard dumpster for ${item.serviceType.toLowerCase()}`;
     });
+    const allLight = items.every((i) =>
+      ["Clean Soil", "Clean Concrete", "Mixed Materials"].includes(i.serviceType)
+    );
+    const rentalDaysForBullet = items.length === 1
+      ? items[0].days
+      : Math.max(...items.map((i) => i.days));
     const weightSummary = items.length === 1
       ? `Weight limit: ${items[0].weight}`
       : `Weight limits: ${items.map((i) => `${i.size} = ${i.weight}`).join(", ")}`;
     const rentalTerms = [
       ...itemBullets,
-      `Rental includes 7 days — extra days: $49/day`,
+      `Rental includes ${rentalDaysForBullet} days — extra days: $49/day`,
       weightSummary,
-      `Overweight fee: $135 per extra ton (prorated)`,
+      ...(allLight ? [] : [`Overweight fee: $135 per extra ton (prorated)`]),
       `Mattresses / appliances / electronics: $60 each`,
       `Tires: $20 each`,
       `Do not exceed the marked fill line`,
