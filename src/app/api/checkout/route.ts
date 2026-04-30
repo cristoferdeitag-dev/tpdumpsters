@@ -73,11 +73,39 @@ export async function POST(request: Request) {
       console.error("DB write error (continuing):", dbError);
     }
 
-    // Create Stripe Customer for future charges
+    // Parse out billing address. If the form provided billingAddress as a
+    // separate string, use it; otherwise fall back to the delivery address
+    // (most customers bill where they get the dumpster).
+    const billingLine1 = booking.billingAddress?.line1 || booking.address;
+    const billingCity  = booking.billingAddress?.city  || booking.city;
+    const billingState = booking.billingAddress?.state || booking.state || "CA";
+    const billingZip   = booking.billingAddress?.zip   || booking.zipCode;
+
+    // Create Stripe Customer with full billing AND shipping address so the
+    // generated invoice renders both "Bill to" and "Ship to" sections, just
+    // like Asaí's manual invoices.
     const stripeCustomer = await getStripe().customers.create({
       email: booking.customerEmail,
       name: booking.customerName,
       phone: booking.customerPhone,
+      address: {
+        line1: billingLine1,
+        city: billingCity,
+        state: billingState,
+        postal_code: billingZip,
+        country: "US",
+      },
+      shipping: {
+        name: booking.customerName,
+        phone: booking.customerPhone,
+        address: {
+          line1: booking.address,
+          city: booking.city,
+          state: booking.state || "CA",
+          postal_code: booking.zipCode,
+          country: "US",
+        },
+      },
       metadata: { booking_id: bookingId },
     });
 
@@ -99,6 +127,24 @@ export async function POST(request: Request) {
       booking.onlineDiscount > 0 ? `5% online discount: -$${booking.onlineDiscount.toFixed(2)}` : null,
     ].filter(Boolean).join(" | ");
 
+    // Bulleted rental terms — same wording Asaí uses on her manual invoices.
+    const sizeNum = booking.service.size?.replace(" Yard", "").replace("yd", "") || "?";
+    const weightLimit = ({ "10": "1 ton", "20": "2 tons", "30": "3 tons" } as Record<string, string>)[sizeNum] || "N/A";
+    const rentalTerms = [
+      `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()}`,
+      `Rental includes 7 days — extra days: $49/day`,
+      `Weight limit: ${weightLimit}`,
+      `Overweight fee: $135 per extra ton (prorated)`,
+      `Mattresses / appliances / electronics: $60 each`,
+      `Tires: $20 each`,
+      `Do not exceed the marked fill line`,
+      `No prohibited materials`,
+      `24h notice required — $150 cancellation fee`,
+      `Payment upon arrival`,
+      `Card: use the "pay online" link above`,
+      `Zelle: TP PAVERS SERVICE INC - 510 253 62 30`,
+    ].map((line) => `• ${line}`).join("\n");
+
     // Create Stripe Checkout Session
     const origin = request.headers.get("origin") || "https://tpdumpsters.com";
 
@@ -106,6 +152,27 @@ export async function POST(request: Request) {
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
+      // Auto-generate a finalized invoice on payment success with the same
+      // formatting Asaí uses on her manual invoices (bulleted terms +
+      // ship-to address visible).
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          description: `General Rental Terms:\n${rentalTerms}`,
+          metadata: {
+            booking_id: bookingId,
+            customer_name: booking.customerName,
+            service_type: booking.service.serviceType,
+            dumpster_size: booking.service.size,
+          },
+          custom_fields: [
+            { name: "Booking ID", value: bookingId },
+            { name: "Delivery Address", value: `${booking.address}, ${booking.city} ${booking.zipCode}`.substring(0, 60) },
+            { name: "Delivery Date", value: `${booking.deliveryDate}${windowLabel ? ` — ${windowLabel}` : ""}` },
+          ],
+          footer: "Thanks for choosing TP Dumpsters!",
+        },
+      },
       payment_intent_data: {
         setup_future_usage: 'off_session',
         statement_descriptor: 'TP DUMPSTERS',

@@ -176,11 +176,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build detailed rental terms note
-    const termsLines = items.map((item) =>
-      `${item.size} Dumpster — ${item.serviceType} | ${item.days}-day rental | Weight limit: ${item.weight}`
-    );
-    const termsNote = termsLines.join(" | ");
+    // Build bulleted General Rental Terms — same format Asaí uses on her
+    // hand-crafted Stripe invoices. Pricing line lives in the bullets, not
+    // the footer, so it's easier for customers to scan.
+    const itemBullets = items.map((item) => {
+      const sizeNum = item.size.replace(" Yard", "");
+      return `${sizeNum}-yard dumpster for ${item.serviceType.toLowerCase()}`;
+    });
+    const weightSummary = items.length === 1
+      ? `Weight limit: ${items[0].weight}`
+      : `Weight limits: ${items.map((i) => `${i.size} = ${i.weight}`).join(", ")}`;
+    const rentalTerms = [
+      ...itemBullets,
+      `Rental includes 7 days — extra days: $49/day`,
+      weightSummary,
+      `Overweight fee: $135 per extra ton (prorated)`,
+      `Mattresses / appliances / electronics: $60 each`,
+      `Tires: $20 each`,
+      `Do not exceed the marked fill line`,
+      `No prohibited materials`,
+      `24h notice required — $150 cancellation fee`,
+      `Payment upon arrival`,
+      `Card: use the "pay online" link above`,
+      `Zelle: TP PAVERS SERVICE INC - 510 253 62 30`,
+    ].map((line) => `• ${line}`).join("\n");
+    const termsNote = `General Rental Terms:\n${rentalTerms}`;
 
     // Build invoice metadata. booking_id is what the Supabase webhook keys on
     // to auto-mark the corresponding Dumpsterin booking as paid.
@@ -202,7 +222,7 @@ export async function POST(request: NextRequest) {
       custom_fields: [
         { name: "Delivery Address", value: deliveryAddress.substring(0, 40) },
       ],
-      footer: "Extra days: $49/day • Overweight: $125/ton • Mattresses: $60 • Appliances: $40 • Tires: $20\nKeep debris below fill line. No hazardous materials. 24h cancellation notice ($150 fee).\nZelle: TP PAVERS SERVICE INC — (510) 253-6230\n\nThanks for choosing TP Dumpsters!",
+      footer: "Thanks for choosing TP Dumpsters!",
       pending_invoice_items_behavior: "include" as const,
       metadata: invoiceMetadata,
     };
