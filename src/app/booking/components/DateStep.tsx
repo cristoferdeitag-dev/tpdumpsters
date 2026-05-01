@@ -4,9 +4,8 @@ import { useMemo } from "react";
 import type { BookingData } from "./BookingWizard";
 
 const DELIVERY_WINDOWS = [
-  { id: "morning", emoji: "🌅", label: "Morning", time: "7:00 AM - 11:00 AM" },
-  { id: "midday", emoji: "☀️", label: "Midday", time: "11:00 AM - 3:00 PM" },
-  { id: "afternoon", emoji: "🌆", label: "Afternoon", time: "3:00 PM - 7:00 PM" },
+  { id: "morning", emoji: "🌅", label: "Morning", time: "7:00 AM - 12:00 PM" },
+  { id: "afternoon", emoji: "🌆", label: "Afternoon", time: "2:00 PM - 7:00 PM" },
 ] as const;
 
 function getWindowLabel(windowId: string): string {

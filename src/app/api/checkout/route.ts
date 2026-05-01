@@ -111,6 +111,7 @@ export async function POST(request: Request) {
 
     // Build line item description
     // Map delivery window to label
+    // Display map: midday remains so legacy bookings still render correctly.
     const windowLabels: Record<string, string> = {
       morning: "Morning (7AM-12PM)",
       midday: "Midday (11AM-3PM)",
