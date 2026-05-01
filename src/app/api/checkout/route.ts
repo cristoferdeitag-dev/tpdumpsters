@@ -130,15 +130,24 @@ export async function POST(request: Request) {
     // Bulleted rental terms for the ONLINE flow — customer is paying right
     // now via Stripe Checkout, so we omit Zelle / pay-online / cancellation /
     // payment-upon-arrival lines (none of them apply to online bookings).
+    const DIMS_MAP: Record<string, string> = {
+      "10": "12' L × 8' W × 2.5' H",
+      "20": "16' L × 8' W × 4' H",
+      "30": "16' L × 8' W × 6' H",
+    };
     const sizeNum = booking.service.size?.replace(" Yard", "").replace("yd", "") || "?";
+    const dims = DIMS_MAP[sizeNum] || "";
     const lightServices = ["Clean Soil", "Clean Concrete", "Mixed Materials"];
     const isLight = lightServices.includes(booking.service.serviceType);
     const rentalDays = isLight ? 3 : 7;
     const weightLimit = isLight
       ? "No weight limit"
       : ({ "10": "1 ton", "20": "2 tons", "30": "3 tons" } as Record<string, string>)[sizeNum] || "N/A";
+    const sizeBullet = dims
+      ? `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()} (${dims})`
+      : `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()}`;
     const rentalTerms = [
-      `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()}`,
+      sizeBullet,
       `Rental includes ${rentalDays} days — extra days: $49/day`,
       `Weight limit: ${weightLimit}`,
       ...(isLight ? [] : [`Overweight fee: $135 per extra ton (prorated)`]),

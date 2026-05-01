@@ -1,48 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 
+/* ───────── Dumpster dimensions helper (shared source of truth) ───────── */
+const DIMS_MAP: Record<string, string> = {
+  "10": "12' L × 8' W × 2.5' H",
+  "20": "16' L × 8' W × 4' H",
+  "30": "16' L × 8' W × 6' H",
+};
+
+function getDims(size: string): string {
+  const sizeNum = size.replace(/[^0-9]/g, "");
+  return DIMS_MAP[sizeNum] || "";
+}
+
 /* ───────── Service pricing ───────── */
 const SERVICES: Record<string, Record<string, { price: number; dims: string; weight: string; days: number }>> = {
   "General Debris": {
-    "10 Yard": { price: 649, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-    "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
-    "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
+    "10 Yard": { price: 649, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Household Clean Out": {
-    "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-    "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
-    "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Construction Debris": {
-    "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-    "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
-    "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Roofing": {
-    "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-    "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
-    "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Green Waste": {
-    "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-    "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
-    "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Clean Soil": {
-    "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "No weight limit", days: 3 },
   },
   "Clean Concrete": {
-    "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "No weight limit", days: 3 },
   },
   "Mixed Materials": {
-    "10 Yard": { price: 749, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
+    "10 Yard": { price: 749, dims: getDims("10"), weight: "No weight limit", days: 3 },
   },
 };
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { customerName, customerEmail, customerPhone, deliveryAddress, billingAddress, notes, extras, bookingId } = body;
+    const {
+      customerName,
+      customerEmail,
+      customerPhone,
+      deliveryAddress,
+      billingAddress,
+      notes,
+      extras,
+      bookingId,
+      draft = true,
+    } = body;
 
     if (!customerName || !deliveryAddress) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -76,7 +98,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity || 1,
         customPrice: item.customPrice,
         unitPrice: item.customPrice || sizeInfo!.price,
-        dims: sizeInfo?.dims || "",
+        dims: sizeInfo?.dims || getDims(item.size),
         weight: sizeInfo?.weight || "",
         days: sizeInfo?.days || 7,
       };
@@ -85,11 +107,8 @@ export async function POST(request: NextRequest) {
     // Legacy compat values (use first item)
     const serviceType = items[0].serviceType;
     const size = items[0].size;
-    const unitPrice = items[0].unitPrice;
     const qty = items.reduce((sum, i) => sum + i.quantity, 0);
-    const dims = items[0].dims;
-    const weight = items[0].weight;
-    const days = Math.max(...items.map((i) => i.days));
+
     // Parse extras
     interface ExtraCharge { name: string; price: number; quantity: number }
     const extraCharges: ExtraCharge[] = (extras && Array.isArray(extras))
@@ -145,7 +164,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create invoice items for each service line
+    // Create invoice items — bare descriptions (no Tuesday-to-Tuesday, no weight in parens)
     for (const item of items) {
       const itemDesc = `${item.size.replace(" Yard", "-yard")} dumpster for ${item.serviceType.toLowerCase()}`;
       for (let i = 0; i < item.quantity; i++) {
@@ -161,8 +180,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create invoice items for extras
-    for (const extra of extraCharges) {
+    // Extras: always use the standard surcharge description
+    const hasSpecialItems = extraCharges.some((e) =>
+      /mattress|appliance|electronic|tire|fridge|washer|dryer/i.test(e.name)
+    );
+    const otherExtras = extraCharges.filter((e) =>
+      !/mattress|appliance|electronic|tire|fridge|washer|dryer/i.test(e.name)
+    );
+    const specialItemsTotal = extraCharges
+      .filter((e) => /mattress|appliance|electronic|tire|fridge|washer|dryer/i.test(e.name))
+      .reduce((sum, e) => sum + e.price * e.quantity, 0);
+
+    if (hasSpecialItems && specialItemsTotal > 0) {
+      await stripe.invoiceItems.create({
+        customer: customer.id,
+        description: "Special item disposal (mattresses, appliances, electronics & tires)",
+        amount: specialItemsTotal * 100,
+        currency: "usd",
+      });
+    }
+
+    for (const extra of otherExtras) {
       for (let i = 0; i < extra.quantity; i++) {
         const desc = extra.quantity > 1
           ? `${extra.name} (${i + 1} of ${extra.quantity})`
@@ -176,14 +214,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Bulleted General Rental Terms for the MANUAL flow — Asaí (or the
-    // Dumpsterin app sending a quote) bills a customer who hasn't paid yet,
-    // so we keep the full terms including Zelle / pay-online / cancellation
-    // / payment-upon-arrival.
-    const itemBullets = items.map((item) => {
-      const sizeNum = item.size.replace(" Yard", "");
-      return `${sizeNum}-yard dumpster for ${item.serviceType.toLowerCase()}`;
-    });
+    // Build MANUAL v3 terms (Asaí's exact wording, fits 500-char Stripe cap)
     const allLight = items.every((i) =>
       ["Clean Soil", "Clean Concrete", "Mixed Materials"].includes(i.serviceType)
     );
@@ -191,34 +222,52 @@ export async function POST(request: NextRequest) {
       ? items[0].days
       : Math.max(...items.map((i) => i.days));
     const weightSummary = items.length === 1
-      ? `Weight limit: ${items[0].weight}`
-      : `Weight limits: ${items.map((i) => `${i.size} = ${i.weight}`).join(", ")}`;
-    const rentalTerms = [
-      ...itemBullets,
-      `Rental includes ${rentalDaysForBullet} days — extra days: $49/day`,
-      weightSummary,
-      ...(allLight ? [] : [`Overweight fee: $135 per extra ton (prorated)`]),
-      `Mattresses / appliances / electronics: $60 each`,
-      `Tires: $20 each`,
-      `Do not exceed the marked fill line`,
-      `No prohibited materials`,
-      `24h notice required — $150 cancellation fee`,
-      `Payment upon arrival`,
-      `Card: use the "pay online" link above`,
-      `Zelle: TP PAVERS SERVICE INC - 510 253 62 30`,
-    ].map((line) => `• ${line}`).join("\n");
-    const termsNote = `General Rental Terms:\n${rentalTerms}`;
+      ? items[0].weight
+      : items.map((i) => `${i.size} = ${i.weight}`).join(", ");
 
-    // Build invoice metadata. booking_id is what the Supabase webhook keys on
-    // to auto-mark the corresponding Dumpsterin booking as paid.
+    // First bullet: size + service + dimensions (inline)
+    const sizeBullets = items.map((item) => {
+      const sizeNum = item.size.replace(" Yard", "");
+      const d = item.dims || getDims(item.size);
+      return `• ${sizeNum}-yard dumpster for ${item.serviceType.toLowerCase()}${d ? ` (${d})` : ""}`;
+    });
+
+    const termLines = [
+      ...sizeBullets,
+      `• Rental includes ${rentalDaysForBullet} days; extra days: $49/day`,
+      `• Weight limit: ${weightSummary}${allLight ? "" : ". Overweight: $135 per extra ton (prorated)"}`,
+      `• Mattresses/appliances/tires: $20-$60 each (size dependent)`,
+      `• Do not exceed the marked fill line. No prohibited materials`,
+      `• 24h notice - $150 cancellation fee`,
+      `• Payment upon arrival or via the "pay online" link above`,
+      `• Zelle: TP PAVERS SERVICE INC - 510 253 62 30`,
+    ];
+    const termsNote = `General Rental Terms:\n${termLines.join("\n")}`;
+
+    // Footer: always starts with thanks; append notes if provided
+    const footer = notes
+      ? `Thanks for choosing TP Dumpsters!\n\nNotes:\n- ${notes}`
+      : `Thanks for choosing TP Dumpsters!`;
+
+    // Build invoice metadata
     const invoiceMetadata: Record<string, string> = {
       customer_name: customerName,
       service_type: serviceType,
       dumpster_size: size,
       source: bookingId ? "dumpsterin_quote" : "quote_generator",
+      variant: "manual",
+      grand_total: String(grandTotal),
     };
     if (bookingId) invoiceMetadata.booking_id = bookingId;
     if (customerPhone) invoiceMetadata.customer_phone = customerPhone;
+
+    // Custom fields: Delivery Address + optional Booking ID (no Service field)
+    const customFields: Array<{ name: string; value: string }> = [
+      { name: "Delivery Address", value: deliveryAddress.substring(0, 40) },
+    ];
+    if (bookingId) {
+      customFields.push({ name: "Booking ID", value: bookingId });
+    }
 
     // Create invoice with detailed terms
     const invoiceParams: Record<string, unknown> = {
@@ -226,31 +275,29 @@ export async function POST(request: NextRequest) {
       collection_method: "send_invoice" as const,
       days_until_due: 7,
       description: termsNote,
-      custom_fields: [
-        { name: "Delivery Address", value: deliveryAddress.substring(0, 40) },
-      ],
-      footer: "Thanks for choosing TP Dumpsters!",
+      custom_fields: customFields,
+      footer,
       pending_invoice_items_behavior: "include" as const,
+      auto_advance: false,
       metadata: invoiceMetadata,
     };
-
-    if (billingAddress) {
-      (invoiceParams.custom_fields as Array<{name: string; value: string}>).push({
-        name: "Billing Address",
-        value: billingAddress.substring(0, 40),
-      });
-    }
-    if (bookingId) {
-      (invoiceParams.custom_fields as Array<{name: string; value: string}>).push({
-        name: "Booking ID",
-        value: bookingId,
-      });
-    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const invoice = await stripe.invoices.create(invoiceParams as any);
 
-    // Finalize to get PDF
+    // If draft=true (default), leave as draft — Asaí finalizes from Stripe dashboard
+    if (draft) {
+      return NextResponse.json({
+        invoice_id: invoice.id,
+        status: "draft",
+        customerName,
+        serviceType,
+        size,
+        quantity: qty,
+      });
+    }
+
+    // draft=false → finalize now and return PDF/hosted URLs
     const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
 
     // Create a clean Checkout Session for payment (separate from invoice)
@@ -277,7 +324,7 @@ export async function POST(request: NextRequest) {
             },
             quantity: item.quantity,
           })),
-          ...extraCharges.map((extra) => ({
+          ...otherExtras.map((extra) => ({
             price_data: {
               currency: "usd",
               product_data: {
@@ -288,6 +335,19 @@ export async function POST(request: NextRequest) {
             },
             quantity: extra.quantity,
           })),
+          ...(hasSpecialItems && specialItemsTotal > 0
+            ? [{
+                price_data: {
+                  currency: "usd",
+                  product_data: {
+                    name: "Special item disposal",
+                    description: "Mattresses, appliances, electronics & tires",
+                  },
+                  unit_amount: specialItemsTotal * 100,
+                },
+                quantity: 1,
+              }]
+            : []),
         ],
         metadata: {
           invoice_id: finalized.id,
@@ -320,14 +380,12 @@ export async function POST(request: NextRequest) {
     let sentSms = false;
     if (customerPhone) {
       try {
-        // Load Twilio keys from server (not in repo)
         const fs = await import("fs");
         const twilioKeys = JSON.parse(fs.readFileSync("/home/u781187371/twilio-keys.json", "utf8"));
         const twilioSid = twilioKeys.accountSid;
         const twilioToken = twilioKeys.authToken;
         const fromNumber = twilioKeys.dumpsterNumber;
-        
-        // Format phone number - ensure it starts with +
+
         let toNumber = customerPhone.replace(/[\s()-]/g, "");
         if (!toNumber.startsWith("+")) toNumber = "+" + toNumber;
 
