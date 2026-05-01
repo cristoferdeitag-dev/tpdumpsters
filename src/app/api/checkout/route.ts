@@ -118,14 +118,11 @@ export async function POST(request: Request) {
     };
     const windowLabel = windowLabels[booking.deliveryWindow] || "";
 
-    const description = [
-      `${booking.service.serviceType} - ${booking.service.size} Dumpster`,
-      `Delivery: ${booking.deliveryDate}${windowLabel ? ` — ${windowLabel}` : ""}`,
-      `Pickup: ${booking.pickupDate}`,
-      `${booking.address}, ${booking.city}, ${booking.zipCode}`,
-      booking.extraDays > 0 ? `+${booking.extraDays} extra day(s) @ $49/day` : null,
-      booking.onlineDiscount > 0 ? `5% online discount: -$${booking.onlineDiscount.toFixed(2)}` : null,
-    ].filter(Boolean).join(" | ");
+    // Bare line-item description per Asaí (2026-05-01): no dates, no
+    // address, no surcharges in description. Dates move to custom_fields,
+    // address sits in Ship to, surcharges become their own line items.
+    const sizeNumDesc = booking.service.size?.replace(" Yard", "").replace("yd", "") || "?";
+    const description = `${sizeNumDesc}-yard dumpster for ${booking.service.serviceType.toLowerCase()}`;
 
     // Bulleted rental terms for the ONLINE flow — customer is paying right
     // now via Stripe Checkout, so we omit Zelle / pay-online / cancellation /
@@ -151,8 +148,7 @@ export async function POST(request: Request) {
       `Rental includes ${rentalDays} days — extra days: $49/day`,
       `Weight limit: ${weightLimit}`,
       ...(isLight ? [] : [`Overweight fee: $135 per extra ton (prorated)`]),
-      `Mattresses / appliances / electronics: $60 each`,
-      `Tires: $20 each`,
+      `Mattresses / appliances / electronics / tires: $20-$60 each`,
       `Do not exceed the marked fill line`,
       `No prohibited materials`,
     ].map((line) => `• ${line}`).join("\n");
@@ -179,8 +175,8 @@ export async function POST(request: Request) {
           },
           custom_fields: [
             { name: "Booking ID", value: bookingId },
-            { name: "Delivery Address", value: `${booking.address}, ${booking.city} ${booking.zipCode}`.substring(0, 60) },
             { name: "Delivery Date", value: `${booking.deliveryDate}${windowLabel ? ` — ${windowLabel}` : ""}` },
+            { name: "Pickup Date", value: booking.pickupDate || "" },
           ],
           footer: "Thanks for choosing TP Dumpsters!",
         },
