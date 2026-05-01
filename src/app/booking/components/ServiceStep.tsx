@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { FaCalendarDays } from "react-icons/fa6";
 import type { BookingData, ServiceSelection } from "./BookingWizard";
 import { trackDumpsterSelected } from "@/lib/tracking";
 
@@ -137,31 +136,35 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
     };
     updateBooking({ service, extraDays: 0 });
     trackDumpsterSelected(activeService.service, item.size, item.price);
+    // Auto-advance to date step (user shouldn't have to scroll to a CTA after
+    // explicitly selecting a size). Tiny delay so the selected state flashes
+    // before we move on.
+    setTimeout(() => onNext(), 350);
   };
 
   return (
     <div>
-      {/* ── Header ── */}
-      <p className="font-[var(--font-poppins)] text-[11px] font-bold text-tp-red uppercase tracking-[0.25em] mb-2">
-        Step 1 — Choose your dumpster
-      </p>
-      <h2 className="font-[var(--font-oswald)] text-[36px] md:text-[44px] font-extrabold text-[#1a1a1a] uppercase leading-tight mb-3">
-        What are you tossing?
+      {/* ── Header (original copy preserved) ── */}
+      <h4 className="font-[var(--font-red-hat)] text-sm font-bold text-tp-gold uppercase tracking-[2px] mb-2">
+        STEP 1
+      </h4>
+      <h2 className="font-[var(--font-poppins)] text-[26px] md:text-[32px] font-bold text-[#222] mb-2">
+        Choose your dumpster
       </h2>
-      <p className="font-[var(--font-poppins)] text-[15px] text-[#666] mb-8 max-w-xl">
-        Pick the type of waste — we'll show you the sizes that fit best.
+      <p className="font-[var(--font-poppins)] text-[15px] text-[#999] mb-10">
+        Select the type of waste and dumpster size you need.
       </p>
 
-      {/* ── Service type pills (Stitch-style segmented control) ── */}
-      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 mb-8">
+      {/* ── Service type pills (original red rounded chips) ── */}
+      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 mb-10">
         {services.map((svc, idx) => (
           <button
             key={svc.service}
             onClick={() => setActiveServiceIdx(idx)}
-            className={`flex items-center justify-center gap-2 px-5 py-3 rounded-md text-[13px] font-bold uppercase tracking-wider font-[var(--font-poppins)] transition-all duration-200 ${
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold font-[var(--font-poppins)] transition-all duration-200 ${
               activeServiceIdx === idx
-                ? "bg-[#1a1a1a] text-white shadow-md"
-                : "bg-white text-[#666] ring-1 ring-[#e5e5e5] hover:ring-[#1a1a1a] hover:text-[#1a1a1a]"
+                ? "bg-tp-red text-white shadow-md"
+                : "bg-[#f5f5f5] text-[#555] border border-[#e5e5e5] hover:border-tp-red hover:text-tp-red"
             }`}
           >
             <span className="text-base">{svc.icon}</span>
@@ -171,13 +174,13 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       </div>
 
       {/* ── Service description banner ── */}
-      <div className="bg-[#fafafa] rounded-md px-6 py-4 mb-10 border-l-4 border-tp-red">
-        <p className="font-[var(--font-poppins)] text-[14px] text-[#444] leading-relaxed">
-          <span className="font-bold text-[#1a1a1a]">{activeService.icon} {activeService.service}:</span>{" "}
+      <div className="bg-[#fafafa] rounded-2xl px-6 py-4 mb-10 border border-[#eee]">
+        <p className="font-[var(--font-poppins)] text-[14px] text-[#555] leading-relaxed">
+          <span className="font-semibold text-[#333]">{activeService.icon} {activeService.service}:</span>{" "}
           {activeService.description}
         </p>
         {activeService.note && (
-          <p className="font-[var(--font-poppins)] text-xs text-[#888] mt-2 leading-relaxed">
+          <p className="font-[var(--font-poppins)] text-xs text-[#aaa] mt-2 leading-relaxed">
             {activeService.note}
           </p>
         )}
@@ -232,12 +235,12 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
 
               {/* ── Dumpster illustration (only for the 3 standard sizes) ── */}
               {sizeImage && (
-                <div className="bg-gradient-to-b from-[#fafafa] to-white px-6 pt-5 pb-3">
+                <div className="bg-[#fafafa] px-4 pt-4 pb-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={sizeImage}
                     alt={`${item.size} dumpster illustration`}
-                    className="w-full h-32 object-contain transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-48 sm:h-52 object-contain transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
                   />
                 </div>
@@ -305,24 +308,9 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         </div>
       )}
 
-      <p className="text-center text-xs text-[#bbb] mt-8 mb-10 font-[var(--font-poppins)]">
-        Extra weight charged at $125/ton (prorated) · Extra days: $49/day
+      <p className="text-center text-xs text-[#bbb] mt-8 mb-2 font-[var(--font-poppins)]">
+        Extra weight charged at $135/ton (prorated) · Extra days: $49/day
       </p>
-
-      {/* ── Next button ── */}
-      <div className="flex justify-end">
-        <button
-          onClick={onNext}
-          disabled={!booking.service}
-          className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-[var(--font-poppins)] font-semibold text-sm transition-all duration-200 ${
-            booking.service
-              ? "bg-tp-red text-white hover:brightness-110 shadow-lg shadow-red-500/20"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          <FaCalendarDays /> Next: Choose dates →
-        </button>
-      </div>
     </div>
   );
 }
