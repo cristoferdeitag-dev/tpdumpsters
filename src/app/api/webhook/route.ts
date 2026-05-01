@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
     const fullAddress = [address, city, zipCode].filter(Boolean).join(", ");
 
     // Build description for calendar events
+    const customerNotes = (session.metadata?.notes || "").trim();
     const eventDescription = [
       `Booking ID: ${bookingId}`,
       `Service: ${serviceType} - ${dumpsterSize} Yard`,
@@ -128,6 +129,7 @@ export async function POST(req: NextRequest) {
       `Email: ${customerEmail}`,
       `Total: ${totalPaid}`,
       `Address: ${fullAddress}`,
+      customerNotes ? `Notes: ${customerNotes}` : null,
       `Booked online via tpdumpsters.com`,
     ].filter(Boolean).join("\n");
 

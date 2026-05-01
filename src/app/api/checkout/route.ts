@@ -216,6 +216,7 @@ export async function POST(request: Request) {
         zip_code: booking.zipCode,
         authorized_charges: String(booking.authorizedCharges || false),
         delivery_window: booking.deliveryWindow || "",
+        notes: (booking.notes || "").slice(0, 500),
       },
       success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
       cancel_url: `${origin}/booking?cancelled=true`,

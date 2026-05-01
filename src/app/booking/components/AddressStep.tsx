@@ -442,23 +442,6 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         </div>
       </div>
 
-      {/* Dumpster contents */}
-      <div className="mb-6">
-        <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm">
-          🗑️ What will the dumpster contain?
-        </h3>
-        <textarea
-          placeholder="Example: Old furniture, drywall, wood scraps, carpet..."
-          value={booking.dumpsterContents}
-          onChange={(e) => updateBooking({ dumpsterContents: e.target.value })}
-          rows={2}
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors resize-none"
-        />
-        <p className="text-[11px] text-[#aaa] mt-1 font-[var(--font-poppins)]">
-          This helps us prepare the right dumpster for your project.
-        </p>
-      </div>
-
       {/* Billing address (optional) */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">

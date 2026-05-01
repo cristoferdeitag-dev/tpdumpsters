@@ -40,14 +40,14 @@ const services: ServiceCategory[] = [
     service: "General Debris",
     icon: "🏗️",
     description: "Home remodels, furniture, junk, light demolition",
-    note: "⚠️ Mattresses/appliances/tires: $20–$60 each (size dependent, special disposal)",
+    note: "⚠️ Mattresses/appliances/electronics/tires: $20–$60 each (size dependent, special disposal)",
     sizes: GENERAL_SIZES,
   },
   {
     service: "Household Clean Out",
     icon: "🏠",
     description: "House & garage cleanouts, furniture removal, decluttering",
-    note: "⚠️ Mattresses/appliances/tires: $20–$60 each (size dependent, special disposal)",
+    note: "⚠️ Mattresses/appliances/electronics/tires: $20–$60 each (size dependent, special disposal)",
     sizes: GENERAL_SIZES,
   },
   {
@@ -354,23 +354,25 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       )}
 
       <p className="text-center text-xs text-[#bbb] mt-8 mb-10 font-[var(--font-poppins)]">
-        Extra weight charged at $125/ton (prorated) · Extra days: $49/day
+        Extra weight charged at $135/ton (prorated) · Extra days: $49/day
       </p>
 
-      {/* ── Next button ── */}
-      <div className="flex justify-end">
-        <button
-          onClick={onNext}
-          disabled={!booking.service}
-          className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-[var(--font-poppins)] font-semibold text-sm transition-all duration-200 ${
-            booking.service
-              ? "bg-tp-red text-white hover:brightness-110 shadow-lg shadow-red-500/20"
-              : "bg-gray-100 text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          <FaCalendarDays /> Next: Choose dates →
-        </button>
-      </div>
+      {/* Spacer so sticky CTA never overlaps content above */}
+      <div className="h-24" aria-hidden="true" />
+
+      {/* ── Sticky Next CTA ── */}
+      {booking.service && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-4 pt-3 bg-gradient-to-t from-white via-white/95 to-white/0 pointer-events-none">
+          <div className="max-w-3xl mx-auto flex justify-end pointer-events-auto">
+            <button
+              onClick={onNext}
+              className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-[var(--font-poppins)] font-semibold text-sm transition-all duration-200 bg-tp-red text-white hover:brightness-110 shadow-xl shadow-red-500/30"
+            >
+              <FaCalendarDays /> Next: Choose dates →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -241,7 +241,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
             </div>
           </div>
           <p className="text-[10px] text-[#aaa] mt-3">
-            Total rental: {totalDays} days. Extra weight charged at $125/ton (prorated).
+            Total rental: {totalDays} days. Extra weight charged at $135/ton (prorated).
           </p>
         </div>
       )}
