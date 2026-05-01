@@ -32,7 +32,7 @@ interface ServiceCategory {
 const GENERAL_SIZES: SizeOption[] = [
   { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 7 },
   { size: "20 Yard", price: 699, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
-  { size: "30 Yard", price: 799, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
+  { size: "30 Yard", price: 849, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
 ];
 
 const services: ServiceCategory[] = [
