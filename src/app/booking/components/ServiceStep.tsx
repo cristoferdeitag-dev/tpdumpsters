@@ -103,11 +103,13 @@ const sizeBestFor: Record<string, string> = {
   "30 Yard": "Best for: Large renovations & construction",
 };
 
-/* ───────── Dumpster illustrations (with embedded dimensions) ───────── */
+/* ───────── Dumpster photos (real outdoor shots, Stitch-style cards) ─────────
+   Pulled from /public/images/dumpsters/ — actual TP red dumpsters in the
+   field, no studio illustrations. Cropped via object-cover in the card. */
 const sizeImages: Record<string, string> = {
-  "10 Yard": "/images/sizes/10-yard.png",
-  "20 Yard": "/images/sizes/20-yard.png",
-  "30 Yard": "/images/sizes/30-yard.png",
+  "10 Yard": "/images/dumpsters/dumpster-dirt-sunny.jpg",
+  "20 Yard": "/images/dumpsters/delivery-residential.jpg",
+  "30 Yard": "/images/dumpsters/construction-site.jpg",
 };
 
 export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
@@ -186,9 +188,13 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         )}
       </div>
 
-      {/* ── Price cards ── */}
+      {/* ── Price cards (Stitch-literal structure: full-bleed image at
+            top, MOST POPULAR sticker absolute, header row with title left
+            + price right, check_circle bullets, full-width SELECT THIS
+            DUMPSTER button. Only TP's red/gold tokens replace Stitch's
+            primary color.) ── */}
       <div
-        className={`grid grid-cols-1 gap-5 md:gap-6 items-end ${
+        className={`grid grid-cols-1 gap-6 ${
           activeService.sizes.length === 3
             ? "md:grid-cols-3"
             : activeService.sizes.length === 2
@@ -201,7 +207,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           const isSelected = selectedKey === key;
           const isPopular = activeService.sizes.length === 3 && idx === 1;
           const isFeatured = isPopular || activeService.sizes.length === 1;
-          const bestFor = sizeBestFor[item.size] || `Best for: ${activeService.service.toLowerCase()}`;
+          const bestFor = sizeBestFor[item.size] || `Best for ${activeService.service.toLowerCase()}`;
           const sizeImage = sizeImages[item.size];
 
           return (
@@ -209,86 +215,95 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
               key={key}
               onClick={() => handleSelect(item)}
               className={`
-                group relative bg-white rounded-2xl text-left transition-all duration-300 cursor-pointer overflow-hidden
-                flex flex-col
-                hover:-translate-y-1 hover:shadow-2xl
-                ${isSelected
-                  ? "ring-2 ring-tp-red shadow-[0_8px_30px_rgba(224,43,32,0.18)] md:scale-[1.02] z-10"
-                  : isFeatured
-                  ? "ring-2 ring-tp-red/70 shadow-[0_4px_24px_rgba(224,43,32,0.12)] md:scale-[1.02] z-10"
-                  : "ring-1 ring-[#eee] shadow-[0_2px_12px_rgba(0,0,0,0.05)]"
+                relative bg-white rounded-lg overflow-hidden text-left
+                transition-all duration-300 cursor-pointer
+                ${isSelected || isFeatured
+                  ? "border-2 border-tp-red shadow-[0_4px_20px_rgba(224,43,32,0.12)]"
+                  : "border border-[#e4e2e2] shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.12)]"
                 }
               `}
             >
-              {/* ── Top badge ── */}
-              {isSelected ? (
-                <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
+              {/* MOST POPULAR sticker — absolute, top-left */}
+              {isPopular && !isSelected && (
+                <div className="absolute top-4 left-4 z-10 bg-tp-red text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded">
+                  Most Popular
+                </div>
+              )}
+              {isSelected && (
+                <div className="absolute top-4 left-4 z-10 bg-tp-red text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded">
                   ✓ Selected
                 </div>
-              ) : isPopular ? (
-                <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
-                  ⭐ Most Popular
-                </div>
-              ) : (
-                <div className="h-2" aria-hidden />
               )}
 
-              {/* ── Dumpster illustration (only for the 3 standard sizes) ── */}
+              {/* Full-bleed image header */}
               {sizeImage && (
-                <div className="bg-[#fafafa] px-4 pt-4 pb-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={sizeImage}
-                    alt={`${item.size} dumpster illustration`}
-                    className="w-full h-48 sm:h-52 object-contain transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={sizeImage}
+                  alt={`${item.size} dumpster`}
+                  className="w-full h-48 object-cover bg-[#fafafa]"
+                  loading="lazy"
+                />
               )}
 
-              <div className="px-7 pt-5 pb-7 sm:px-7 sm:pb-7 flex-1 flex flex-col">
-                {/* ── Title + Best for ── */}
-                <h3 className="font-[var(--font-poppins)] text-2xl font-bold text-[#1a1a1a]">
-                  {item.size} Dumpster
-                </h3>
-                <p className="text-xs font-[var(--font-poppins)] text-[#888] mt-1 mb-5">
-                  {bestFor}
-                </p>
-
-                {/* ── Price ── */}
-                <div className="mb-5">
-                  <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#bbb] font-[var(--font-poppins)]">
-                    Starting at
-                  </span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="font-[var(--font-oswald)] text-[44px] leading-none font-bold text-tp-red">
+              <div className="p-6">
+                {/* Title row: name+tagline left, price right */}
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="font-[var(--font-poppins)] text-xl font-bold text-[#1a1a1a] leading-tight">
+                      {item.size} Dumpster
+                    </h4>
+                    <p className="text-[13px] text-[#5f5e5e] mt-1 font-[var(--font-poppins)]">
+                      {bestFor}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <span className="text-[10px] font-bold text-[#5f5e5e] block uppercase tracking-wider">
+                      Starting at
+                    </span>
+                    <span className="text-2xl font-[var(--font-oswald)] font-bold text-tp-red">
                       ${item.price}
                     </span>
                   </div>
                 </div>
 
-                {/* ── Compact spec list (3 bullets) ── */}
-                <ul className="space-y-2.5 mb-6 text-sm text-[#444] font-[var(--font-poppins)]">
-                  <li className="flex items-center gap-2">
-                    <span className="text-tp-gold flex-shrink-0" aria-hidden>📐</span>
-                    <span>{item.dimensions}</span>
+                {/* check_circle bullets */}
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center gap-2 text-sm text-[#5f5e5e] font-[var(--font-poppins)]">
+                    <span
+                      className="material-symbols-outlined text-tp-red text-lg shrink-0"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      check_circle
+                    </span>
+                    {item.weightLimit} weight included
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-tp-gold flex-shrink-0" aria-hidden>⚖️</span>
-                    <span>{item.weightLimit} weight included</span>
+                  <li className="flex items-center gap-2 text-sm text-[#5f5e5e] font-[var(--font-poppins)]">
+                    <span
+                      className="material-symbols-outlined text-tp-red text-lg shrink-0"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      check_circle
+                    </span>
+                    {item.rentalDays}-day rental period
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-tp-gold flex-shrink-0" aria-hidden>📅</span>
-                    <span>{item.rentalDays}-day rental, delivery + pickup</span>
+                  <li className="flex items-center gap-2 text-sm text-[#5f5e5e] font-[var(--font-poppins)]">
+                    <span
+                      className="material-symbols-outlined text-tp-red text-lg shrink-0"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      check_circle
+                    </span>
+                    {item.dimensions}
                   </li>
                 </ul>
 
-                {/* ── CTA button ── */}
+                {/* Full-width SELECT THIS DUMPSTER button */}
                 <div
-                  className={`mt-auto flex items-center justify-center w-full py-3.5 rounded-xl text-[13px] font-bold uppercase tracking-wider transition-all duration-300 font-[var(--font-poppins)] ${
+                  className={`w-full py-4 text-center text-[13px] font-bold uppercase tracking-wider rounded-lg font-[var(--font-poppins)] transition-all duration-150 ${
                     isSelected
                       ? "bg-green-500 text-white"
-                      : "bg-tp-red text-white hover:brightness-110"
+                      : "bg-tp-red text-white hover:bg-tp-red-dark active:scale-95"
                   }`}
                 >
                   {isSelected ? "✓ Selected" : "Select this dumpster"}
