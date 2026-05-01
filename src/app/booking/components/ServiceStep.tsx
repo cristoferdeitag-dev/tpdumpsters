@@ -97,23 +97,19 @@ const services: ServiceCategory[] = [
   },
 ];
 
-/* ───────── Subtexts per dumpster size ───────── */
-const sizeSubtexts: Record<string, string> = {
-  "10 Yard": "Ideal for small cleanouts",
-  "20 Yard": "Perfect for home projects",
-  "30 Yard": "Best for large jobs",
+/* ───────── "Best for" subtitles per dumpster size ───────── */
+const sizeBestFor: Record<string, string> = {
+  "10 Yard": "Best for: Heavy materials or small cleanouts",
+  "20 Yard": "Best for: Medium home projects & cleanouts",
+  "30 Yard": "Best for: Large renovations & construction",
 };
 
-/* ───────── Checkmark icon ───────── */
-function Check({ className }: { className?: string }) {
-  return (
-    <span
-      className={`inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white text-[11px] flex-shrink-0 ${className ?? ""}`}
-    >
-      ✓
-    </span>
-  );
-}
+/* ───────── Dumpster illustrations (with embedded dimensions) ───────── */
+const sizeImages: Record<string, string> = {
+  "10 Yard": "/images/sizes/10-yard.png",
+  "20 Yard": "/images/sizes/20-yard.png",
+  "30 Yard": "/images/sizes/30-yard.png",
+};
 
 export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
   const [activeServiceIdx, setActiveServiceIdx] = useState(() => {
@@ -202,24 +198,26 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           const isSelected = selectedKey === key;
           const isPopular = activeService.sizes.length === 3 && idx === 1;
           const isFeatured = isPopular || activeService.sizes.length === 1;
-          const isDark = isFeatured || isSelected;
-          const subtext = sizeSubtexts[item.size] || activeService.service;
+          const bestFor = sizeBestFor[item.size] || `Best for: ${activeService.service.toLowerCase()}`;
+          const sizeImage = sizeImages[item.size];
 
           return (
             <button
               key={key}
               onClick={() => handleSelect(item)}
               className={`
-                relative rounded-2xl text-left transition-all duration-300 cursor-pointer overflow-hidden
-                hover:scale-[1.03] hover:shadow-2xl
-                ${isDark
-                  ? "bg-[#1a1a1a] text-white shadow-2xl md:scale-[1.04] z-10"
-                  : "bg-white text-[#333] shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-[#eee]"
+                group relative bg-white rounded-2xl text-left transition-all duration-300 cursor-pointer overflow-hidden
+                flex flex-col
+                hover:-translate-y-1 hover:shadow-2xl
+                ${isSelected
+                  ? "ring-2 ring-tp-red shadow-[0_8px_30px_rgba(224,43,32,0.18)] md:scale-[1.02] z-10"
+                  : isFeatured
+                  ? "ring-2 ring-tp-red/70 shadow-[0_4px_24px_rgba(224,43,32,0.12)] md:scale-[1.02] z-10"
+                  : "ring-1 ring-[#eee] shadow-[0_2px_12px_rgba(0,0,0,0.05)]"
                 }
-                ${isSelected ? "ring-2 ring-tp-red" : ""}
               `}
             >
-              {/* ── Badge ── */}
+              {/* ── Top badge ── */}
               {isSelected ? (
                 <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
                   ✓ Selected
@@ -228,112 +226,66 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                 <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
                   ⭐ Most Popular
                 </div>
-              ) : null}
+              ) : (
+                <div className="h-2" aria-hidden />
+              )}
 
-              <div className="px-7 pt-7 pb-7 sm:px-8 sm:pt-8 sm:pb-8">
-                {/* ── Title ── */}
-                <h3 className="font-[var(--font-poppins)] text-xl font-bold mb-1">
+              {/* ── Dumpster illustration (only for the 3 standard sizes) ── */}
+              {sizeImage && (
+                <div className="bg-gradient-to-b from-[#fafafa] to-white px-6 pt-5 pb-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={sizeImage}
+                    alt={`${item.size} dumpster illustration`}
+                    className="w-full h-32 object-contain transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
+              <div className="px-7 pt-5 pb-7 sm:px-7 sm:pb-7 flex-1 flex flex-col">
+                {/* ── Title + Best for ── */}
+                <h3 className="font-[var(--font-poppins)] text-2xl font-bold text-[#1a1a1a]">
                   {item.size} Dumpster
                 </h3>
-
-                {/* ── Subtext ── */}
-                <p
-                  className={`text-sm mb-6 font-[var(--font-poppins)] ${
-                    isDark ? "text-white/50" : "text-[#999]"
-                  }`}
-                >
-                  {subtext}
+                <p className="text-xs font-[var(--font-poppins)] text-[#888] mt-1 mb-5">
+                  {bestFor}
                 </p>
 
                 {/* ── Price ── */}
-                <div className="mb-1">
-                  <span
-                    className={`text-xs font-medium ${
-                      isDark ? "text-white/40" : "text-[#bbb]"
-                    }`}
-                  >
+                <div className="mb-5">
+                  <span className="text-[10px] uppercase tracking-[0.18em] font-bold text-[#bbb] font-[var(--font-poppins)]">
                     Starting at
                   </span>
-                </div>
-                <div className="flex items-baseline gap-1 mb-7">
-                  <span
-                    className={`font-[var(--font-oswald)] text-[52px] leading-none font-bold ${
-                      isDark ? "text-white" : "text-[#222]"
-                    }`}
-                  >
-                    ${item.price}
-                  </span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="font-[var(--font-oswald)] text-[44px] leading-none font-bold text-tp-red">
+                      ${item.price}
+                    </span>
+                  </div>
                 </div>
 
-                {/* ── Divider ── */}
-                <div
-                  className={`h-px mb-6 ${
-                    isDark ? "bg-white/10" : "bg-[#eee]"
-                  }`}
-                />
-
-                {/* ── Feature list ── */}
-                <ul className="space-y-4 mb-8">
-                  <li className="flex items-center gap-3">
-                    <Check />
-                    <span
-                      className={`text-sm font-[var(--font-poppins)] ${
-                        isDark ? "text-white/80" : "text-[#555]"
-                      }`}
-                    >
-                      {item.dimensions}
-                    </span>
+                {/* ── Compact spec list (3 bullets) ── */}
+                <ul className="space-y-2.5 mb-6 text-sm text-[#444] font-[var(--font-poppins)]">
+                  <li className="flex items-center gap-2">
+                    <span className="text-tp-gold flex-shrink-0" aria-hidden>📐</span>
+                    <span>{item.dimensions}</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <Check />
-                    <span
-                      className={`text-sm font-[var(--font-poppins)] ${
-                        isDark ? "text-white/80" : "text-[#555]"
-                      }`}
-                    >
-                      {item.weightLimit} included
-                    </span>
+                  <li className="flex items-center gap-2">
+                    <span className="text-tp-gold flex-shrink-0" aria-hidden>⚖️</span>
+                    <span>{item.weightLimit} weight included</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <Check />
-                    <span
-                      className={`text-sm font-[var(--font-poppins)] ${
-                        isDark ? "text-white/80" : "text-[#555]"
-                      }`}
-                    >
-                      {item.rentalDays}-day rental included
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Check />
-                    <span
-                      className={`text-sm font-[var(--font-poppins)] ${
-                        isDark ? "text-white/80" : "text-[#555]"
-                      }`}
-                    >
-                      Delivery &amp; pickup included
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <Check />
-                    <span
-                      className={`text-sm font-[var(--font-poppins)] ${
-                        isDark ? "text-white/80" : "text-[#555]"
-                      }`}
-                    >
-                      No hidden fees
-                    </span>
+                  <li className="flex items-center gap-2">
+                    <span className="text-tp-gold flex-shrink-0" aria-hidden>📅</span>
+                    <span>{item.rentalDays}-day rental, delivery + pickup</span>
                   </li>
                 </ul>
 
                 {/* ── CTA button ── */}
                 <div
-                  className={`flex items-center justify-center w-full py-4 rounded-xl text-sm font-semibold transition-all duration-300 font-[var(--font-poppins)] ${
+                  className={`mt-auto flex items-center justify-center w-full py-3.5 rounded-xl text-[13px] font-bold uppercase tracking-wider transition-all duration-300 font-[var(--font-poppins)] ${
                     isSelected
                       ? "bg-green-500 text-white"
-                      : isFeatured
-                      ? "bg-tp-red text-white hover:brightness-110"
-                      : "bg-transparent text-[#333] border-2 border-[#222] hover:bg-[#222] hover:text-white"
+                      : "bg-tp-red text-white hover:brightness-110"
                   }`}
                 >
                   {isSelected ? "✓ Selected" : "Select this dumpster"}
