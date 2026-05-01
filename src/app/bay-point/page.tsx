@@ -71,8 +71,8 @@ const bayPointFaqs = [
     question: "How much does a dumpster rental cost in Bay Point?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Bay Point dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster
-        (7-day rental, 1 ton included). The 20-yard starts at $649 and the 30-yard at $749.
+        Bay Point dumpster rental prices start at <strong>$649 for a 10-yard</strong> dumpster
+        (7-day rental, 1 ton included). The 20-yard starts at $699 and the 30-yard at $849.
         No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact
         quote for your Bay Point project.
       </p>

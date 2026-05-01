@@ -28,7 +28,7 @@ const danvilleFaqs = [
     question: "What size dumpster is best for a luxury home renovation in Blackhawk or Diablo?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        For high-end renovations in Danville&apos;s premium communities — <strong>Blackhawk estates, Diablo properties, or large homes in Alamo</strong> — the <strong>30-yard dumpster ($749)</strong> is the most popular choice. It handles full kitchen remodels, master suite additions, and multi-room projects without needing multiple pickups.
+        For high-end renovations in Danville&apos;s premium communities — <strong>Blackhawk estates, Diablo properties, or large homes in Alamo</strong> — the <strong>30-yard dumpster ($849)</strong> is the most popular choice. It handles full kitchen remodels, master suite additions, and multi-room projects without needing multiple pickups.
       </p>
     ),
   },
@@ -60,7 +60,7 @@ const danvilleFaqs = [
     question: "How much does a dumpster rental cost in Danville?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Danville dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $649 and the 30-yard at $749. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your Danville project.
+        Danville dumpster rental prices start at <strong>$649 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $699 and the 30-yard at $849. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your Danville project.
       </p>
     ),
   },

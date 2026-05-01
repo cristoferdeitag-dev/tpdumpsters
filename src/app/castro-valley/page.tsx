@@ -44,7 +44,7 @@ const castroValleyFaqs = [
     question: "What size dumpster is best for a Castro Valley home remodel?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        For typical Castro Valley home remodels — kitchen and bath renovations, flooring replacement, or room additions — a <strong>20-yard dumpster ($649)</strong> is the most popular choice. For larger projects like whole-home renovations or multi-room tear-outs, the 30-yard at $749 gives you plenty of room.
+        For typical Castro Valley home remodels — kitchen and bath renovations, flooring replacement, or room additions — a <strong>20-yard dumpster ($699)</strong> is the most popular choice. For larger projects like whole-home renovations or multi-room tear-outs, the 30-yard at $849 gives you plenty of room.
       </p>
     ),
   },
@@ -60,7 +60,7 @@ const castroValleyFaqs = [
     question: "How much does a dumpster rental cost in Castro Valley?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Castro Valley dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $649 and the 30-yard at $749. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your Castro Valley project.
+        Castro Valley dumpster rental prices start at <strong>$649 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $699 and the 30-yard at $849. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your Castro Valley project.
       </p>
     ),
   },

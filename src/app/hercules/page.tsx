@@ -28,7 +28,7 @@ const herculesFaqs = [
     question: "What size dumpster do I need for a Hercules home renovation?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        For typical Hercules home renovations — kitchen remodels, bathroom updates, or flooring projects — a <strong>20-yard dumpster ($649)</strong> is the most popular choice. For larger projects like whole-home renovations or new construction cleanup in Hercules&apos; growing developments, the 30-yard at $749 provides ample capacity.
+        For typical Hercules home renovations — kitchen remodels, bathroom updates, or flooring projects — a <strong>20-yard dumpster ($699)</strong> is the most popular choice. For larger projects like whole-home renovations or new construction cleanup in Hercules&apos; growing developments, the 30-yard at $849 provides ample capacity.
       </p>
     ),
   },
@@ -70,7 +70,7 @@ const herculesFaqs = [
     question: "How much does a dumpster rental cost in Hercules?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Hercules dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $649 and the 30-yard at $749. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your Hercules project.
+        Hercules dumpster rental prices start at <strong>$649 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $699 and the 30-yard at $849. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your Hercules project.
       </p>
     ),
   },
