@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
-import FloatingButtons from "@/components/FloatingButtons";
 import Footer from "@/components/Footer";
 import DynamicBookingWizard from "./components/DynamicBookingWizard";
 
@@ -53,7 +52,6 @@ export default function BookingPage() {
         <DynamicBookingWizard />
       </section>
 
-      <FloatingButtons />
       <Footer />
     </>
   );
