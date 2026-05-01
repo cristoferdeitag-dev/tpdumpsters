@@ -112,9 +112,9 @@ export async function POST(request: Request) {
     // Build line item description
     // Map delivery window to label
     const windowLabels: Record<string, string> = {
-      morning: "Morning (7AM-11AM)",
+      morning: "Morning (7AM-12PM)",
       midday: "Midday (11AM-3PM)",
-      afternoon: "Afternoon (3PM-7PM)",
+      afternoon: "Afternoon (2PM-7PM)",
     };
     const windowLabel = windowLabels[booking.deliveryWindow] || "";
 
@@ -166,7 +166,10 @@ export async function POST(request: Request) {
       invoice_creation: {
         enabled: true,
         invoice_data: {
-          description: `General Rental Terms:\n${rentalTerms}`,
+          // Per Asaí (2026-05-01): "Thanks for choosing TP Dumpsters!" goes
+          // INSIDE the General Rental Terms block, NOT in the footer (where
+          // Stripe renders it below Amount Due).
+          description: `General Rental Terms:\n${rentalTerms}\n\nThanks for choosing TP Dumpsters!`,
           metadata: {
             booking_id: bookingId,
             customer_name: booking.customerName,
@@ -178,7 +181,6 @@ export async function POST(request: Request) {
             { name: "Delivery Date", value: `${booking.deliveryDate}${windowLabel ? ` — ${windowLabel}` : ""}` },
             { name: "Pickup Date", value: booking.pickupDate || "" },
           ],
-          footer: "Thanks for choosing TP Dumpsters!",
         },
       },
       payment_intent_data: {

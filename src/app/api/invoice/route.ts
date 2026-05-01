@@ -242,12 +242,11 @@ export async function POST(request: NextRequest) {
       `• Payment upon arrival or via the "pay online" link above`,
       `• Zelle: TP PAVERS SERVICE INC - 510 253 62 30`,
     ];
-    const termsNote = `General Rental Terms:\n${termLines.join("\n")}`;
-
-    // Footer: always starts with thanks; append notes if provided
-    const footer = notes
-      ? `Thanks for choosing TP Dumpsters!\n\nNotes:\n- ${notes}`
-      : `Thanks for choosing TP Dumpsters!`;
+    // "Thanks for choosing TP Dumpsters!" lives INSIDE the General Rental
+    // Terms block per Asaí (2026-05-01). Footer is reserved for per-invoice
+    // notes only — empty when no notes are passed.
+    const termsNote = `General Rental Terms:\n${termLines.join("\n")}\n\nThanks for choosing TP Dumpsters!`;
+    const footer = notes ? `Notes:\n- ${notes}` : "";
 
     // Build invoice metadata
     const invoiceMetadata: Record<string, string> = {
