@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FaCalendarDays } from "react-icons/fa6";
 import type { BookingData, ServiceSelection } from "./BookingWizard";
 import { trackDumpsterSelected } from "@/lib/tracking";
 
@@ -96,21 +97,23 @@ const services: ServiceCategory[] = [
   },
 ];
 
-/* ───────── "Best for" subtitles per dumpster size ───────── */
-const sizeBestFor: Record<string, string> = {
-  "10 Yard": "Best for: Heavy materials or small cleanouts",
-  "20 Yard": "Best for: Medium home projects & cleanouts",
-  "30 Yard": "Best for: Large renovations & construction",
+/* ───────── Subtexts per dumpster size ───────── */
+const sizeSubtexts: Record<string, string> = {
+  "10 Yard": "Ideal for small cleanouts",
+  "20 Yard": "Perfect for home projects",
+  "30 Yard": "Best for large jobs",
 };
 
-/* ───────── Dumpster photos (real outdoor shots, Stitch-style cards) ─────────
-   Pulled from /public/images/dumpsters/ — actual TP red dumpsters in the
-   field, no studio illustrations. Cropped via object-cover in the card. */
-const sizeImages: Record<string, string> = {
-  "10 Yard": "/images/dumpsters/dumpster-dirt-sunny.jpg",
-  "20 Yard": "/images/dumpsters/delivery-residential.jpg",
-  "30 Yard": "/images/dumpsters/construction-site.jpg",
-};
+/* ───────── Checkmark icon ───────── */
+function Check({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-white text-[11px] flex-shrink-0 ${className ?? ""}`}
+    >
+      ✓
+    </span>
+  );
+}
 
 export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
   const [activeServiceIdx, setActiveServiceIdx] = useState(() => {
@@ -138,15 +141,11 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
     };
     updateBooking({ service, extraDays: 0 });
     trackDumpsterSelected(activeService.service, item.size, item.price);
-    // Auto-advance to date step (user shouldn't have to scroll to a CTA after
-    // explicitly selecting a size). Tiny delay so the selected state flashes
-    // before we move on.
-    setTimeout(() => onNext(), 350);
   };
 
   return (
     <div>
-      {/* ── Header (original copy preserved) ── */}
+      {/* ── Header ── */}
       <h4 className="font-[var(--font-red-hat)] text-sm font-bold text-tp-gold uppercase tracking-[2px] mb-2">
         STEP 1
       </h4>
@@ -157,7 +156,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         Select the type of waste and dumpster size you need.
       </p>
 
-      {/* ── Service type pills (original red rounded chips) ── */}
+      {/* ── Service type pills ── */}
       <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 mb-10">
         {services.map((svc, idx) => (
           <button
@@ -188,13 +187,9 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         )}
       </div>
 
-      {/* ── Price cards (Stitch-literal structure: full-bleed image at
-            top, MOST POPULAR sticker absolute, header row with title left
-            + price right, check_circle bullets, full-width SELECT THIS
-            DUMPSTER button. Only TP's red/gold tokens replace Stitch's
-            primary color.) ── */}
+      {/* ── Price cards ── */}
       <div
-        className={`grid grid-cols-1 gap-6 ${
+        className={`grid grid-cols-1 gap-5 md:gap-6 items-end ${
           activeService.sizes.length === 3
             ? "md:grid-cols-3"
             : activeService.sizes.length === 2
@@ -207,103 +202,138 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           const isSelected = selectedKey === key;
           const isPopular = activeService.sizes.length === 3 && idx === 1;
           const isFeatured = isPopular || activeService.sizes.length === 1;
-          const bestFor = sizeBestFor[item.size] || `Best for ${activeService.service.toLowerCase()}`;
-          const sizeImage = sizeImages[item.size];
+          const isDark = isFeatured || isSelected;
+          const subtext = sizeSubtexts[item.size] || activeService.service;
 
           return (
             <button
               key={key}
               onClick={() => handleSelect(item)}
               className={`
-                relative bg-white rounded-lg overflow-hidden text-left
-                transition-all duration-300 cursor-pointer
-                ${isSelected || isFeatured
-                  ? "border-2 border-tp-red shadow-[0_4px_20px_rgba(224,43,32,0.12)]"
-                  : "border border-[#e4e2e2] shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.12)]"
+                relative rounded-2xl text-left transition-all duration-300 cursor-pointer overflow-hidden
+                hover:scale-[1.03] hover:shadow-2xl
+                ${isDark
+                  ? "bg-[#1a1a1a] text-white shadow-2xl md:scale-[1.04] z-10"
+                  : "bg-white text-[#333] shadow-[0_2px_20px_rgba(0,0,0,0.06)] border border-[#eee]"
                 }
+                ${isSelected ? "ring-2 ring-tp-red" : ""}
               `}
             >
-              {/* MOST POPULAR sticker — absolute, top-left */}
-              {isPopular && !isSelected && (
-                <div className="absolute top-4 left-4 z-10 bg-tp-red text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded">
-                  Most Popular
-                </div>
-              )}
-              {isSelected && (
-                <div className="absolute top-4 left-4 z-10 bg-tp-red text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded">
+              {/* ── Badge ── */}
+              {isSelected ? (
+                <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
                   ✓ Selected
                 </div>
-              )}
+              ) : isPopular ? (
+                <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
+                  ⭐ Most Popular
+                </div>
+              ) : null}
 
-              {/* Full-bleed image header */}
-              {sizeImage && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={sizeImage}
-                  alt={`${item.size} dumpster`}
-                  className="w-full h-48 object-cover bg-[#fafafa]"
-                  loading="lazy"
-                />
-              )}
+              <div className="px-7 pt-7 pb-7 sm:px-8 sm:pt-8 sm:pb-8">
+                {/* ── Title ── */}
+                <h3 className="font-[var(--font-poppins)] text-xl font-bold mb-1">
+                  {item.size} Dumpster
+                </h3>
 
-              <div className="p-6">
-                {/* Title row: name+tagline left, price right */}
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-[var(--font-poppins)] text-xl font-bold text-[#1a1a1a] leading-tight">
-                      {item.size} Dumpster
-                    </h4>
-                    <p className="text-[13px] text-[#5f5e5e] mt-1 font-[var(--font-poppins)]">
-                      {bestFor}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <span className="text-[10px] font-bold text-[#5f5e5e] block uppercase tracking-wider">
-                      Starting at
-                    </span>
-                    <span className="text-2xl font-[var(--font-oswald)] font-bold text-tp-red">
-                      ${item.price}
-                    </span>
-                  </div>
+                {/* ── Subtext ── */}
+                <p
+                  className={`text-sm mb-6 font-[var(--font-poppins)] ${
+                    isDark ? "text-white/50" : "text-[#999]"
+                  }`}
+                >
+                  {subtext}
+                </p>
+
+                {/* ── Price ── */}
+                <div className="mb-1">
+                  <span
+                    className={`text-xs font-medium ${
+                      isDark ? "text-white/40" : "text-[#bbb]"
+                    }`}
+                  >
+                    Starting at
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1 mb-7">
+                  <span
+                    className={`font-[var(--font-oswald)] text-[52px] leading-none font-bold ${
+                      isDark ? "text-white" : "text-[#222]"
+                    }`}
+                  >
+                    ${item.price}
+                  </span>
                 </div>
 
-                {/* check_circle bullets */}
-                <ul className="space-y-2 mb-6">
-                  <li className="flex items-center gap-2 text-sm text-[#5f5e5e] font-[var(--font-poppins)]">
+                {/* ── Divider ── */}
+                <div
+                  className={`h-px mb-6 ${
+                    isDark ? "bg-white/10" : "bg-[#eee]"
+                  }`}
+                />
+
+                {/* ── Feature list ── */}
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center gap-3">
+                    <Check />
                     <span
-                      className="material-symbols-outlined text-tp-red text-lg shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
+                      className={`text-sm font-[var(--font-poppins)] ${
+                        isDark ? "text-white/80" : "text-[#555]"
+                      }`}
                     >
-                      check_circle
+                      {item.dimensions}
                     </span>
-                    {item.weightLimit} weight included
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-[#5f5e5e] font-[var(--font-poppins)]">
+                  <li className="flex items-center gap-3">
+                    <Check />
                     <span
-                      className="material-symbols-outlined text-tp-red text-lg shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
+                      className={`text-sm font-[var(--font-poppins)] ${
+                        isDark ? "text-white/80" : "text-[#555]"
+                      }`}
                     >
-                      check_circle
+                      {item.weightLimit} included
                     </span>
-                    {item.rentalDays}-day rental period
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-[#5f5e5e] font-[var(--font-poppins)]">
+                  <li className="flex items-center gap-3">
+                    <Check />
                     <span
-                      className="material-symbols-outlined text-tp-red text-lg shrink-0"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
+                      className={`text-sm font-[var(--font-poppins)] ${
+                        isDark ? "text-white/80" : "text-[#555]"
+                      }`}
                     >
-                      check_circle
+                      {item.rentalDays}-day rental included
                     </span>
-                    {item.dimensions}
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check />
+                    <span
+                      className={`text-sm font-[var(--font-poppins)] ${
+                        isDark ? "text-white/80" : "text-[#555]"
+                      }`}
+                    >
+                      Delivery &amp; pickup included
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check />
+                    <span
+                      className={`text-sm font-[var(--font-poppins)] ${
+                        isDark ? "text-white/80" : "text-[#555]"
+                      }`}
+                    >
+                      No hidden fees
+                    </span>
                   </li>
                 </ul>
 
-                {/* Full-width SELECT THIS DUMPSTER button */}
+                {/* ── CTA button ── */}
                 <div
-                  className={`w-full py-4 text-center text-[13px] font-bold uppercase tracking-wider rounded-lg font-[var(--font-poppins)] transition-all duration-150 ${
+                  className={`flex items-center justify-center w-full py-4 rounded-xl text-sm font-semibold transition-all duration-300 font-[var(--font-poppins)] ${
                     isSelected
                       ? "bg-green-500 text-white"
-                      : "bg-tp-red text-white hover:bg-tp-red-dark active:scale-95"
+                      : isFeatured
+                      ? "bg-tp-red text-white hover:brightness-110"
+                      : "bg-transparent text-[#333] border-2 border-[#222] hover:bg-[#222] hover:text-white"
                   }`}
                 >
                   {isSelected ? "✓ Selected" : "Select this dumpster"}
@@ -323,9 +353,24 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         </div>
       )}
 
-      <p className="text-center text-xs text-[#bbb] mt-8 mb-2 font-[var(--font-poppins)]">
-        Extra weight charged at $135/ton (prorated) · Extra days: $49/day
+      <p className="text-center text-xs text-[#bbb] mt-8 mb-10 font-[var(--font-poppins)]">
+        Extra weight charged at $125/ton (prorated) · Extra days: $49/day
       </p>
+
+      {/* ── Next button ── */}
+      <div className="flex justify-end">
+        <button
+          onClick={onNext}
+          disabled={!booking.service}
+          className={`flex items-center gap-2 px-8 py-3.5 rounded-xl font-[var(--font-poppins)] font-semibold text-sm transition-all duration-200 ${
+            booking.service
+              ? "bg-tp-red text-white hover:brightness-110 shadow-lg shadow-red-500/20"
+              : "bg-gray-100 text-gray-400 cursor-not-allowed"
+          }`}
+        >
+          <FaCalendarDays /> Next: Choose dates →
+        </button>
+      </div>
     </div>
   );
 }
