@@ -144,24 +144,26 @@ export default function BookingWizard() {
   }
 
   return (
-    <div className="w-[92%] sm:w-[85%] max-w-[900px] mx-auto py-10">
-      {/* Progress bar */}
-      <div className="flex items-center justify-between mb-10 px-2">
+    <div className="w-[94%] sm:w-[88%] max-w-[1000px] mx-auto pt-12 pb-10">
+      {/* ── Stepper — minimal numbered dots, Stitch-style ── */}
+      <div className="flex items-center justify-center gap-1 sm:gap-3 mb-10 px-2">
         {STEPS.map((s, i) => (
-          <div key={s.id} className="flex items-center flex-1">
-            <div className="flex flex-col items-center">
+          <div key={s.id} className="flex items-center">
+            <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
               <div
-                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-lg sm:text-xl font-bold transition-all duration-300 ${
-                  step >= s.id
-                    ? "bg-tp-red text-white shadow-lg"
-                    : "bg-gray-200 text-gray-400"
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[13px] sm:text-sm font-bold font-[var(--font-poppins)] transition-all duration-300 ${
+                  step > s.id
+                    ? "bg-tp-red text-white"
+                    : step === s.id
+                    ? "bg-tp-red text-white ring-4 ring-tp-red/15 scale-110"
+                    : "bg-white text-[#bbb] ring-1 ring-[#e5e5e5]"
                 }`}
               >
-                {step > s.id ? "✓" : s.icon}
+                {step > s.id ? "✓" : s.id}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-1.5 font-[var(--font-poppins)] font-semibold ${
-                  step >= s.id ? "text-tp-red" : "text-gray-400"
+                className={`text-[10px] sm:text-[11px] mt-2 font-[var(--font-poppins)] font-semibold uppercase tracking-wider ${
+                  step >= s.id ? "text-[#1a1a1a]" : "text-[#bbb]"
                 }`}
               >
                 {s.label}
@@ -169,8 +171,8 @@ export default function BookingWizard() {
             </div>
             {i < STEPS.length - 1 && (
               <div
-                className={`flex-1 h-1 mx-2 rounded-full transition-all duration-300 ${
-                  step > s.id ? "bg-tp-red" : "bg-gray-200"
+                className={`w-8 sm:w-16 h-0.5 mx-1 sm:mx-2 rounded-full transition-all duration-300 -mt-5 ${
+                  step > s.id ? "bg-tp-red" : "bg-[#e5e5e5]"
                 }`}
               />
             )}
@@ -179,7 +181,7 @@ export default function BookingWizard() {
       </div>
 
       {/* Step content */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 min-h-[400px]">
+      <div className="bg-white rounded-[20px] shadow-[0_8px_40px_rgba(0,0,0,0.06)] ring-1 ring-[#eee] p-6 sm:p-10 min-h-[400px]">
         {step === 1 && (
           <ServiceStep
             booking={booking}

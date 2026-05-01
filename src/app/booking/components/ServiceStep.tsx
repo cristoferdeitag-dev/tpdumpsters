@@ -142,26 +142,26 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
   return (
     <div>
       {/* ── Header ── */}
-      <h4 className="font-[var(--font-red-hat)] text-sm font-bold text-tp-gold uppercase tracking-[2px] mb-2">
-        STEP 1
-      </h4>
-      <h2 className="font-[var(--font-poppins)] text-[26px] md:text-[32px] font-bold text-[#222] mb-2">
-        Choose your dumpster
+      <p className="font-[var(--font-poppins)] text-[11px] font-bold text-tp-red uppercase tracking-[0.25em] mb-2">
+        Step 1 — Choose your dumpster
+      </p>
+      <h2 className="font-[var(--font-oswald)] text-[36px] md:text-[44px] font-extrabold text-[#1a1a1a] uppercase leading-tight mb-3">
+        What are you tossing?
       </h2>
-      <p className="font-[var(--font-poppins)] text-[15px] text-[#999] mb-10">
-        Select the type of waste and dumpster size you need.
+      <p className="font-[var(--font-poppins)] text-[15px] text-[#666] mb-8 max-w-xl">
+        Pick the type of waste — we'll show you the sizes that fit best.
       </p>
 
-      {/* ── Service type pills ── */}
-      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 mb-10">
+      {/* ── Service type pills (Stitch-style segmented control) ── */}
+      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 mb-8">
         {services.map((svc, idx) => (
           <button
             key={svc.service}
             onClick={() => setActiveServiceIdx(idx)}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold font-[var(--font-poppins)] transition-all duration-200 ${
+            className={`flex items-center justify-center gap-2 px-5 py-3 rounded-md text-[13px] font-bold uppercase tracking-wider font-[var(--font-poppins)] transition-all duration-200 ${
               activeServiceIdx === idx
-                ? "bg-tp-red text-white shadow-md"
-                : "bg-[#f5f5f5] text-[#555] border border-[#e5e5e5] hover:border-tp-red hover:text-tp-red"
+                ? "bg-[#1a1a1a] text-white shadow-md"
+                : "bg-white text-[#666] ring-1 ring-[#e5e5e5] hover:ring-[#1a1a1a] hover:text-[#1a1a1a]"
             }`}
           >
             <span className="text-base">{svc.icon}</span>
@@ -171,13 +171,13 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       </div>
 
       {/* ── Service description banner ── */}
-      <div className="bg-[#fafafa] rounded-2xl px-6 py-4 mb-10 border border-[#eee]">
-        <p className="font-[var(--font-poppins)] text-[14px] text-[#555] leading-relaxed">
-          <span className="font-semibold text-[#333]">{activeService.icon} {activeService.service}:</span>{" "}
+      <div className="bg-[#fafafa] rounded-md px-6 py-4 mb-10 border-l-4 border-tp-red">
+        <p className="font-[var(--font-poppins)] text-[14px] text-[#444] leading-relaxed">
+          <span className="font-bold text-[#1a1a1a]">{activeService.icon} {activeService.service}:</span>{" "}
           {activeService.description}
         </p>
         {activeService.note && (
-          <p className="font-[var(--font-poppins)] text-xs text-[#aaa] mt-2 leading-relaxed">
+          <p className="font-[var(--font-poppins)] text-xs text-[#888] mt-2 leading-relaxed">
             {activeService.note}
           </p>
         )}
