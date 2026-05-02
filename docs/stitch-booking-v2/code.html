@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;900&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#666767",
+                        "primary-fixed": "#ffdad8",
+                        "on-primary": "#ffffff",
+                        "primary": "#a2001c",
+                        "surface-container-highest": "#e4e2e2",
+                        "outline": "#906f6d",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f2f0f0",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "surface-tint": "#bb1428",
+                        "primary-fixed-dim": "#ffb3af",
+                        "inverse-surface": "#303030",
+                        "surface-dim": "#dbd9d9",
+                        "surface-container": "#efeded",
+                        "inverse-primary": "#ffb3af",
+                        "on-primary-fixed": "#410006",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "surface": "#fbf9f8",
+                        "on-primary-container": "#ffdfdd",
+                        "secondary-container": "#e2dfde",
+                        "primary-container": "#c8202f",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#5b403e",
+                        "surface-container-low": "#f5f3f3",
+                        "on-secondary-container": "#636262",
+                        "background": "#fbf9f8",
+                        "tertiary-fixed": "#e2e2e2",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#e4bdbb",
+                        "on-surface": "#1b1c1c",
+                        "on-background": "#1b1c1c",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "surface-variant": "#e4e2e2",
+                        "surface-bright": "#fbf9f8",
+                        "tertiary": "#4d4f4f",
+                        "surface-container-high": "#eae8e7",
+                        "on-secondary-fixed-variant": "#474746",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#e6e6e6",
+                        "on-primary-fixed-variant": "#930019",
+                        "secondary": "#5f5e5e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "section-padding": "80px",
+                        "stack-md": "24px",
+                        "container-max-width": "1200px",
+                        "gutter": "24px",
+                        "stack-lg": "48px",
+                        "stack-sm": "12px"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["Inter"],
+                        "headline-lg": ["Work Sans"],
+                        "display-xl": ["Work Sans"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Work Sans"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["14px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "display-xl": ["48px", {"lineHeight": "1.1", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md antialiased">
+<!-- Top App Bar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shadow-sm dark:shadow-none">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-red-700 dark:text-red-600 active:scale-95 transition-transform duration-150">menu</span>
+<h1 class="text-xl font-black text-red-700 dark:text-red-600 font-['Work_Sans'] uppercase tracking-tighter">DUMPSTER RENTALS</h1>
+</div>
+<span class="material-symbols-outlined text-red-700 dark:text-red-600 active:scale-95 transition-transform duration-150">account_circle</span>
+</header>
+<main class="pt-16 pb-24">
+<!-- Hero Section -->
+<section class="relative h-48 flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 bg-primary-container">
+<img class="w-full h-full object-cover mix-blend-overlay opacity-60" data-alt="A heavy-duty industrial waste management scene with a massive red dumpster as the focal point against a gritty construction site background. The lighting is dramatic and high-contrast, emphasizing the rugged textures of steel and concrete. The overall aesthetic is professional and reliable, featuring a deep industrial red color palette that signals strength and efficiency. The composition is clean and focused, designed for a modern mobile user interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATo3xF9VzTikq69hwbRdFdMkNEXmZU7lBKE2Fr0Gu-mw3UBFjk0SIjhKzQEesxj9WZ6zQkZlTQAf0pZfeR0RJcgVjgCJS7Gut9u3D5sjWRmT-P0vznQuTYtL7EbC8xB5umu0IvmCFazMYX4ba16JIHfI881rKZSJuq-bEeaGzICD76sA-9wOnOQiD2S9asrUb_Neem4qigg-mDf_UGaE7hv9sO4neivgOnIQ8K6e5qVxZELxc_CRq1ozJoZOhYYkhKYswBMm3CDdko"/>
+</div>
+<div class="relative z-10 text-center px-4">
+<div class="inline-block bg-white text-primary px-3 py-1 mb-2 rounded-full font-label-bold text-xs uppercase shadow-lg">
+                    Save $50 Online
+                </div>
+<h2 class="font-display-xl text-white uppercase tracking-tighter text-3xl">BOOK YOUR DUMPSTER</h2>
+</div>
+</section>
+<!-- Progress Tracker -->
+<nav class="bg-white border-b border-surface-container-highest px-4 py-4 flex items-center justify-between overflow-x-auto hide-scrollbar">
+<div class="flex flex-col items-center min-w-[70px]">
+<div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-label-bold mb-1">1</div>
+<span class="text-[10px] font-label-bold text-primary uppercase">Service</span>
+</div>
+<div class="h-px bg-surface-container-highest flex-grow mx-2 min-w-[20px]"></div>
+<div class="flex flex-col items-center min-w-[70px]">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-secondary flex items-center justify-center font-label-bold mb-1">2</div>
+<span class="text-[10px] font-label-bold text-secondary uppercase">Dates</span>
+</div>
+<div class="h-px bg-surface-container-highest flex-grow mx-2 min-w-[20px]"></div>
+<div class="flex flex-col items-center min-w-[70px]">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-secondary flex items-center justify-center font-label-bold mb-1">3</div>
+<span class="text-[10px] font-label-bold text-secondary uppercase">Address</span>
+</div>
+<div class="h-px bg-surface-container-highest flex-grow mx-2 min-w-[20px]"></div>
+<div class="flex flex-col items-center min-w-[70px]">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-secondary flex items-center justify-center font-label-bold mb-1">4</div>
+<span class="text-[10px] font-label-bold text-secondary uppercase">Review</span>
+</div>
+</nav>
+<!-- Selection Content -->
+<section class="px-4 py-8">
+<h3 class="font-headline-lg text-on-surface mb-4">Step 1: Choose your dumpster</h3>
+<!-- Filters -->
+<div class="flex gap-2 overflow-x-auto hide-scrollbar mb-8 pb-2">
+<button class="whitespace-nowrap px-6 py-2 bg-primary text-white font-label-bold rounded-lg border border-primary">General Debris</button>
+<button class="whitespace-nowrap px-6 py-2 bg-white text-secondary font-label-bold rounded-lg border border-surface-container-highest">Heavy Waste</button>
+<button class="whitespace-nowrap px-6 py-2 bg-white text-secondary font-label-bold rounded-lg border border-surface-container-highest">Yard Waste</button>
+</div>
+<!-- Dumpster Cards -->
+<div class="space-y-6">
+<!-- 10 Yard -->
+<div class="bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden border border-surface-container-highest">
+<img class="w-full h-48 object-cover" data-alt="A clean, professional studio shot of a small 10-yard steel roll-off dumpster in a vibrant industrial red. The lighting is bright and clear, highlighting the solid construction and clean lines of the container. Set against a minimalist neutral gray background that matches the high-end industrial design system. The image conveys reliability and manageable scale for residential projects." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjzx4xjAW2aqBiJkBNM8LXl2cMo91nrELLuPDD0NpmVSqE5T_Irbtp6YTIgZ8kYJatWB35WEymmFZUlL-Y7Oq-DqS0wgtgXnyaTEOFfmqMI2mqScjaZFUn_zMerUF3Bd0ofyEKwmfETKK-iVmBE0is3bRBYS1udQW-k2pgOhtL9qzleJQKEhW_AkRQSyTTv_RY_SPkzRCwHi6cmumFpI97rx7Np-ivwxgkKqQFBpFTBpNzoEUKsh72fyEyWv4oWH1vKUHN4T7LCyg8"/>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline-md text-on-surface">10 Yard Dumpster</h4>
+<p class="text-secondary text-sm">Best for small cleanup projects</p>
+</div>
+<div class="text-right">
+<span class="text-xs font-label-bold text-secondary block uppercase">Starting at</span>
+<span class="text-xl font-headline-lg text-primary">$349</span>
+</div>
+</div>
+<ul class="space-y-2 mb-6">
+<li class="flex items-center gap-2 text-sm text-secondary">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                2-3 tons of waste included
+                            </li>
+<li class="flex items-center gap-2 text-sm text-secondary">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                7-day rental period
+                            </li>
+</ul>
+<button class="w-full bg-primary text-white py-4 font-label-bold uppercase tracking-wider rounded-lg active:scale-95 transition-transform duration-150">SELECT THIS DUMPSTER</button>
+</div>
+</div>
+<!-- 20 Yard - Popular -->
+<div class="bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.12)] overflow-hidden border-2 border-primary relative">
+<div class="absolute top-4 left-4 z-10 bg-primary text-white px-3 py-1 font-label-bold text-[10px] uppercase tracking-widest rounded">MOST POPULAR</div>
+<img class="w-full h-48 object-cover" data-alt="A large 20-yard industrial roll-off dumpster displayed prominently in a bright outdoor urban setting. The container is painted in a striking deep red, with high-quality steel construction visible. The lighting is natural morning sun, casting professional soft shadows and highlighting the robust build. This image represents the standard versatile choice for medium-sized construction or renovation tasks." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv0GNYkGsWhq5546wQYkWS94alvnY-IT7jeQuzRvAA5K6E_6X-10XprK3UpRceIbVKzwswqVmusNXcZ5aq52yFUDhi-RShwsS05mFz1qzEDWLGi-kLXxwDQ3mjCVxhw0CYLZDAasXDUnEF0rBCynjlszbRaxxr3fE3S6qhkH9QmrshT7BkeKPEIxjpr25doZoPfiopC1CSsqCE8l6iP0Rz72xN7suZYW-yJ9lXjthlVO-R-qZqowGapcuWl_ByHFwm1RpP_9_tUrTF"/>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline-md text-on-surface">20 Yard Dumpster</h4>
+<p class="text-secondary text-sm">Most common for home renovations</p>
+</div>
+<div class="text-right">
+<span class="text-xs font-label-bold text-secondary block uppercase">Starting at</span>
+<span class="text-xl font-headline-lg text-primary">$459</span>
+</div>
+</div>
+<ul class="space-y-2 mb-6">
+<li class="flex items-center gap-2 text-sm text-secondary">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                4 tons of waste included
+                            </li>
+<li class="flex items-center gap-2 text-sm text-secondary">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                10-day rental period
+                            </li>
+<li class="flex items-center gap-2 text-sm text-secondary">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                Priority delivery available
+                            </li>
+</ul>
+<button class="w-full bg-primary text-white py-4 font-label-bold uppercase tracking-wider rounded-lg active:scale-95 transition-transform duration-150">SELECT THIS DUMPSTER</button>
+</div>
+</div>
+<!-- 30 Yard -->
+<div class="bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden border border-surface-container-highest">
+<img class="w-full h-48 object-cover" data-alt="A massive 30-yard industrial-grade dumpster in a bold corporate red color. The dumpster is shown on a clean industrial lot, emphasizing its huge capacity for commercial-scale waste. High-key, professional daylight provides clear visibility of every structural detail. The image evokes a sense of industrial power and maximum efficiency for large-scale operations." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrZNiGo2F19f-pdZQh8NTEQ7n4rUS7KLkSpwo644DgQovnf8GctxK7FsvAFVNoyRD8D6FmEFnvZsGBxbVklqLq6b0sxe2wrlZ7t0HNeo4EDL814j1XfmENWl2hmKUlpWo3h1H_q8kevGzzQebPxKKMkXvr9oBg5bbKHjPD3gU-JlEQdhU07P-4kyOjt6KgHorTJE6lP_qNuunrJmRBLa3i5Ilf3wJBFKw1Gkw8AiV261CaqSy4tNcMFARfUQLSeBVzTjCPeUxpMHww"/>
+<div class="p-6">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-headline-md text-on-surface">30 Yard Dumpster</h4>
+<p class="text-secondary text-sm">For commercial &amp; major projects</p>
+</div>
+<div class="text-right">
+<span class="text-xs font-label-bold text-secondary block uppercase">Starting at</span>
+<span class="text-xl font-headline-lg text-primary">$589</span>
+</div>
+</div>
+<ul class="space-y-2 mb-6">
+<li class="flex items-center gap-2 text-sm text-secondary">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                6 tons of waste included
+                            </li>
+<li class="flex items-center gap-2 text-sm text-secondary">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                14-day rental period
+                            </li>
+</ul>
+<button class="w-full bg-primary text-white py-4 font-label-bold uppercase tracking-wider rounded-lg active:scale-95 transition-transform duration-150">SELECT THIS DUMPSTER</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Help Section -->
+<section class="px-4 py-8 bg-surface-container-low mt-8 border-y border-surface-container-highest">
+<div class="text-center mb-6">
+<h3 class="font-headline-md text-on-surface mb-2">Need help choosing?</h3>
+<p class="text-secondary text-sm">Our experts are available to help you pick the right size.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-2 bg-white border border-secondary text-on-surface py-3 font-label-bold rounded-lg active:bg-surface-container">
+<span class="material-symbols-outlined text-primary">call</span>
+                    Call
+                </button>
+<button class="flex items-center justify-center gap-2 bg-white border border-secondary text-on-surface py-3 font-label-bold rounded-lg active:bg-surface-container">
+<span class="material-symbols-outlined text-primary">chat_bubble</span>
+                    Live Chat
+                </button>
+</div>
+</section>
+</main>
+<!-- Mobile-optimized Footer -->
+<footer class="flex flex-col items-center gap-4 text-center w-full bg-zinc-900 p-8 mb-20 border-t border-zinc-800">
+<h2 class="text-red-600 font-bold uppercase font-['Work_Sans']">DUMPSTER RENTALS</h2>
+<div class="flex gap-4">
+<a class="font-['Work_Sans'] text-xs font-medium text-zinc-400 hover:text-white underline" href="#">Privacy</a>
+<a class="font-['Work_Sans'] text-xs font-medium text-zinc-400 hover:text-white underline" href="#">Terms</a>
+<a class="font-['Work_Sans'] text-xs font-medium text-zinc-400 hover:text-white underline" href="#">Support</a>
+</div>
+<p class="font-['Work_Sans'] text-xs font-medium text-zinc-400">© 2024 Industrial Rentals Inc.</p>
+<div class="flex gap-6 mt-2">
+<span class="material-symbols-outlined text-zinc-400">social_leaderboard</span>
+<span class="material-symbols-outlined text-zinc-400">local_shipping</span>
+<span class="material-symbols-outlined text-zinc-400">contact_support</span>
+</div>
+</footer>
+<!-- Bottom Nav Bar (Shared Component) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-2 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 p-1 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Work_Sans'] text-[10px] font-bold uppercase mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-red-700 dark:text-red-500 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-1 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="local_shipping" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+<span class="font-['Work_Sans'] text-[10px] font-bold uppercase mt-1">Rentals</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 p-1 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="font-['Work_Sans'] text-[10px] font-bold uppercase mt-1">Support</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 p-1 active:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Work_Sans'] text-[10px] font-bold uppercase mt-1">Account</span>
+</a>
+</nav>
+</body></html>

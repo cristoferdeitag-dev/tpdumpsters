@@ -78,21 +78,12 @@ export default function ServiceStepV2({ booking, updateBooking, onNext }: Props)
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <p className="font-[var(--font-poppins)] text-[10px] sm:text-xs font-bold text-tp-red uppercase tracking-[2px] mb-1.5">
-          Step 1
-        </p>
-        <h2 className="font-[var(--font-oswald)] text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1a1a1a] uppercase tracking-tight mb-2">
-          Choose your dumpster
-        </h2>
-        <p className="font-[var(--font-poppins)] text-sm text-[#666]">
-          Select the type of waste, then pick the size that fits your project.
-        </p>
-      </div>
+      <h2 className="font-[var(--font-work-sans)] text-2xl sm:text-3xl lg:text-[32px] font-bold text-[#1b1c1c] mb-6 leading-tight">
+        Step 1: Choose your dumpster
+      </h2>
 
-      {/* Filter pills (waste type) */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 mb-7 scrollbar-hide">
+      {/* Filter pills — Stitch's monochrome border style. Active = solid red. */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-8 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
         {services.map((svc, idx) => {
           const active = activeServiceIdx === idx;
           return (
@@ -100,10 +91,10 @@ export default function ServiceStepV2({ booking, updateBooking, onNext }: Props)
               key={svc.service}
               type="button"
               onClick={() => setActiveServiceIdx(idx)}
-              className={`whitespace-nowrap px-5 py-2.5 rounded-lg font-[var(--font-poppins)] text-sm font-semibold transition-all border-2 ${
+              className={`whitespace-nowrap px-6 py-2 rounded-lg font-[var(--font-inter)] text-sm font-semibold border transition-colors ${
                 active
-                  ? "bg-tp-red text-white border-tp-red shadow-md"
-                  : "bg-white text-[#444] border-[#e5e5e5] hover:border-tp-red hover:text-tp-red"
+                  ? "bg-[#a2001c] text-white border-[#a2001c]"
+                  : "bg-white text-[#5f5e5e] border-[#e4e2e2] hover:border-[#906f6d]"
               }`}
             >
               {svc.service}
@@ -112,15 +103,10 @@ export default function ServiceStepV2({ booking, updateBooking, onNext }: Props)
         })}
       </div>
 
-      {/* Service description */}
-      <div className="mb-6 px-4 py-3 bg-[#fafafa] rounded-lg border border-[#eee]">
-        <p className="font-[var(--font-poppins)] text-sm text-[#555]">
-          <span className="font-bold text-[#222]">{activeService.service}:</span> {activeService.description}
-        </p>
-      </div>
-
-      {/* Stitch-style cards: full-width stacked */}
-      <div className="space-y-5">
+      {/* Cards: stacked on mobile (Stitch's literal layout), 3-up grid on lg
+          for desktop adaptation. The card markup is the same; the grid just
+          spreads them horizontally. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {activeService.sizes.map((item, idx) => {
           const key = `${activeService.service}-${item.size}`;
           const isSelected = selectedKey === key;
@@ -128,64 +114,55 @@ export default function ServiceStepV2({ booking, updateBooking, onNext }: Props)
           return (
             <article
               key={key}
-              className={`relative bg-white rounded-2xl overflow-hidden border-2 transition-all ${
-                isSelected
-                  ? "border-tp-red shadow-[0_8px_30px_rgba(224,43,32,0.18)]"
-                  : isPopular
-                  ? "border-tp-red shadow-[0_4px_20px_rgba(224,43,32,0.12)]"
-                  : "border-[#e5e5e5] shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:border-[#bbb]"
+              className={`relative bg-white rounded-lg overflow-hidden border transition-shadow ${
+                isPopular || isSelected
+                  ? "border-2 border-[#a2001c] shadow-[0_4px_20px_rgba(0,0,0,0.12)]"
+                  : "border-[#e4e2e2] shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
               }`}
             >
               {isPopular && (
-                <div className="absolute top-4 left-4 z-10 bg-tp-red text-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded font-[var(--font-poppins)]">
-                  ⭐ Most Popular
+                <div className="absolute top-4 left-4 z-10 bg-[#a2001c] text-white px-3 py-1 font-[var(--font-inter)] text-[10px] uppercase tracking-widest font-bold rounded">
+                  MOST POPULAR
                 </div>
               )}
 
-              {/* Visual hero of the card */}
-              <div className="relative h-40 sm:h-48 bg-gradient-to-br from-[#1a1a1a] via-[#2a2a2a] to-[#0d0d0d] flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 opacity-30">
-                  <div className="absolute -right-20 -bottom-20 w-72 h-72 rounded-full bg-tp-red blur-3xl" />
-                </div>
+              <div className="relative w-full h-48 bg-[#efeded] flex items-center justify-center overflow-hidden">
                 {item.image ? (
-                  <div className="relative w-full h-full flex items-center justify-center p-3">
-                    <Image
-                      src={item.image}
-                      alt={`${item.size} dumpster`}
-                      width={400}
-                      height={250}
-                      className="object-contain w-auto h-full max-h-full drop-shadow-2xl"
-                    />
-                  </div>
+                  <Image
+                    src={item.image}
+                    alt={`${item.size} dumpster`}
+                    width={500}
+                    height={300}
+                    className="object-contain w-auto h-full p-4"
+                  />
                 ) : (
-                  <span className="relative text-white text-4xl sm:text-5xl font-extrabold uppercase tracking-tighter font-[var(--font-oswald)]">
+                  <span className="font-[var(--font-work-sans)] text-4xl font-black uppercase tracking-tight text-[#a2001c]">
                     {item.size}
                   </span>
                 )}
               </div>
 
-              {/* Card body */}
-              <div className="p-5 sm:p-6">
+              <div className="p-6">
                 <div className="flex justify-between items-start mb-4 gap-3">
                   <div>
-                    <h3 className="font-[var(--font-oswald)] text-2xl sm:text-3xl font-extrabold text-[#1a1a1a] uppercase tracking-tight">
+                    <h3 className="font-[var(--font-work-sans)] text-2xl font-semibold text-[#1b1c1c] leading-tight">
                       {item.size} Dumpster
                     </h3>
-                    <p className="font-[var(--font-poppins)] text-sm text-[#777] mt-0.5">
+                    <p className="text-[#5f5e5e] text-sm font-[var(--font-inter)] mt-0.5">
                       {sizeTagline[item.size] || activeService.service}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="block text-[10px] font-bold text-[#999] uppercase tracking-wider font-[var(--font-poppins)]">
+                    <span className="text-xs font-[var(--font-inter)] font-semibold text-[#5f5e5e] block uppercase">
                       Starting at
                     </span>
-                    <span className="font-[var(--font-oswald)] text-3xl sm:text-4xl font-extrabold text-tp-red">
+                    <span className="font-[var(--font-work-sans)] text-2xl font-bold text-[#a2001c]">
                       ${item.price}
                     </span>
                   </div>
                 </div>
 
-                <ul className="space-y-2 mb-5">
+                <ul className="space-y-2 mb-6">
                   <Bullet>{item.dimensions}</Bullet>
                   <Bullet>{item.weightLimit} weight included</Bullet>
                   <Bullet>{item.rentalDays}-day rental period</Bullet>
@@ -195,13 +172,13 @@ export default function ServiceStepV2({ booking, updateBooking, onNext }: Props)
                 <button
                   type="button"
                   onClick={() => handleSelect(item)}
-                  className={`w-full py-4 rounded-lg font-[var(--font-poppins)] font-bold uppercase tracking-wider text-sm transition-all active:scale-[0.98] ${
+                  className={`w-full py-4 font-[var(--font-inter)] font-bold uppercase tracking-wider text-sm rounded-lg transition-transform active:scale-[0.98] ${
                     isSelected
-                      ? "bg-green-600 text-white"
-                      : "bg-tp-red text-white hover:bg-tp-red-dark shadow-lg shadow-tp-red/20"
+                      ? "bg-[#15a37b] text-white"
+                      : "bg-[#a2001c] text-white hover:bg-[#930019]"
                   }`}
                 >
-                  {isSelected ? "✓ Selected — Continue" : "Select this dumpster"}
+                  {isSelected ? "✓ Selected — Continue" : "SELECT THIS DUMPSTER"}
                 </button>
               </div>
             </article>
@@ -210,50 +187,54 @@ export default function ServiceStepV2({ booking, updateBooking, onNext }: Props)
       </div>
 
       {activeService.note && (
-        <div className="mt-6 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
-          <p className="font-[var(--font-poppins)] text-xs text-amber-800">
-            ⚠️ {activeService.note}
+        <div className="mt-8 px-4 py-3 bg-[#ffdad6] border border-[#ffb3af] rounded-lg text-center max-w-[900px] mx-auto">
+          <p className="font-[var(--font-inter)] text-xs text-[#93000a]">
+            ⚠ {activeService.note}
           </p>
         </div>
       )}
 
-      <p className="text-center text-[11px] text-[#aaa] mt-6 font-[var(--font-poppins)]">
+      <p className="text-center text-[11px] text-[#5f5e5e] mt-6 font-[var(--font-inter)]">
         Extra weight: $125/ton (prorated) · Extra days: $49/day
       </p>
 
-      {/* Help section — Stitch */}
-      <div className="mt-10 px-5 py-6 bg-[#fafafa] border border-[#eee] rounded-2xl">
-        <div className="text-center mb-4">
-          <h4 className="font-[var(--font-oswald)] text-lg font-bold text-[#1a1a1a] uppercase tracking-tight mb-1">
-            Need help choosing?
-          </h4>
-          <p className="font-[var(--font-poppins)] text-sm text-[#777]">
-            Our team can help you pick the right size.
-          </p>
+      {/* Help section — mirrors the Stitch "Need help choosing?" block. */}
+      <section className="mt-12 px-4 py-8 bg-[#f5f3f3] border-y border-[#e4e2e2] -mx-4 sm:-mx-6 lg:-mx-8">
+        <div className="max-w-[700px] mx-auto">
+          <div className="text-center mb-6">
+            <h3 className="font-[var(--font-work-sans)] text-2xl font-semibold text-[#1b1c1c] mb-2">
+              Need help choosing?
+            </h3>
+            <p className="text-[#5f5e5e] text-sm font-[var(--font-inter)]">
+              Our experts are available to help you pick the right size.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <a
+              href="tel:+15106502083"
+              className="flex items-center justify-center gap-2 bg-white border border-[#5f5e5e] text-[#1b1c1c] py-3 font-[var(--font-inter)] font-bold rounded-lg hover:bg-[#efeded] transition-colors"
+            >
+              <span className="text-[#a2001c]">📞</span>
+              Call
+            </a>
+            <a
+              href="sms:+15106502083"
+              className="flex items-center justify-center gap-2 bg-white border border-[#5f5e5e] text-[#1b1c1c] py-3 font-[var(--font-inter)] font-bold rounded-lg hover:bg-[#efeded] transition-colors"
+            >
+              <span className="text-[#a2001c]">💬</span>
+              Text
+            </a>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <a
-            href="tel:+15106502083"
-            className="flex items-center justify-center gap-2 bg-white border-2 border-[#ddd] text-[#222] py-3 font-[var(--font-poppins)] font-bold rounded-lg hover:border-tp-red hover:text-tp-red transition-colors text-sm"
-          >
-            📞 Call
-          </a>
-          <a
-            href="sms:+15106502083"
-            className="flex items-center justify-center gap-2 bg-white border-2 border-[#ddd] text-[#222] py-3 font-[var(--font-poppins)] font-bold rounded-lg hover:border-tp-red hover:text-tp-red transition-colors text-sm"
-          >
-            💬 Text
-          </a>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
 
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
-    <li className="flex items-center gap-2.5 font-[var(--font-poppins)] text-sm text-[#555]">
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-tp-red/10 text-tp-red text-[11px] font-bold flex-shrink-0">
+    <li className="flex items-center gap-2 text-sm text-[#5f5e5e] font-[var(--font-inter)]">
+      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#a2001c] text-white text-[11px] font-bold flex-shrink-0">
         ✓
       </span>
       <span>{children}</span>

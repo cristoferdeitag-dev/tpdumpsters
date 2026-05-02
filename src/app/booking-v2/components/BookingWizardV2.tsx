@@ -101,9 +101,9 @@ export default function BookingWizardV2() {
   if (isConfirmed) return <ConfirmationStep booking={booking} />;
 
   return (
-    <div className="w-[92%] sm:w-[88%] max-w-[960px] mx-auto -mt-6 relative z-20">
-      {/* Stitch-style progress tracker */}
-      <nav className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] px-4 sm:px-6 py-5 mb-6">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Stitch progress tracker — dot + label per step, hairline connectors. */}
+      <nav className="bg-white border-b border-[#e4e2e2] py-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 mb-6 sm:mb-8">
         <div className="flex items-center justify-between max-w-[700px] mx-auto">
           {STEPS.map((s, i) => {
             const active = step === s.id;
@@ -114,22 +114,20 @@ export default function BookingWizardV2() {
                   type="button"
                   onClick={() => done && setStep(s.id)}
                   disabled={!done}
-                  className="flex flex-col items-center min-w-[60px] disabled:cursor-default"
+                  className="flex flex-col items-center min-w-[70px] disabled:cursor-default"
                 >
                   <div
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold mb-1.5 transition-all ${
-                      done
-                        ? "bg-tp-red text-white"
-                        : active
-                        ? "bg-tp-red text-white ring-4 ring-tp-red/20"
-                        : "bg-[#e5e5e5] text-[#999]"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mb-1 transition-colors font-[var(--font-inter)] ${
+                      active || done
+                        ? "bg-[#a2001c] text-white"
+                        : "bg-[#e4e2e2] text-[#5f5e5e]"
                     }`}
                   >
                     {done ? "✓" : s.id}
                   </div>
                   <span
-                    className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wider font-[var(--font-poppins)] ${
-                      active || done ? "text-tp-red" : "text-[#999]"
+                    className={`text-[10px] font-bold uppercase tracking-wider font-[var(--font-inter)] ${
+                      active || done ? "text-[#a2001c]" : "text-[#5f5e5e]"
                     }`}
                   >
                     {s.label}
@@ -137,8 +135,8 @@ export default function BookingWizardV2() {
                 </button>
                 {i < STEPS.length - 1 && (
                   <div
-                    className={`h-px flex-grow mx-2 sm:mx-3 min-w-[12px] mb-5 ${
-                      done ? "bg-tp-red" : "bg-[#e5e5e5]"
+                    className={`h-px flex-grow mx-2 sm:mx-3 min-w-[20px] mb-5 ${
+                      done ? "bg-[#a2001c]" : "bg-[#e4e2e2]"
                     }`}
                   />
                 )}
@@ -148,34 +146,37 @@ export default function BookingWizardV2() {
         </div>
       </nav>
 
-      {/* Step content */}
-      <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5 sm:p-8 min-h-[400px]">
+      <div className="pb-16">
         {step === 1 && (
           <ServiceStepV2 booking={booking} updateBooking={updateBooking} onNext={nextStep} />
         )}
-        {step === 2 && (
-          <DateStep
-            booking={booking}
-            updateBooking={updateBooking}
-            onNext={nextStep}
-            onBack={prevStep}
-          />
-        )}
-        {step === 3 && (
-          <AddressStep
-            booking={booking}
-            updateBooking={updateBooking}
-            onNext={nextStep}
-            onBack={prevStep}
-          />
-        )}
-        {step === 4 && (
-          <SummaryStep
-            booking={booking}
-            onBack={prevStep}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-          />
+        {step >= 2 && (
+          <div className="bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5 sm:p-8 max-w-[760px] mx-auto">
+            {step === 2 && (
+              <DateStep
+                booking={booking}
+                updateBooking={updateBooking}
+                onNext={nextStep}
+                onBack={prevStep}
+              />
+            )}
+            {step === 3 && (
+              <AddressStep
+                booking={booking}
+                updateBooking={updateBooking}
+                onNext={nextStep}
+                onBack={prevStep}
+              />
+            )}
+            {step === 4 && (
+              <SummaryStep
+                booking={booking}
+                onBack={prevStep}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>
