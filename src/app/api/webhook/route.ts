@@ -75,7 +75,42 @@ export async function POST(req: NextRequest) {
 
     const event = JSON.parse(rawBody);
 
-    // Only handle checkout.session.completed
+    // Manual-invoice flow — Asaí creates invoices in the Stripe Dashboard
+    // and the customer pays them. We don't auto-classify line items here
+    // (that lived in the legacy tp-dumpsters repo against Supabase); we
+    // just ping Cris + Asaí so they know cash landed.
+    if (event.type === "invoice.payment_succeeded") {
+      const inv = event.data?.object || {};
+      const amountPaid = ((inv.amount_paid || 0) / 100).toFixed(2);
+      const customerName: string =
+        inv.customer_name || inv.customer_details?.name || "";
+      const customerEmail: string = inv.customer_email || "";
+      const invoiceNumber: string = inv.number || inv.id || "";
+      const lineDescription: string =
+        (inv.description as string) ||
+        (inv.lines?.data?.[0]?.description as string) ||
+        "";
+
+      const text =
+        `💰 *Stripe invoice paid — $${amountPaid}*\n\n` +
+        `👤 ${customerName || "(sin nombre)"}` +
+        (customerEmail ? ` — ${customerEmail}` : "") +
+        `\n🧾 ${invoiceNumber}` +
+        (lineDescription ? `\n📝 ${lineDescription.slice(0, 200)}` : "") +
+        `\n🔗 https://dashboard.stripe.com/invoices/${inv.id}`;
+      try {
+        await notifyAdminsTelegram(text);
+      } catch (telErr) {
+        console.error("📨 Admin Telegram (invoice) error:", telErr);
+      }
+      return NextResponse.json({
+        received: true,
+        type: "invoice.payment_succeeded",
+        invoice: invoiceNumber,
+      });
+    }
+
+    // Only handle checkout.session.completed for the online booking flow
     if (event.type !== "checkout.session.completed") {
       console.log(`⏭️ Webhook: ignoring event type ${event.type}`);
       return NextResponse.json({ received: true, ignored: true });
