@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCalendarEvent } from "@/lib/calendar";
 import { sendSMS } from "@/lib/twilio";
+import { notifyAdminsTelegram } from "@/lib/telegram";
 import * as mysql from "mysql2/promise";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -205,6 +206,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Admin Telegram notification (Cristofer + Asaí). Migrated 2026-04-28
+    // in the legacy tp-dumpsters repo but never landed on this live repo —
+    // ported here on 2026-05-04 after Asaí flagged she wasn't being paged.
+    const adminWindowLabel = windowInfo?.label || "TBD";
+    const deliveryDateLabel = deliveryDate
+      ? new Date(deliveryDate + "T12:00:00").toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        })
+      : "";
+    const adminTelegram =
+      `💰 *New booking paid — ${totalPaid}*\n\n` +
+      `👤 ${customerName}${customerPhone ? ` — ${customerPhone}` : ""}\n` +
+      `🗑️ ${dumpsterSize} ${serviceType}\n` +
+      `📦 ${deliveryDateLabel || deliveryDate} — ${adminWindowLabel}\n` +
+      `📍 ${fullAddress}\n` +
+      `📋 ${bookingId}`;
+    let adminNotified = false;
+    try {
+      await notifyAdminsTelegram(adminTelegram);
+      adminNotified = true;
+      console.log("📨 Admin Telegram notified");
+    } catch (telErr) {
+      console.error("📨 Admin Telegram error (non-blocking):", telErr);
+    }
+
     return NextResponse.json({
       received: true,
       bookingId,
@@ -214,6 +242,7 @@ export async function POST(req: NextRequest) {
         pickup: pickupResult,
       },
       smsSent,
+      adminNotified,
     });
   } catch (error) {
     console.error("❌ Webhook error:", error);
