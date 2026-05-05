@@ -268,6 +268,55 @@ export async function POST(req: NextRequest) {
       console.error("📨 Admin Telegram error (non-blocking):", telErr);
     }
 
+    // Forward the confirmed booking to the Dumpsterin app so Asaí can see
+    // the customer with full address details in the operations CRM. Same
+    // contract that lived in the legacy tp-dumpsters repo. Non-blocking —
+    // if the Edge Function is down the booking still completes here.
+    let dumpsterinSynced = false;
+    try {
+      const totalPriceUsd = session.amount_total ? session.amount_total / 100 : 0;
+      const dumpsterinRes = await fetch(
+        "https://mbirzaocjkhqydtuqmze.supabase.co/functions/v1/webhook-booking",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-webhook-secret": "tp-dumpsters-webhook-2026",
+          },
+          body: JSON.stringify({
+            bookingId,
+            customerName,
+            customerPhone,
+            customerEmail,
+            service: {
+              serviceType,
+              size: dumpsterSize,
+              basePrice: totalPriceUsd,
+            },
+            deliveryDate,
+            pickupDate,
+            deliveryWindow,
+            address,
+            city,
+            zipCode,
+            totalPrice: totalPriceUsd,
+            notes: `Paid online via Stripe | ${totalPaid}`,
+          }),
+        }
+      );
+      dumpsterinSynced = dumpsterinRes.ok;
+      if (!dumpsterinRes.ok) {
+        const body = await dumpsterinRes.text().catch(() => "");
+        console.error(
+          `🔗 Dumpsterin sync HTTP ${dumpsterinRes.status}: ${body.slice(0, 300)}`
+        );
+      } else {
+        console.log("🔗 Dumpsterin sync: success");
+      }
+    } catch (syncErr) {
+      console.error("🔗 Dumpsterin sync error (non-blocking):", syncErr);
+    }
+
     return NextResponse.json({
       received: true,
       bookingId,
@@ -278,6 +327,7 @@ export async function POST(req: NextRequest) {
       },
       smsSent,
       adminNotified,
+      dumpsterinSynced,
     });
   } catch (error) {
     console.error("❌ Webhook error:", error);
