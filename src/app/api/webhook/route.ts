@@ -269,10 +269,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Forward the confirmed booking to the Dumpsterin app so Asaí can see
-    // the customer with full address details in the operations CRM. Same
-    // contract that lived in the legacy tp-dumpsters repo. Non-blocking —
-    // if the Edge Function is down the booking still completes here.
+    // the customer with full address details in the operations CRM. The
+    // webhook-booking Edge Function creates the booking row; we then PATCH
+    // it with the extra fields it doesn't natively accept (billing,
+    // customer notes, authorized_charges). Non-blocking — if Dumpsterin is
+    // down the booking still completes here.
     let dumpsterinSynced = false;
+    let dumpsterinId = "";
     try {
       const totalPriceUsd = session.amount_total ? session.amount_total / 100 : 0;
       const dumpsterinRes = await fetch(
@@ -311,10 +314,61 @@ export async function POST(req: NextRequest) {
           `🔗 Dumpsterin sync HTTP ${dumpsterinRes.status}: ${body.slice(0, 300)}`
         );
       } else {
-        console.log("🔗 Dumpsterin sync: success");
+        const json = (await dumpsterinRes.json().catch(() => ({}))) as {
+          dumpsterin_id?: string;
+        };
+        dumpsterinId = json.dumpsterin_id || "";
+        console.log(`🔗 Dumpsterin sync: success (id=${dumpsterinId})`);
       }
     } catch (syncErr) {
       console.error("🔗 Dumpsterin sync error (non-blocking):", syncErr);
+    }
+
+    // Patch the Dumpsterin booking row with the extra fields the Edge
+    // Function doesn't capture today: billing_address (jsonb), the
+    // customer's freeform notes, and authorized_charges. Done as a direct
+    // Supabase PATCH so we don't have to redeploy the Edge Function. Also
+    // best-effort: a failure here doesn't roll back the rest.
+    if (dumpsterinId) {
+      try {
+        const billing = {
+          line1: meta.billing_line1 || "",
+          city: meta.billing_city || "",
+          state: meta.billing_state || "",
+          zip: meta.billing_zip || "",
+        };
+        const hasBilling =
+          !!billing.line1 || !!billing.city || !!billing.state || !!billing.zip;
+        const customerNotes = meta.notes || "";
+        const authorized = meta.authorized_charges === "true";
+        const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://mbirzaocjkhqydtuqmze.supabase.co";
+        const supaKey = process.env.SUPABASE_SERVICE_KEY || "";
+        if (supaKey) {
+          const patchBody: Record<string, unknown> = {
+            authorized_charges: authorized,
+          };
+          if (hasBilling) patchBody.billing_address = billing;
+          if (customerNotes) patchBody.notes_from_customer = customerNotes;
+          await fetch(
+            `${supaUrl}/rest/v1/bookings?id=eq.${dumpsterinId}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: supaKey,
+                Authorization: `Bearer ${supaKey}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify(patchBody),
+            }
+          );
+          console.log("🔗 Dumpsterin extras PATCHed (billing/notes/authorized)");
+        } else {
+          console.warn("⚠️ Dumpsterin PATCH skipped — SUPABASE_SERVICE_KEY not set");
+        }
+      } catch (patchErr) {
+        console.error("🔗 Dumpsterin PATCH error (non-blocking):", patchErr);
+      }
     }
 
     return NextResponse.json({

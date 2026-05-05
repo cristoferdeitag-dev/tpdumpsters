@@ -9,6 +9,13 @@ import ConfirmationStep from "./ConfirmationStep";
 import { trackBookingStarted, trackBookingStep, trackBookingPayment } from "@/lib/tracking";
 
 /* ───────── Types ───────── */
+export interface BillingAddress {
+  line1: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
 export interface ServiceSelection {
   serviceType: string;
   size: string;
@@ -35,7 +42,7 @@ export interface BookingData {
   customerPhone: string;
   customerEmail: string;
   notes: string;
-  billingAddress: string;
+  billingAddress: BillingAddress | null;
   authorizedCharges: boolean;
 }
 
@@ -59,7 +66,7 @@ const initialBooking: BookingData = {
   customerPhone: "",
   customerEmail: "",
   notes: "",
-  billingAddress: "",
+  billingAddress: null,
   authorizedCharges: false,
 };
 

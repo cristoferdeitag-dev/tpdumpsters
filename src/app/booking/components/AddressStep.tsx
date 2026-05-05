@@ -147,7 +147,7 @@ const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
 export default function AddressStep({ booking, updateBooking, onNext, onBack }: Props) {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [showBilling, setShowBilling] = useState(booking.billingAddress !== "");
+  const [showBilling, setShowBilling] = useState(booking.billingAddress !== null);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const billingInputRef = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -242,18 +242,28 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
     }
   }, [initAutocomplete]);
 
-  // Init billing autocomplete
+  // Init billing autocomplete — parses address_components into a structured
+  // {line1, city, state, zip} object so the backend can use it directly
+  // instead of trying to read string.line1 (the bug Asaí caught 2026-05-05).
   useEffect(() => {
     if (!showBilling || !window.google || !billingInputRef.current || billingAutocompleteRef.current) return;
     billingAutocompleteRef.current = new window.google.maps.places.Autocomplete(
       billingInputRef.current,
-      { componentRestrictions: { country: "us" }, types: ["address"], fields: ["formatted_address"] }
+      { componentRestrictions: { country: "us" }, types: ["address"], fields: ["address_components", "formatted_address"] }
     );
     billingAutocompleteRef.current.addListener("place_changed", () => {
       const place = billingAutocompleteRef.current?.getPlace();
-      if (place?.formatted_address) {
-        updateBooking({ billingAddress: place.formatted_address });
+      if (!place?.address_components) return;
+      let line1 = "", city = "", state = "", zip = "";
+      for (const c of place.address_components) {
+        const types = c.types as string[];
+        if (types.includes("street_number")) line1 = c.long_name + " ";
+        if (types.includes("route")) line1 += c.long_name;
+        if (types.includes("locality")) city = c.long_name;
+        if (types.includes("administrative_area_level_1")) state = c.short_name;
+        if (types.includes("postal_code")) zip = c.long_name;
       }
+      updateBooking({ billingAddress: { line1: line1.trim() || place.formatted_address || "", city, state, zip } });
     });
   }, [showBilling, updateBooking]);
 
@@ -285,6 +295,14 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
   };
 
   /* ───────── Can proceed? ───────── */
+  const billingComplete =
+    !showBilling ||
+    (!!booking.billingAddress &&
+      !!booking.billingAddress.line1 &&
+      !!booking.billingAddress.city &&
+      !!booking.billingAddress.state &&
+      !!booking.billingAddress.zip);
+
   const allValid =
     booking.address.trim() !== "" &&
     booking.city.trim() !== "" &&
@@ -295,7 +313,8 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
     !validateName(booking.customerName) &&
     !validatePhone(booking.customerPhone) &&
     !validateEmail(booking.customerEmail) &&
-    !validateZip(booking.zipCode);
+    !validateZip(booking.zipCode) &&
+    billingComplete;
 
   const inputClass = (field: string, hasError: boolean) =>
     `w-full px-4 py-3 border-2 rounded-xl text-sm font-[var(--font-poppins)] focus:outline-none transition-colors ${
@@ -469,13 +488,30 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               ref={billingInputRef}
               type="text"
               placeholder="Start typing your billing address..."
-              value={booking.billingAddress}
-              onChange={(e) => updateBooking({ billingAddress: e.target.value })}
+              defaultValue={booking.billingAddress ? `${booking.billingAddress.line1}, ${booking.billingAddress.city}` : ""}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors"
               autoComplete="off"
             />
+            {booking.billingAddress ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-[#555] font-[var(--font-poppins)]">
+                <div className="font-semibold text-[#333] mb-1">Billing address captured:</div>
+                <div>{booking.billingAddress.line1}</div>
+                <div>{booking.billingAddress.city}, {booking.billingAddress.state} {booking.billingAddress.zip}</div>
+                {(!booking.billingAddress.line1 || !booking.billingAddress.city || !booking.billingAddress.state || !booking.billingAddress.zip) && (
+                  <div className="text-red-500 mt-1">⚠ Some fields missing — pick a more specific address from the dropdown.</div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-[#888] font-[var(--font-poppins)]">
+                Pick an address from the dropdown so we capture the full street, city, state, and ZIP.
+              </p>
+            )}
             <button
-              onClick={() => { setShowBilling(false); updateBooking({ billingAddress: "" }); }}
+              onClick={() => {
+                setShowBilling(false);
+                updateBooking({ billingAddress: null });
+                if (billingInputRef.current) billingInputRef.current.value = "";
+              }}
               className="text-xs text-[#999] font-[var(--font-poppins)] hover:text-tp-red"
             >
               ✕ Use delivery address instead
