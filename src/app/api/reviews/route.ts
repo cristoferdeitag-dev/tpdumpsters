@@ -91,9 +91,26 @@ let cachedData: ReviewsResponse | null = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
+// Hostinger Passenger has GOOGLE_PLACES_API_KEY + GOOGLE_PLACE_ID set to
+// stale/wrong values from a previous setup, and .htaccess SetEnv doesn't
+// override them (hPanel-managed env wins). Hardcode the correct TP
+// Dumpsters Google Business Profile creds inline as a fallback so the
+// reviews route works regardless. The API key is referrer-restricted so
+// it's safe to embed; the place_id is public anyway.
+const FALLBACK_API_KEY = "AIzaSyAWkJznwQtNDv_MhFhdYvqBdfzAa3IIMew";
+const FALLBACK_PLACE_ID = "ChIJVZniUJGdhYARmS5Y-dXyOT0";
+
 async function fetchGoogleReviews(): Promise<ReviewsResponse> {
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  const placeId = process.env.GOOGLE_PLACE_ID;
+  // Prefer env if it looks valid (real place_ids start with "ChIJ"); if
+  // env has the wrong value, fall through to the hardcoded constants.
+  const envKey = process.env.GOOGLE_PLACES_API_KEY;
+  const envPlaceId = process.env.GOOGLE_PLACE_ID;
+  const apiKey =
+    envKey && envKey.startsWith("AIzaSy") && envKey.length > 30
+      ? envKey
+      : FALLBACK_API_KEY;
+  const placeId =
+    envPlaceId && envPlaceId.startsWith("ChIJ") ? envPlaceId : FALLBACK_PLACE_ID;
 
   if (!apiKey || !placeId) {
     console.warn("Missing GOOGLE_PLACES_API_KEY or GOOGLE_PLACE_ID");
