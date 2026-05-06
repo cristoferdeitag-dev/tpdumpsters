@@ -14,7 +14,7 @@ export default function Footer() {
           </a>
         </p>
         <p className="text-[#ddd] text-sm leading-[1.8] font-[var(--font-poppins)]">
-          3201 Ramona Street, Pinole, California, 94564, EE. UU.
+          150 Brookside Dr, Richmond, California, 94801, United States
         </p>
         <p className="text-[#bbb] text-xs mt-4 font-[var(--font-poppins)]">
           &copy; {new Date().getFullYear()} TP Dumpsters. All rights reserved.

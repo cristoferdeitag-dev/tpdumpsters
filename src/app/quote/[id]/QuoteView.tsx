@@ -102,7 +102,7 @@ export default function QuoteView({ quoteId }: { quoteId: string }) {
             <p className="text-xs text-white/50 mt-0.5">Bay Area Dumpster Rental Services</p>
           </div>
           <div className="text-right text-[11px] text-white/60 leading-relaxed">
-            <p>3201 Ramona St, Pinole, CA 94564</p>
+            <p>150 Brookside Dr, Richmond, CA 94801</p>
             <p>(510) 650-2083 &nbsp;|&nbsp; contact@tpdumpsters.com</p>
             <p>tpdumpsters.com</p>
           </div>

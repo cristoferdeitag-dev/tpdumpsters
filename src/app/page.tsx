@@ -26,10 +26,10 @@ const jsonLd = {
   logo: "/images/logo/TP.png",
   address: {
     "@type": "PostalAddress",
-    streetAddress: "3201 Ramona Street",
-    addressLocality: "Pinole",
+    streetAddress: "150 Brookside Dr",
+    addressLocality: "Richmond",
     addressRegion: "CA",
-    postalCode: "94564",
+    postalCode: "94801",
     addressCountry: "US",
   },
   geo: {
