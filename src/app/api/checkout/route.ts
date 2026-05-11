@@ -188,6 +188,7 @@ export async function POST(request: Request) {
         setup_future_usage: 'off_session',
         statement_descriptor: 'TP DUMPSTERS',
         statement_descriptor_suffix: 'DUMPSTER',
+        receipt_email: booking.customerEmail,
       },
       line_items: [
         {
