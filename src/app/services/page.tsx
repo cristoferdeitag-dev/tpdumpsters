@@ -488,7 +488,7 @@ export default function ServicesPage() {
                 <p className="text-gray-500 text-sm mb-4">
                   16&apos;L × 8&apos;W × 4&apos;H
                 </p>
-                <p className="text-3xl font-black text-gray-900 mb-1">$649</p>
+                <p className="text-3xl font-black text-gray-900 mb-1">$699</p>
                 <p className="text-sm text-gray-500 mb-6">2 tons included · 7 days</p>
                 <ul className="text-left space-y-2 text-sm text-gray-700">
                   <li className="flex items-center gap-2">

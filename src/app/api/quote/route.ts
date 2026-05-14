@@ -6,35 +6,35 @@ const SERVICES: Record<string, { sizes: Record<string, { price: number; dims: st
   "General Debris": {
     sizes: {
       "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-      "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
+      "20 Yard": { price: 699, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
       "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
     },
   },
   "Household Clean Out": {
     sizes: {
       "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-      "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
+      "20 Yard": { price: 699, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
       "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
     },
   },
   "Construction Debris": {
     sizes: {
       "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-      "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
+      "20 Yard": { price: 699, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
       "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
     },
   },
   "Roofing": {
     sizes: {
       "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-      "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
+      "20 Yard": { price: 699, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
       "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
     },
   },
   "Green Waste": {
     sizes: {
       "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-      "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
+      "20 Yard": { price: 699, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
       "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
     },
   },

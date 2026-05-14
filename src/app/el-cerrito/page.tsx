@@ -44,7 +44,7 @@ const elCerritoFaqs = [
     question: "What size dumpster is best for renovating an older El Cerrito home?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        El Cerrito has many mid-century and post-war homes that are prime for renovation. For kitchen and bath remodels, a <strong>20-yard dumpster ($649)</strong> handles most projects. For full gut renovations or homes with multiple rooms being updated, the 30-yard at $749 gives you the capacity you need without multiple hauls.
+        El Cerrito has many mid-century and post-war homes that are prime for renovation. For kitchen and bath remodels, a <strong>20-yard dumpster ($699)</strong> handles most projects. For full gut renovations or homes with multiple rooms being updated, the 30-yard at $749 gives you the capacity you need without multiple hauls.
       </p>
     ),
   },
@@ -60,7 +60,7 @@ const elCerritoFaqs = [
     question: "How much does a dumpster rental cost in El Cerrito?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        El Cerrito dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $649 and the 30-yard at $749. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your El Cerrito project.
+        El Cerrito dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster (7-day rental, 1 ton included). The 20-yard starts at $699 and the 30-yard at $749. No hidden fees, no surprise charges. Call <strong>(510) 650-2083</strong> for an exact quote for your El Cerrito project.
       </p>
     ),
   },
@@ -172,7 +172,7 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "20 Yard Dumpster Rental", description: "Versatile mid-size dumpster for remodels, roofing, and medium cleanouts. 7-day rental, 2 tons included." },
-        price: "649",
+        price: "699",
         priceCurrency: "USD",
       },
       {

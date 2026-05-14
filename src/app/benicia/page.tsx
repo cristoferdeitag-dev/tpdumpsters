@@ -172,7 +172,7 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "20 Yard Dumpster Rental", description: "Versatile mid-size dumpster for remodels, roofing, and medium cleanouts. 7-day rental, 2 tons included." },
-        price: "649",
+        price: "699",
         priceCurrency: "USD",
       },
       {

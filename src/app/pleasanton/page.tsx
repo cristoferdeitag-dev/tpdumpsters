@@ -21,7 +21,7 @@ const pleasantonFaqs = [
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
         Our Pleasanton dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster
-        (7-day rental, 1 ton included). The 20-yard starts at <strong>$649</strong> and the 30-yard
+        (7-day rental, 1 ton included). The 20-yard starts at <strong>$699</strong> and the 30-yard
         at <strong>$749</strong>. We offer transparent, flat-rate pricing with no hidden fees. Call{" "}
         <strong>(510) 650-2083</strong> or email contact@tpdumpsters.com for your exact quote.
       </p>
@@ -190,7 +190,7 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "20 Yard Dumpster Rental", description: "Versatile mid-size dumpster for remodels, roofing, and medium cleanouts. 7-day rental, 2 tons included." },
-        price: "649",
+        price: "699",
         priceCurrency: "USD",
       },
       {
