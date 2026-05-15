@@ -46,7 +46,15 @@ const SERVICES: Record<string, Record<string, { price: number; dims: string; wei
   "Clean Concrete": {
     "10 Yard": { price: 599, dims: getDims("10"), weight: "No weight limit", days: 3 },
   },
+  // Mixed Materials = clean soil + clean concrete mixed in the same load.
+  // Bricks are billed under the separate "Bricks" service below.
   "Mixed Materials": {
+    "10 Yard": { price: 749, dims: getDims("10"), weight: "No weight limit", days: 3 },
+  },
+  "Bricks": {
+    "10 Yard": { price: 749, dims: getDims("10"), weight: "No weight limit", days: 3 },
+  },
+  "Clean Asphalt": {
     "10 Yard": { price: 749, dims: getDims("10"), weight: "No weight limit", days: 3 },
   },
 };
@@ -216,7 +224,7 @@ export async function POST(request: NextRequest) {
 
     // Build MANUAL v3 terms (Asaí's exact wording, fits 500-char Stripe cap)
     const allLight = items.every((i) =>
-      ["Clean Soil", "Clean Concrete", "Mixed Materials"].includes(i.serviceType)
+      ["Clean Soil", "Clean Concrete", "Mixed Materials", "Bricks", "Clean Asphalt"].includes(i.serviceType)
     );
     const rentalDaysForBullet = items.length === 1
       ? items[0].days

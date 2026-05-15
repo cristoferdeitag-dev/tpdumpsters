@@ -20,12 +20,28 @@ interface SizeOption {
   rentalDays: number;
 }
 
+// Sub-type for a parent service (e.g. Mixed Materials → Soil+Concrete /
+// Bricks / Asphalt). Each variant maps to its own backend serviceType so
+// invoicing tracks them separately, while the booking UI groups them
+// visually under the parent.
+interface ServiceVariant {
+  serviceType: string;
+  label: string;
+  sublabel: string;
+  size: string;
+  price: number;
+  dimensions: string;
+  weightLimit: string;
+  rentalDays: number;
+}
+
 interface ServiceCategory {
   service: string;
   icon: string;
   description: string;
   note?: string;
-  sizes: SizeOption[];
+  sizes?: SizeOption[];
+  variants?: ServiceVariant[];
 }
 
 /* ───────── Pricing data ───────── */
@@ -72,7 +88,7 @@ const services: ServiceCategory[] = [
     service: "Clean Soil",
     icon: "🌱",
     description: "Must be 95% pure. No rocks, grass, gravel, mesh, wood, or garbage.",
-    note: "⚠️ Extra fee: $125 if prohibited items are added",
+    note: "⚠️ Extra fee: $150 if prohibited items are added",
     sizes: [
       { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
@@ -81,18 +97,50 @@ const services: ServiceCategory[] = [
     service: "Clean Concrete",
     icon: "🪨",
     description: "Must be 95% pure. No rebar, no garbage.",
-    note: "⚠️ Extra fee: $125 if prohibited items are added",
+    note: "⚠️ Extra fee: $150 if prohibited items are added",
     sizes: [
       { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
   {
+    // Mixed Materials expands into 3 sub-types in the size picker. Each
+    // variant maps to its own internal serviceType so the invoice/quote
+    // backend tracks them separately.
     service: "Mixed Materials",
     icon: "🔀",
-    description: "Clean soil, concrete & bricks mix. Must be 95% pure. No rocks, grass, gravel, mesh, wood, rebar, or garbage.",
+    description: "Pick the type of clean load — different rules apply.",
     note: "⚠️ Extra fee: $150 if prohibited items are added",
-    sizes: [
-      { size: "10 Yard", price: 799, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
+    variants: [
+      {
+        serviceType: "Mixed Materials",
+        label: "Soil + Concrete Mix",
+        sublabel: "Clean soil and clean concrete in the same load",
+        size: "10 Yard",
+        price: 749,
+        dimensions: "12' L × 8' W × 2.5' H",
+        weightLimit: "No weight limit",
+        rentalDays: 3,
+      },
+      {
+        serviceType: "Bricks",
+        label: "Bricks Only",
+        sublabel: "Clean bricks only — no mixed materials",
+        size: "10 Yard",
+        price: 749,
+        dimensions: "12' L × 8' W × 2.5' H",
+        weightLimit: "No weight limit",
+        rentalDays: 3,
+      },
+      {
+        serviceType: "Clean Asphalt",
+        label: "Clean Asphalt",
+        sublabel: "Asphalt only — no dirt, concrete, rebar, gravel, wood, trash, fabric",
+        size: "10 Yard",
+        price: 749,
+        dimensions: "12' L × 8' W × 2.5' H",
+        weightLimit: "No weight limit",
+        rentalDays: 3,
+      },
     ],
   },
 ];
@@ -126,13 +174,35 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
 
   const activeService = services[activeServiceIdx];
 
+  // Normalize sizes + variants into a single render list. Variants override
+  // the parent service's serviceType so the booking carries (e.g.) "Bricks"
+  // instead of "Mixed Materials" when the customer picks bricks-only.
+  type RenderItem = SizeOption & {
+    serviceType?: string;
+    label?: string;
+    sublabel?: string;
+  };
+  const renderItems: RenderItem[] = activeService.variants
+    ? activeService.variants.map((v) => ({
+        size: v.size,
+        price: v.price,
+        dimensions: v.dimensions,
+        weightLimit: v.weightLimit,
+        rentalDays: v.rentalDays,
+        serviceType: v.serviceType,
+        label: v.label,
+        sublabel: v.sublabel,
+      }))
+    : (activeService.sizes ?? []);
+
   const selectedKey = booking.service
     ? `${booking.service.serviceType}-${booking.service.size}`
     : null;
 
-  const handleSelect = (item: SizeOption) => {
+  const handleSelect = (item: RenderItem) => {
+    const serviceType = item.serviceType ?? activeService.service;
     const service: ServiceSelection = {
-      serviceType: activeService.service,
+      serviceType,
       size: item.size,
       basePrice: item.price,
       baseDays: item.rentalDays,
@@ -140,7 +210,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       dimensions: item.dimensions,
     };
     updateBooking({ service, extraDays: 0 });
-    trackDumpsterSelected(activeService.service, item.size, item.price);
+    trackDumpsterSelected(serviceType, item.size, item.price);
   };
 
   return (
@@ -190,20 +260,22 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       {/* ── Price cards ── */}
       <div
         className={`grid grid-cols-1 gap-5 md:gap-6 items-end ${
-          activeService.sizes.length === 3
+          renderItems.length === 3
             ? "md:grid-cols-3"
-            : activeService.sizes.length === 2
+            : renderItems.length === 2
             ? "md:grid-cols-2 max-w-2xl mx-auto"
             : "md:grid-cols-1 max-w-md mx-auto"
         }`}
       >
-        {activeService.sizes.map((item, idx) => {
-          const key = `${activeService.service}-${item.size}`;
+        {renderItems.map((item, idx) => {
+          const cardServiceType = item.serviceType ?? activeService.service;
+          const key = `${cardServiceType}-${item.size}`;
           const isSelected = selectedKey === key;
-          const isPopular = activeService.sizes.length === 3 && idx === 1;
-          const isFeatured = isPopular || activeService.sizes.length === 1;
+          const isPopular = renderItems.length === 3 && idx === 0;
+          const isFeatured = isPopular || renderItems.length === 1;
           const isDark = isFeatured || isSelected;
-          const subtext = sizeSubtexts[item.size] || activeService.service;
+          const subtext = item.sublabel || sizeSubtexts[item.size] || activeService.service;
+          const heading = item.label || `${item.size} Dumpster`;
 
           return (
             <button
@@ -233,7 +305,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
               <div className="px-7 pt-7 pb-7 sm:px-8 sm:pt-8 sm:pb-8">
                 {/* ── Title ── */}
                 <h3 className="font-[var(--font-poppins)] text-xl font-bold mb-1">
-                  {item.size} Dumpster
+                  {heading}
                 </h3>
 
                 {/* ── Subtext ── */}
