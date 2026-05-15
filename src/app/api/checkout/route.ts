@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
+import { isDateBlocked, blockedReason } from "@/lib/availability";
 
 let dbInitialized = false;
 
@@ -20,6 +21,16 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Reject delivery dates the yard can't service (fully booked).
+    // Belt-and-suspenders: the DateStep client also blocks these, but a
+    // savvy customer could POST directly to /api/checkout.
+    if (isDateBlocked(booking.deliveryDate)) {
+      return NextResponse.json(
+        { error: blockedReason(booking.deliveryDate) },
         { status: 400 }
       );
     }

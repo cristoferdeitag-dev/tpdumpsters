@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { BookingData } from "./BookingWizard";
+import { isDateBlocked, blockedReason } from "@/lib/availability";
 
 const DELIVERY_WINDOWS = [
   { id: "morning", emoji: "🌅", label: "Morning", time: "7:00 AM - 12:00 PM" },
@@ -58,8 +59,18 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     ? addDays(booking.deliveryDate, baseDays)
     : "";
 
+  // Inline error for unavailable delivery dates (yard fully booked).
+  const [deliveryError, setDeliveryError] = useState("");
+
   // When delivery date changes, auto-set pickup to minimum and reset window
   const handleDeliveryChange = (date: string) => {
+    if (date && isDateBlocked(date)) {
+      setDeliveryError(blockedReason(date));
+      // Don't propagate the blocked date; force the user to pick again.
+      updateBooking({ deliveryDate: "", deliveryWindow: "", pickupDate: "" });
+      return;
+    }
+    setDeliveryError("");
     const autoPickup = addDays(date, baseDays);
     const totalDays = baseDays;
     const extra = Math.max(0, totalDays - baseDays);
@@ -126,6 +137,11 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
                   — {getWindowLabel(booking.deliveryWindow)}
                 </span>
               )}
+            </p>
+          )}
+          {deliveryError && (
+            <p className="text-xs text-tp-red font-semibold mt-1.5 font-[var(--font-poppins)]">
+              {deliveryError}
             </p>
           )}
         </div>
