@@ -75,16 +75,17 @@ export async function POST(req: NextRequest) {
 
     const event = JSON.parse(rawBody);
 
-    // Manual-invoice flow — Asaí creates invoices in the Stripe Dashboard
-    // and the customer pays them. We don't auto-classify line items here
-    // (that lived in the legacy tp-dumpsters repo against Supabase); we
-    // just ping Cris + Asaí so they know cash landed.
+    // Manual-invoice flow — Asaí or Thiago creates invoices in the Stripe
+    // Dashboard and the customer pays them (Stripe link OR offline marked
+    // paid manually). For each one we (a) notify admins and (b) mirror the
+    // booking into Dumpsterin so the CRM stays in sync with cash flow.
     if (event.type === "invoice.payment_succeeded") {
       const inv = event.data?.object || {};
       const amountPaid = ((inv.amount_paid || 0) / 100).toFixed(2);
       const customerName: string =
         inv.customer_name || inv.customer_details?.name || "";
       const customerEmail: string = inv.customer_email || "";
+      const customerPhone: string = inv.customer_phone || "";
       const invoiceNumber: string = inv.number || inv.id || "";
       const lineDescription: string =
         (inv.description as string) ||
@@ -103,6 +104,144 @@ export async function POST(req: NextRequest) {
       } catch (telErr) {
         console.error("📨 Admin Telegram (invoice) error:", telErr);
       }
+
+      // Sync to Dumpsterin so Asaí / Cris see this paid invoice in the CRM.
+      // We POST directly to the Supabase bookings table because the
+      // webhook-booking Edge Function expects fields we don't have here
+      // (deliveryWindow, etc.). One row per invoice; multi-dumpster invoices
+      // get a single row matching the total — same convention used by the
+      // existing Dumpsterin sync.
+      try {
+        const supaUrl =
+          process.env.NEXT_PUBLIC_SUPABASE_URL ||
+          "https://mbirzaocjkhqydtuqmze.supabase.co";
+        const supaKey = process.env.SUPABASE_SERVICE_KEY || "";
+        if (!supaKey) {
+          console.warn(
+            "⚠️ Dumpsterin invoice sync skipped — SUPABASE_SERVICE_KEY not set"
+          );
+        } else {
+          // De-dupe: skip if a booking with this stripe_invoice_id already
+          // exists. The backfill script + checkout.session.completed sync
+          // both can produce rows for the same invoice in edge cases.
+          const checkUrl = `${supaUrl}/rest/v1/bookings?select=id&stripe_invoice_id=eq.${inv.id}`;
+          const checkRes = await fetch(checkUrl, {
+            headers: { apikey: supaKey, Authorization: `Bearer ${supaKey}` },
+          });
+          const existing = checkRes.ok ? await checkRes.json() : [];
+          if (Array.isArray(existing) && existing.length > 0) {
+            console.log(
+              `🔗 Dumpsterin invoice sync: ${inv.id} already exists, skipping insert`
+            );
+          } else {
+            // Classify sales rep by customer email/name against Thiago's
+            // known clients. Anything else defaults to Asaí. Online bookings
+            // go through checkout.session.completed, not this path.
+            const THIAGO_NEEDLES = [
+              "villatoro",
+              "rockandr",
+              "rock & rose",
+              "buildhaven",
+              "build haven",
+              "kingdomconcrete",
+              "kingdom concrete",
+            ];
+            const haystack = (
+              (customerName || "") +
+              " " +
+              (customerEmail || "")
+            ).toLowerCase();
+            const salesRep = THIAGO_NEEDLES.some((n) => haystack.includes(n))
+              ? "tiago"
+              : "asai";
+
+            // Derive size + service_type from the first dumpster-ish line
+            // item. Falls back to "20 / General Debris" if nothing matches.
+            const lines = (inv.lines?.data || []) as Array<{
+              description?: string;
+            }>;
+            let size = 20;
+            let serviceType = "General Debris";
+            for (const li of lines) {
+              const d = (li.description || "").toLowerCase();
+              const m = d.match(/(\d+)[\s-]*yard/);
+              if (m) size = parseInt(m[1], 10);
+              if (d.includes("general debris")) serviceType = "General Debris";
+              else if (d.includes("household")) serviceType = "Household Clean Out";
+              else if (d.includes("construction"))
+                serviceType = "Construction Debris";
+              else if (d.includes("roofing")) serviceType = "Roofing";
+              else if (d.includes("green waste") || d.includes("yard"))
+                serviceType = "Green Waste";
+              else if (d.includes("clean soil") || d.includes("clean concrete"))
+                serviceType = "Clean Materials";
+              else if (d.includes("mixed")) serviceType = "Mixed Materials";
+              else if (d.includes("base rock") || d.includes("base gravel"))
+                serviceType = "Base Rock";
+              if (size && serviceType) break;
+            }
+
+            const paidAtTs =
+              inv.status_transitions?.paid_at || Math.floor(Date.now() / 1000);
+            const paidAtIso = new Date(paidAtTs * 1000).toISOString();
+            const scheduledDate = paidAtIso.slice(0, 10);
+
+            const addr = inv.customer_address || {};
+            const addrLine = [addr.line1, addr.line2].filter(Boolean).join(" ");
+
+            const row: Record<string, unknown> = {
+              company_id: "a0000000-0000-0000-0000-000000000001",
+              booking_number: invoiceNumber || `INV-${(inv.id as string).slice(0, 8)}`,
+              customer_name: customerName.trim() || "Unknown",
+              customer_email: customerEmail || "",
+              customer_phone: customerPhone || "",
+              address: addrLine,
+              city: addr.city || "",
+              state: addr.state || "CA",
+              zip: addr.postal_code || "",
+              service_type: serviceType,
+              dumpster_size: size,
+              scheduled_date: scheduledDate,
+              status: "completed",
+              base_price: (inv.total || 0) / 100,
+              paid_amount: (inv.amount_paid || 0) / 100,
+              paid_at: paidAtIso,
+              payment_status: "paid",
+              stripe_invoice_id: inv.id,
+              sales_rep: salesRep,
+              source: "phone",
+              notes: `Auto-sync from Stripe invoice ${inv.id} paid $${amountPaid} on ${scheduledDate}`,
+            };
+
+            const insertRes = await fetch(`${supaUrl}/rest/v1/bookings`, {
+              method: "POST",
+              headers: {
+                apikey: supaKey,
+                Authorization: `Bearer ${supaKey}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify(row),
+            });
+            if (!insertRes.ok) {
+              const body = await insertRes.text().catch(() => "");
+              console.error(
+                `🔗 Dumpsterin invoice sync HTTP ${insertRes.status}: ${body.slice(0, 300)}`
+              );
+            } else {
+              console.log(
+                `🔗 Dumpsterin invoice sync: inserted ${invoiceNumber} (${salesRep}, $${amountPaid})`
+              );
+            }
+          }
+        }
+      } catch (syncErr) {
+        console.error(
+          "🔗 Dumpsterin invoice sync error (non-blocking):",
+          syncErr
+        );
+      }
+
       return NextResponse.json({
         received: true,
         type: "invoice.payment_succeeded",
