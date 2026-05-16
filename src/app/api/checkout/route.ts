@@ -146,24 +146,68 @@ export async function POST(request: Request) {
     };
     const sizeNum = booking.service.size?.replace(" Yard", "").replace("yd", "") || "?";
     const dims = DIMS_MAP[sizeNum] || "";
-    const lightServices = ["Clean Soil", "Clean Concrete", "Mixed Materials"];
+    // Light loads: clean soil/concrete/mixed-of-those/bricks/asphalt. All
+    // 10-yard only, 3-day rental, no weight limit, $150 prohibited-items
+    // fee. They DO NOT carry the mattresses/appliances surcharge line that
+    // belongs to general-debris-family services.
+    const lightServices = [
+      "Clean Soil",
+      "Clean Concrete",
+      "Mixed Materials",
+      "Bricks",
+      "Clean Asphalt",
+    ];
     const isLight = lightServices.includes(booking.service.serviceType);
     const rentalDays = isLight ? 3 : 7;
     const weightLimit = isLight
       ? "No weight limit"
       : ({ "10": "1 ton", "20": "2 tons", "30": "3 tons" } as Record<string, string>)[sizeNum] || "N/A";
-    const sizeBullet = dims
-      ? `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()} (${dims})`
+
+    // Per-service line copy. Mixed Materials = clean soil + clean concrete
+    // (NOT bricks — bricks is its own service). Asphalt and Bricks each
+    // get their own descriptive bullet.
+    const LIGHT_DESCRIPTIONS: Record<string, string> = {
+      "Clean Soil": "10-yard dumpster for clean soil",
+      "Clean Concrete": "10-yard dumpster for clean concrete",
+      "Mixed Materials": "10-yard dumpster for mixed materials (clean soil + clean concrete)",
+      "Bricks": "10-yard dumpster for clean bricks",
+      "Clean Asphalt": "10-yard dumpster for clean asphalt",
+    };
+    const baseBullet = isLight
+      ? (LIGHT_DESCRIPTIONS[booking.service.serviceType] || `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()}`)
       : `${sizeNum}-yard dumpster for ${booking.service.serviceType.toLowerCase()}`;
-    const rentalTerms = [
-      sizeBullet,
-      `Rental includes ${rentalDays} days — extra days: $49/day`,
-      `Weight limit: ${weightLimit}`,
-      ...(isLight ? [] : [`Overweight fee: $135 per extra ton (prorated)`]),
-      `Mattresses / appliances / electronics / tires: $20-$60 each`,
-      `Do not exceed the marked fill line`,
-      `No prohibited materials`,
-    ].map((line) => `• ${line}`).join("\n");
+    const sizeBullet = dims ? `${baseBullet} (${dims})` : baseBullet;
+
+    // Per-service prohibited-materials guidance (Asaí 2026-05-16: light
+    // loads must NOT carry the mattresses surcharge line — that's a
+    // general-debris term and ends up wrong on a soil/concrete invoice).
+    const LIGHT_PURITY: Record<string, string> = {
+      "Clean Soil": "95% pure — no rocks, grass, gravel, mesh, wood, rebar, or garbage",
+      "Clean Concrete": "95% pure — no rebar, wood, dirt, grass, or garbage",
+      "Mixed Materials": "95% pure clean soil + clean concrete — no rocks, grass, gravel, mesh, wood, rebar, or garbage",
+      "Bricks": "Clean bricks only — no rocks, grass, gravel, mesh, wood, rebar, or garbage",
+      "Clean Asphalt": "95% pure — no dirt, concrete, rebar, gravel, wood, trash, grass, fabric, or mixed materials",
+    };
+    const rentalTerms = (
+      isLight
+        ? [
+            sizeBullet,
+            `Rental includes ${rentalDays} days — extra days: $49/day`,
+            `Weight limit: ${weightLimit}`,
+            LIGHT_PURITY[booking.service.serviceType] || "Clean loads must be 95% pure",
+            `Extra fee: $150 if prohibited items are added`,
+            `Do not exceed the marked fill line`,
+          ]
+        : [
+            sizeBullet,
+            `Rental includes ${rentalDays} days — extra days: $49/day`,
+            `Weight limit: ${weightLimit}`,
+            `Overweight fee: $135 per extra ton (prorated)`,
+            `Mattresses / appliances / electronics / tires: $20-$60 each`,
+            `Do not exceed the marked fill line`,
+            `No prohibited materials`,
+          ]
+    ).map((line) => `• ${line}`).join("\n");
 
     // Create Stripe Checkout Session
     const origin = request.headers.get("origin") || "https://tpdumpsters.com";
