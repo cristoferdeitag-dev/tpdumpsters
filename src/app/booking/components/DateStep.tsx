@@ -6,7 +6,7 @@ import { isDateBlocked, blockedReason } from "@/lib/availability";
 
 const DELIVERY_WINDOWS = [
   { id: "morning", emoji: "🌅", label: "Morning", time: "7:00 AM - 12:00 PM" },
-  { id: "afternoon", emoji: "🌆", label: "Afternoon", time: "2:00 PM - 7:00 PM" },
+  { id: "afternoon", emoji: "🌆", label: "Afternoon", time: "1:00 PM - 6:00 PM" },
 ] as const;
 
 function getWindowLabel(windowId: string): string {

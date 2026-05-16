@@ -27,7 +27,7 @@ function formatDate(dateStr: string): string {
 const WINDOW_LABELS: Record<string, string> = {
   morning: "Morning (7:00 AM - 12:00 PM)",
   midday: "Midday (11:00 AM - 3:00 PM)",
-  afternoon: "Afternoon (2:00 PM - 7:00 PM)",
+  afternoon: "Afternoon (1:00 PM - 6:00 PM)",
 };
 
 export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }: Props) {

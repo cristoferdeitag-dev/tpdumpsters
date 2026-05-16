@@ -277,9 +277,9 @@ export async function POST(req: NextRequest) {
 
     // Map delivery windows to start/end times
     const WINDOWS: Record<string, { start: string; end: string; label: string }> = {
-      morning: { start: "07:00:00", end: "11:00:00", label: "Morning (7AM-11AM)" },
+      morning: { start: "07:00:00", end: "12:00:00", label: "Morning (7AM-12PM)" },
       midday: { start: "11:00:00", end: "15:00:00", label: "Midday (11AM-3PM)" },
-      afternoon: { start: "15:00:00", end: "19:00:00", label: "Afternoon (3PM-7PM)" },
+      afternoon: { start: "13:00:00", end: "18:00:00", label: "Afternoon (1PM-6PM)" },
     };
     const windowInfo = WINDOWS[deliveryWindow];
     const totalPaid = session.amount_total
@@ -364,9 +364,9 @@ export async function POST(req: NextRequest) {
     if (customerPhone) {
       try {
         const windowLabels: Record<string, string> = {
-          morning: "7:00 AM - 11:00 AM",
+          morning: "7:00 AM - 12:00 PM",
           midday: "11:00 AM - 3:00 PM",
-          afternoon: "3:00 PM - 7:00 PM",
+          afternoon: "1:00 PM - 6:00 PM",
         };
         const deliveryWindowMeta = meta.delivery_window || "";
         const windowLabel = windowLabels[deliveryWindowMeta] || "7:00 AM - 5:00 PM";
