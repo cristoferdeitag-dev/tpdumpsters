@@ -323,6 +323,13 @@ export async function POST(req: NextRequest) {
       console.error("❌ DB update error:", dbErr);
     }
 
+    // Pick one Google Calendar color per booking so the delivery and the
+    // pickup events for the same customer read as a pair (was green/red).
+    // Hash bookingId to a stable id in 1..11 (Google's slot range).
+    let _h = 0;
+    for (let i = 0; i < bookingId.length; i++) _h = ((_h << 5) - _h + bookingId.charCodeAt(i)) | 0;
+    const bookingColorId = String((Math.abs(_h) % 11) + 1);
+
     // 2. Create delivery calendar event (timed if window selected, otherwise all-day)
     const deliverySummary = `${customerName} ${dumpsterSize}${typeCode}delivery`;
     const deliveryResult = await createCalendarEvent({
@@ -330,18 +337,22 @@ export async function POST(req: NextRequest) {
       date: deliveryDate,
       description: eventDescription,
       location: fullAddress,
-      colorId: "10", // green for delivery
+      colorId: bookingColorId,
       ...(windowInfo ? { startTime: windowInfo.start, endTime: windowInfo.end } : {}),
     });
 
-    // 3. Create pickup calendar event
+    // 3. Create pickup calendar event — timed 7am-6pm so Google doesn't
+    //    render it as an all-day banner like a holiday. Same colorId as
+    //    the delivery so a single customer's two events read as a pair.
     const pickupSummary = `${customerName} ${dumpsterSize}${typeCode}pickup`;
     const pickupResult = await createCalendarEvent({
       summary: pickupSummary,
       date: pickupDate,
       description: eventDescription,
       location: fullAddress,
-      colorId: "11", // red for pickup
+      colorId: bookingColorId,
+      startTime: "07:00:00",
+      endTime: "18:00:00",
     });
 
     console.log(

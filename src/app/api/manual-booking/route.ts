@@ -126,6 +126,12 @@ export async function POST(req: NextRequest) {
     // Create calendar events
     const window = WINDOWS[deliveryWindow] || WINDOWS.morning;
 
+    // One Google Calendar color per booking so a single customer's two
+    // events (delivery + pickup) read as a pair. Hash bookingId → 1..11.
+    let _h = 0;
+    for (let i = 0; i < bookingId.length; i++) _h = ((_h << 5) - _h + bookingId.charCodeAt(i)) | 0;
+    const bookingColorId = String((Math.abs(_h) % 11) + 1);
+
     // Delivery event (timed)
     const deliverySummary = `${customerName} ${size}${typeCode}delivery`;
     const deliveryResult = await createCalendarEvent({
@@ -133,19 +139,22 @@ export async function POST(req: NextRequest) {
       date: deliveryDate,
       description: `Manual Booking: ${bookingId}\nService: ${serviceType}\nSize: ${dumpsterSize}\nPhone: ${phone}${email ? `\nEmail: ${email}` : ""}\nPrice: $${totalPrice}\nPayment: ${paymentMethod || "Other"}${notes ? `\nNotes: ${notes}` : ""}`,
       location: fullAddress,
-      colorId: "10",
+      colorId: bookingColorId,
       startTime: window.start,
       endTime: window.end,
     });
 
-    // Pickup event (all-day)
+    // Pickup event — timed 7am-6pm so Google doesn't render it as an
+    // all-day banner like a holiday. Same color as the delivery.
     const pickupSummary = `${customerName} ${size}${typeCode}pickup`;
     const pickupResult = await createCalendarEvent({
       summary: pickupSummary,
       date: pickupDate,
       description: `Manual Booking: ${bookingId}\nPickup for ${customerName}\nService: ${serviceType}\nSize: ${dumpsterSize}\nAddress: ${fullAddress}`,
       location: fullAddress,
-      colorId: "11",
+      colorId: bookingColorId,
+      startTime: "07:00:00",
+      endTime: "18:00:00",
     });
 
     console.log(`📅 Calendar events created for ${bookingId}: delivery=${deliveryResult.eventId}, pickup=${pickupResult.eventId}`);
