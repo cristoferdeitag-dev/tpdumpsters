@@ -49,9 +49,18 @@ export default function SizesSection() {
         <h4 className="font-[var(--font-red-hat)] text-sm font-bold text-tp-gold uppercase tracking-[2px] mb-2">
           SIZES
         </h4>
-        <h2 className="font-[var(--font-poppins)] text-[26px] md:text-[32px] font-bold text-[#333] mb-10">
-          Dumpster sizes &amp; common projects
-        </h2>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-10">
+          <h2 className="font-[var(--font-poppins)] text-[26px] md:text-[32px] font-bold text-[#333]">
+            Dumpster sizes &amp; common projects
+          </h2>
+          <a
+            href="/booking"
+            className="inline-flex items-center gap-2 self-start md:self-auto bg-tp-green/10 hover:bg-tp-green/20 text-tp-green text-[12px] font-bold font-[var(--font-poppins)] uppercase tracking-wider px-3 py-2 rounded-full transition-colors"
+          >
+            <span>💰 Save $50</span>
+            <span className="text-tp-green/70 font-semibold normal-case tracking-normal">when you book online</span>
+          </a>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[30px]">
           {sizes.map((size) => (
             <div

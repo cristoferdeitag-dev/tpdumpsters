@@ -14,7 +14,8 @@ interface Props {
 /* ───────── Data types ───────── */
 interface SizeOption {
   size: string;
-  price: number;
+  basePrice: number;
+  price: number; // price the customer pays when booking online (basePrice - $50)
   dimensions: string;
   weightLimit: string;
   rentalDays: number;
@@ -29,11 +30,14 @@ interface ServiceVariant {
   label: string;
   sublabel: string;
   size: string;
+  basePrice: number;
   price: number;
   dimensions: string;
   weightLimit: string;
   rentalDays: number;
 }
+
+const ONLINE_DISCOUNT = 50;
 
 interface ServiceCategory {
   service: string;
@@ -45,10 +49,12 @@ interface ServiceCategory {
 }
 
 /* ───────── Pricing data ───────── */
+// basePrice = list price; price = online-booking price (basePrice - $50 discount).
+// The booking flow charges `price` and shows the base struck through.
 const GENERAL_SIZES: SizeOption[] = [
-  { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 7 },
-  { size: "20 Yard", price: 699, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
-  { size: "30 Yard", price: 849, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
+  { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 7 },
+  { size: "20 Yard", basePrice: 749, price: 699, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
+  { size: "30 Yard", basePrice: 849, price: 799, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
 ];
 
 const services: ServiceCategory[] = [
@@ -90,7 +96,7 @@ const services: ServiceCategory[] = [
     description: "Must be 95% pure. No rocks, grass, gravel, mesh, wood, or garbage.",
     note: "⚠️ Extra fee: $150 if prohibited items are added",
     sizes: [
-      { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
+      { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
   {
@@ -99,7 +105,7 @@ const services: ServiceCategory[] = [
     description: "Must be 95% pure. No rebar, no garbage.",
     note: "⚠️ Extra fee: $150 if prohibited items are added",
     sizes: [
-      { size: "10 Yard", price: 649, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
+      { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
   {
@@ -116,6 +122,7 @@ const services: ServiceCategory[] = [
         label: "Soil + Concrete Mix",
         sublabel: "Clean soil and clean concrete in the same load",
         size: "10 Yard",
+        basePrice: 799,
         price: 749,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
@@ -126,6 +133,7 @@ const services: ServiceCategory[] = [
         label: "Bricks Only",
         sublabel: "Clean bricks only — no mixed materials",
         size: "10 Yard",
+        basePrice: 799,
         price: 749,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
@@ -136,6 +144,7 @@ const services: ServiceCategory[] = [
         label: "Clean Asphalt",
         sublabel: "Asphalt only — no dirt, concrete, rebar, gravel, wood, trash, fabric",
         size: "10 Yard",
+        basePrice: 799,
         price: 749,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
@@ -185,6 +194,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
   const renderItems: RenderItem[] = activeService.variants
     ? activeService.variants.map((v) => ({
         size: v.size,
+        basePrice: v.basePrice,
         price: v.price,
         dimensions: v.dimensions,
         weightLimit: v.weightLimit,
@@ -318,7 +328,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                 </p>
 
                 {/* ── Price ── */}
-                <div className="mb-1">
+                <div className="mb-1 flex items-baseline gap-2">
                   <span
                     className={`text-xs font-medium ${
                       isDark ? "text-white/40" : "text-[#bbb]"
@@ -326,14 +336,26 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                   >
                     Starting at
                   </span>
+                  <span
+                    className={`text-sm font-[var(--font-poppins)] line-through ${
+                      isDark ? "text-white/40" : "text-[#aaa]"
+                    }`}
+                  >
+                    ${item.basePrice}
+                  </span>
                 </div>
-                <div className="flex items-baseline gap-1 mb-7">
+                <div className="flex items-baseline gap-2 mb-2">
                   <span
                     className={`font-[var(--font-oswald)] text-[52px] leading-none font-bold ${
                       isDark ? "text-white" : "text-[#222]"
                     }`}
                   >
                     ${item.price}
+                  </span>
+                </div>
+                <div className="mb-7">
+                  <span className="inline-block bg-tp-green/15 text-tp-green text-[11px] font-bold font-[var(--font-poppins)] uppercase tracking-wider px-2.5 py-1 rounded-full">
+                    Save ${ONLINE_DISCOUNT} online
                   </span>
                 </div>
 

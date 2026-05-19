@@ -4,8 +4,10 @@ import { useState } from "react";
 import { FaCalendarDays, FaRuler, FaWeightHanging, FaCalendarCheck } from "react-icons/fa6";
 
 /* ───────── Data types ───────── */
+// basePrice = list/sticker price; price = online-booking price (basePrice - $50).
 interface SizeOption {
   size: string;
+  basePrice: number | null;
   price: number | null;
   dimensions: string;
   weightLimit: string;
@@ -20,6 +22,8 @@ interface ServiceCategory {
   sizes: SizeOption[];
 }
 
+const ONLINE_DISCOUNT = 50;
+
 /* ───────── Pricing data (same for all cities) ───────── */
 const services: ServiceCategory[] = [
   {
@@ -30,13 +34,15 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 649,
+        basePrice: 649,
+        price: 599,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "1 ton",
         rentalDays: "7 days",
       },
       {
         size: "20 Yard",
+        basePrice: 749,
         price: 699,
         dimensions: "16' L × 8' W × 4' H",
         weightLimit: "2 tons",
@@ -44,7 +50,8 @@ const services: ServiceCategory[] = [
       },
       {
         size: "30 Yard",
-        price: 849,
+        basePrice: 849,
+        price: 799,
         dimensions: "16' L × 8' W × 6' H",
         weightLimit: "3 tons",
         rentalDays: "7 days",
@@ -58,7 +65,8 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 649,
+        basePrice: 649,
+        price: 599,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",
@@ -72,7 +80,8 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 649,
+        basePrice: 649,
+        price: 599,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",
@@ -86,7 +95,8 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        price: 799,
+        basePrice: 799,
+        price: 749,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",
@@ -177,16 +187,32 @@ export default function PricingTable({ cityName }: PricingTableProps) {
                   </p>
 
                   {/* Price */}
-                  <div className="flex items-baseline gap-1 mb-1">
+                  <div className="flex items-baseline gap-2 mb-1">
                     <span className={`text-xs ${isPopular || activeService.sizes.length === 1 ? "text-white/60" : "text-[#aaa]"}`}>
                       Starting at
                     </span>
+                    {item.basePrice != null && (
+                      <span className={`text-sm line-through ${isPopular || activeService.sizes.length === 1 ? "text-white/50" : "text-[#aaa]"}`}>
+                        ${item.basePrice}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-baseline gap-1 mb-6">
+                  <div className="flex items-baseline gap-1 mb-2">
                     <span className={`font-[var(--font-oswald)] text-5xl font-bold ${isPopular || activeService.sizes.length === 1 ? "text-white" : "text-tp-red"}`}>
                       ${item.price}
                     </span>
                   </div>
+                  {item.basePrice != null && (
+                    <div className="mb-6">
+                      <span className={`inline-block text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                        isPopular || activeService.sizes.length === 1
+                          ? "bg-white/20 text-white"
+                          : "bg-tp-green/15 text-tp-green"
+                      }`}>
+                        Save ${ONLINE_DISCOUNT} online
+                      </span>
+                    </div>
+                  )}
 
                   {/* Details */}
                   <ul className={`space-y-3 mb-8 text-sm ${isPopular || activeService.sizes.length === 1 ? "text-white/80" : "text-[#666]"}`}>

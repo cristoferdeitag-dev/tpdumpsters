@@ -446,7 +446,11 @@ export default function ServicesPage() {
                 <p className="text-gray-500 text-sm mb-4">
                   12&apos;L × 8&apos;W × 2.5&apos;H
                 </p>
-                <p className="text-3xl font-black text-gray-900 mb-1">$599</p>
+                <div className="flex items-baseline justify-center gap-2 mb-1">
+                  <span className="text-base text-gray-400 line-through">$649</span>
+                  <span className="text-3xl font-black text-gray-900">$599</span>
+                </div>
+                <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>
                 <p className="text-sm text-gray-500 mb-6">1 ton included · 7 days</p>
                 <ul className="text-left space-y-2 text-sm text-gray-700">
                   <li className="flex items-center gap-2">
@@ -488,7 +492,11 @@ export default function ServicesPage() {
                 <p className="text-gray-500 text-sm mb-4">
                   16&apos;L × 8&apos;W × 4&apos;H
                 </p>
-                <p className="text-3xl font-black text-gray-900 mb-1">$699</p>
+                <div className="flex items-baseline justify-center gap-2 mb-1">
+                  <span className="text-base text-gray-400 line-through">$749</span>
+                  <span className="text-3xl font-black text-gray-900">$699</span>
+                </div>
+                <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>
                 <p className="text-sm text-gray-500 mb-6">2 tons included · 7 days</p>
                 <ul className="text-left space-y-2 text-sm text-gray-700">
                   <li className="flex items-center gap-2">
@@ -527,7 +535,11 @@ export default function ServicesPage() {
                 <p className="text-gray-500 text-sm mb-4">
                   16&apos;L × 8&apos;W × 6&apos;H
                 </p>
-                <p className="text-3xl font-black text-gray-900 mb-1">$749</p>
+                <div className="flex items-baseline justify-center gap-2 mb-1">
+                  <span className="text-base text-gray-400 line-through">$849</span>
+                  <span className="text-3xl font-black text-gray-900">$799</span>
+                </div>
+                <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>
                 <p className="text-sm text-gray-500 mb-6">3 tons included · 7 days</p>
                 <ul className="text-left space-y-2 text-sm text-gray-700">
                   <li className="flex items-center gap-2">
