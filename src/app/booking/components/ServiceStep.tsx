@@ -214,7 +214,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
     const service: ServiceSelection = {
       serviceType,
       size: item.size,
-      basePrice: item.price,
+      basePrice: item.basePrice,
       baseDays: item.rentalDays,
       weightLimit: item.weightLimit,
       dimensions: item.dimensions,
