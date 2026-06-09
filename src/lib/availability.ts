@@ -7,7 +7,7 @@
  * the operations team is full on a given day, drop the date in and ship.
  */
 export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
-  "2026-05-16", // Saturday 5/16 — fully booked (Asaí, 2026-05-15)
+  "2026-06-10", // Wednesday 6/10 — fully booked (Asaí, 2026-06-09)
 ]);
 
 // Standing rule: TP does not deliver on Sundays.
