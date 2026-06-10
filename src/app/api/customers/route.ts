@@ -18,17 +18,20 @@ export async function GET(req: NextRequest) {
 
   try {
     const db = getPool();
+    // NOTE: the customers table only has id/name/phone/email/created_at. An
+    // earlier version selected & ordered by c.stripe_id / c.total_revenue /
+    // c.total_services, which don't exist → every list load 500'd. We now derive
+    // revenue and service count from each customer's bookings instead.
     const [rows] = await db.execute(`
       SELECT c.id, c.name, c.phone, c.email, c.created_at,
-        c.stripe_id, c.total_revenue, c.total_services,
         b.id as booking_db_id, b.booking_id, b.service_type, b.dumpster_size,
         b.total_price, b.delivery_date, b.pickup_date, b.status, b.address, b.city
       FROM customers c
       LEFT JOIN bookings b ON c.id = b.customer_id
-      ORDER BY c.total_revenue DESC, c.created_at DESC
+      ORDER BY c.created_at DESC
     `);
 
-    // Group bookings by customer
+    // Group bookings by customer, deriving revenue/service totals as we go.
     const customerMap = new Map<string, any>();
     for (const row of rows as any[]) {
       if (!customerMap.has(row.id)) {
@@ -38,14 +41,15 @@ export async function GET(req: NextRequest) {
           phone: row.phone || "",
           email: row.email || "",
           created_at: row.created_at,
-          stripe_id: row.stripe_id || "",
-          total_revenue: Number(row.total_revenue) || 0,
-          total_services: Number(row.total_services) || 0,
+          stripe_id: "",
+          total_revenue: 0,
+          total_services: 0,
           bookings: [],
         });
       }
       if (row.booking_db_id) {
-        customerMap.get(row.id)!.bookings.push({
+        const customer = customerMap.get(row.id)!;
+        customer.bookings.push({
           id: row.booking_db_id,
           booking_id: row.booking_id,
           service_type: row.service_type,
@@ -57,10 +61,17 @@ export async function GET(req: NextRequest) {
           address: row.address,
           city: row.city,
         });
+        customer.total_revenue += Number(row.total_price) || 0;
+        customer.total_services += 1;
       }
     }
 
-    return NextResponse.json({ customers: Array.from(customerMap.values()) });
+    // Highest-value customers first (matches the dashboard's prior intent).
+    const customers = Array.from(customerMap.values()).sort(
+      (a, b) => b.total_revenue - a.total_revenue
+    );
+
+    return NextResponse.json({ customers });
   } catch (err) {
     console.error("Customers GET error:", err);
     return NextResponse.json({ error: "Database error" }, { status: 500 });
