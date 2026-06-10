@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 // PricingTable removed — replaced by SizesSection everywhere
@@ -12,6 +13,12 @@ import DynamicServiceAreaMap from '@/components/DynamicServiceAreaMap';
 import FloatingButtons from "@/components/FloatingButtons";
 import ChatWidget from "@/components/ChatWidget";
 import Footer from "@/components/Footer";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "https://tpdumpsters.com",
+  },
+};
 
 const jsonLd = {
   "@context": "https://schema.org",

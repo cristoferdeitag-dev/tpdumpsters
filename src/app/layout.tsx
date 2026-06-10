@@ -33,9 +33,10 @@ const openSans = Open_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Rent a Dumpster in California! - TP Dumpsters",
+  metadataBase: new URL("https://tpdumpsters.com"),
+  title: "Dumpster Rental Bay Area | Same-Day Roll-Off Delivery - TP Dumpsters",
   description:
-    "Fast, reliable dumpster rentals in the Bay Area. 10, 20 & 30 yard roll-off dumpsters for contractors, remodelers & cleanups. Same-day delivery. Bilingual support. Transparent pricing.",
+    "Dumpster rental across the Bay Area & Contra Costa. 10, 20 & 30 yard roll-off dumpsters for contractors, remodelers & cleanups. Same-day delivery. Bilingual support. Transparent pricing.",
   keywords: [
     "dumpster rental",
     "Bay Area dumpster",
@@ -54,9 +55,9 @@ export const metadata: Metadata = {
     icon: "/images/logo/favicon-32x32.png",
   },
   openGraph: {
-    title: "Rent a Dumpster in California! - TP Dumpsters",
+    title: "Dumpster Rental Bay Area | Same-Day Roll-Off Delivery - TP Dumpsters",
     description:
-      "Fast, reliable dumpster rentals in the Bay Area. 10, 20 & 30 yard roll-off dumpsters. Same-day delivery available.",
+      "Dumpster rental across the Bay Area & Contra Costa. 10, 20 & 30 yard roll-off dumpsters. Same-day delivery available.",
     url: "https://tpdumpsters.com",
     siteName: "TP Dumpsters",
     locale: "en_US",
@@ -72,9 +73,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rent a Dumpster in California! - TP Dumpsters",
+    title: "Dumpster Rental Bay Area | Same-Day Roll-Off Delivery - TP Dumpsters",
     description:
-      "Fast, reliable dumpster rentals in the Bay Area. Same-day delivery available.",
+      "Dumpster rental across the Bay Area & Contra Costa. Same-day delivery available.",
     images: [
       "https://tpdumpsters.com/images/hero/red-dumpster-construction.png",
     ],
@@ -86,9 +87,10 @@ export const metadata: Metadata = {
   verification: {
     google: "GtNKIqE6hxon63WpRDS_-4Y6U0_tqinf0wvazM2Nn00",
   },
-  alternates: {
-    canonical: "https://tpdumpsters.com",
-  },
+  // NOTE: no global `alternates.canonical` here on purpose. A canonical set in
+  // the root layout is inherited by every child page that doesn't override it,
+  // which silently de-indexed /booking (pointed it at the homepage). Each page
+  // now declares its own canonical; the homepage's lives in app/page.tsx.
 };
 
 export default function RootLayout({

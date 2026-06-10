@@ -1,6 +1,5 @@
-'use client';
-
-import { use } from 'react';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import FloatingButtons from '@/components/FloatingButtons';
@@ -120,11 +119,43 @@ function RelatedPosts({ currentSlug }: { currentSlug: string }) {
   );
 }
 
-/* ───── main page ───── */
-export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
+/* ───── per-article metadata (fixes shared title/canonical across all posts) ───── */
+export function generateStaticParams() {
+  return blogPosts.map((p) => ({ slug: p.slug }));
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
   const post = blogPosts.find((p) => p.slug === slug);
-  if (!post) return null;
+  if (!post) return { title: 'Article Not Found | TP Dumpsters' };
+  const url = `https://tpdumpsters.com/blog/${post.slug}`;
+  return {
+    title: `${post.title} | TP Dumpsters`,
+    description: post.excerpt,
+    alternates: { canonical: url },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url,
+      type: 'article',
+      images: [{ url: `https://tpdumpsters.com${post.image}` }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: [`https://tpdumpsters.com${post.image}`],
+    },
+  };
+}
+
+/* ───── main page ───── */
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = blogPosts.find((p) => p.slug === slug);
+  if (!post) notFound();
 
   const ArticleContent = articleComponents[slug];
 

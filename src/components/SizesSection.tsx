@@ -6,7 +6,7 @@ const sizes = [
     name: "10 Yard",
     subtitle: "Best for: Heavy Materials or Small Cleanouts",
     image: "/images/sizes/10-yard.png",
-    imageAlt: "9 yard Dumpster in California - TP Dumpsters",
+    imageAlt: "10 yard dumpster rental in the Bay Area - TP Dumpsters",
     description: "Compact size, ideal for tight spaces and heavy debris.",
     features: [
       "Clean soil, concrete, bricks",
