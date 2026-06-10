@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "Book a Dumpster Online | TP Dumpsters - Bay Area",
   description:
     "Book your dumpster rental online. Choose your size, pick your dates, and get an instant quote. Same-day delivery available in the Bay Area. Call (510) 650-2083",
+  alternates: {
+    canonical: "https://tpdumpsters.com/booking",
+  },
   robots: {
     index: true,
     follow: true,

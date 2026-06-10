@@ -6,8 +6,34 @@ import { getCalendarEvents } from '@/lib/calendar';
 // we just shape the events into a simple JSON the client can render.
 //
 // CORS is open to dumpsterin.com so the SPA bundle can call from the browser.
-// No payment data, just event titles/times/locations the staff already see in
-// Google Calendar.
+//
+// SECURITY: this endpoint is publicly reachable (CORS does NOT stop a direct
+// curl). The raw Google Calendar event descriptions contain customer PII —
+// phone, email, full street address, dollar amounts. By default we REDACT that
+// PII so an anonymous caller only sees the operational shape (type/size/window)
+// the Schedule UI needs. A trusted caller that passes the dashboard token
+// (`?auth=`, `Authorization: Bearer`, or that secret) gets the full detail.
+
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+
+function isTrusted(req: NextRequest): boolean {
+  if (!DASHBOARD_PASSWORD) return false;
+  const fromQuery = req.nextUrl.searchParams.get('auth') || '';
+  const header = req.headers.get('authorization') || '';
+  const fromHeader = header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : '';
+  return fromQuery === DASHBOARD_PASSWORD || fromHeader === DASHBOARD_PASSWORD;
+}
+
+// Strip PII lines from a Google Calendar event description, keeping only the
+// non-sensitive operational lines (Booking ID, Service, Delivery Window, size).
+function redactDescription(description: string): string {
+  if (!description) return '';
+  const SENSITIVE = /^(phone|email|e-mail|address|delivery address|billing address|total|amount|price|card|name|customer)\s*:/i;
+  return description
+    .split('\n')
+    .filter((line) => !SENSITIVE.test(line.trim()))
+    .join('\n');
+}
 
 const ALLOWED_ORIGINS = new Set([
   'https://dumpsterin.com',
@@ -47,13 +73,16 @@ export async function GET(req: NextRequest) {
   const timeMin = from ? new Date(from).toISOString() : defaultFrom.toISOString();
   const timeMax = to ? new Date(to).toISOString() : defaultTo.toISOString();
 
+  const trusted = isTrusted(req);
+
   try {
     const raw = await getCalendarEvents(timeMin, timeMax);
     const events = raw.map((ev: any) => ({
       id: ev.id,
       summary: ev.summary || '',
-      description: ev.description || '',
-      location: ev.location || '',
+      description: trusted ? (ev.description || '') : redactDescription(ev.description || ''),
+      // location is the customer's street address — PII. Only for trusted callers.
+      location: trusted ? (ev.location || '') : '',
       // Google returns dateTime for timed events, date for all-day events.
       start: ev.start?.dateTime || ev.start?.date || null,
       end: ev.end?.dateTime || ev.end?.date || null,

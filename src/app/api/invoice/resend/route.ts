@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { requireAuth, isValidBookingId } from "@/lib/auth";
 
 // Resend an existing Stripe invoice (email + SMS) without creating a new one.
 // Looks up the invoice by metadata.booking_id, then re-fires Stripe's email
@@ -8,6 +9,8 @@ import { getStripe } from "@/lib/stripe";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const unauthorized = requireAuth(request, body);
+    if (unauthorized) return unauthorized;
     const { bookingId, customerName, customerEmail, customerPhone } = body as {
       bookingId?: string;
       customerName?: string;
@@ -15,8 +18,8 @@ export async function POST(request: NextRequest) {
       customerPhone?: string;
     };
 
-    if (!bookingId) {
-      return NextResponse.json({ error: "Missing bookingId" }, { status: 400 });
+    if (!isValidBookingId(bookingId)) {
+      return NextResponse.json({ error: "Invalid or missing bookingId" }, { status: 400 });
     }
 
     const stripe = getStripe();

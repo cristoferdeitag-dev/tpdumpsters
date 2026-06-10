@@ -6,6 +6,33 @@ import { isDateBlocked, blockedReason } from "@/lib/availability";
 
 let dbInitialized = false;
 
+// Server-side source of truth for base prices (mirror of /api/invoice SERVICES).
+// Used to reject client-tampered totals — the browser sends booking.totalPrice,
+// so without this a direct POST could pay $1 for a dumpster.
+const BASE_PRICES: Record<string, Record<string, number>> = {
+  "General Debris": { "10": 649, "20": 699, "30": 749 },
+  "Household Clean Out": { "10": 599, "20": 699, "30": 749 },
+  "Construction Debris": { "10": 599, "20": 699, "30": 749 },
+  "Roofing": { "10": 599, "20": 699, "30": 749 },
+  "Green Waste": { "10": 599, "20": 699, "30": 749 },
+  "Clean Soil": { "10": 599 },
+  "Clean Concrete": { "10": 599 },
+  "Mixed Materials": { "10": 749 },
+  "Bricks": { "10": 749 },
+  "Clean Asphalt": { "10": 749 },
+};
+const EXTRA_DAY_FEE = 49;
+
+// Returns the minimum legitimate total for a booking, or null if the
+// service/size isn't in the catalog (then we don't block — just trust + log).
+function expectedMinTotal(serviceType: string, size: string, extraDays: number): number | null {
+  const sizeNum = String(size || "").replace(/[^0-9]/g, "");
+  const base = BASE_PRICES[serviceType]?.[sizeNum];
+  if (base == null) return null;
+  const days = Number.isFinite(extraDays) && extraDays > 0 ? Math.min(extraDays, 60) : 0;
+  return base + days * EXTRA_DAY_FEE;
+}
+
 export async function POST(request: Request) {
   try {
     const booking = await request.json();
@@ -21,6 +48,33 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // PRICE INTEGRITY: the amount charged comes from booking.totalPrice (client
+    // supplied). Verify it isn't below the catalog minimum for this service +
+    // size + extra days. Blocks price-tampering; allows >= expected (legit
+    // add-ons/surcharges) and unknown services (logged, not blocked).
+    const expectedMin = expectedMinTotal(
+      booking.service.serviceType,
+      booking.service.size,
+      Number(booking.extraDays)
+    );
+    const clientTotal = Number(booking.totalPrice);
+    if (!Number.isFinite(clientTotal) || clientTotal <= 0) {
+      return NextResponse.json({ error: "Invalid total price" }, { status: 400 });
+    }
+    if (expectedMin == null) {
+      console.warn(
+        `⚠️ CHECKOUT price uncatalogued: ${booking.service.serviceType} ${booking.service.size} total=$${clientTotal} — allowed without floor check`
+      );
+    } else if (clientTotal < expectedMin - 1) {
+      console.error(
+        `🚨 CHECKOUT price tampering blocked: ${booking.service.serviceType} ${booking.service.size} extraDays=${booking.extraDays} sent=$${clientTotal} expected>=$${expectedMin}`
+      );
+      return NextResponse.json(
+        { error: "Price validation failed. Please restart your booking." },
         { status: 400 }
       );
     }

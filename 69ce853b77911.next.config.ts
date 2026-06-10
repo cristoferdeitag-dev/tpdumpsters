@@ -17,7 +17,24 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    // Security headers applied site-wide. Clickjacking protection matters most
+    // for the /dashboard, /internal and /driver admin surfaces; HSTS forces
+    // HTTPS; nosniff + Referrer-Policy reduce data leakage of any ?auth= token.
+    const securityHeaders = [
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=31536000; includeSubDomains",
+      },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "X-DNS-Prefetch-Control", value: "on" },
+    ];
     return [
+      {
+        source: "/(.*)",
+        headers: securityHeaders,
+      },
       {
         source: "/((?!_next/static|_next/image|images|favicon).*)",
         headers: [

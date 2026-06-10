@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { requireAuth, isValidBookingId } from "@/lib/auth";
 
 // Auto-charge an open invoice using the customer's default payment method.
 // Per Asaí 2026-04-30: "auto-charge si tarjeta guardada". Fails cleanly if
@@ -11,9 +12,11 @@ import { getStripe } from "@/lib/stripe";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const unauthorized = requireAuth(request, body);
+    if (unauthorized) return unauthorized;
     const { bookingId } = body as { bookingId?: string };
-    if (!bookingId) {
-      return NextResponse.json({ error: "Missing bookingId" }, { status: 400 });
+    if (!isValidBookingId(bookingId)) {
+      return NextResponse.json({ error: "Invalid or missing bookingId" }, { status: 400 });
     }
 
     const stripe = getStripe();

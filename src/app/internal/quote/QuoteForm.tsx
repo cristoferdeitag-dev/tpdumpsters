@@ -359,6 +359,7 @@ export default function QuoteForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          auth: ACCESS_CODE,
           customerName: customerName.trim(),
           customerEmail: customerEmail.trim() || undefined,
           customerPhone: customerPhone.trim() ? `${phoneCode} ${customerPhone.trim()}` : undefined,

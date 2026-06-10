@@ -63,15 +63,17 @@ export async function POST(req: NextRequest) {
     const sigHeader = req.headers.get("stripe-signature") || "";
     const webhookSecret = getWebhookSecret();
 
-    if (webhookSecret) {
-      if (!verifyStripeSignature(rawBody, sigHeader, webhookSecret)) {
-        console.error("❌ Webhook: Invalid Stripe signature");
-        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-      }
-      console.log("✅ Webhook: Stripe signature verified");
-    } else {
-      console.warn("⚠️ Webhook: No webhook secret configured, skipping verification");
+    if (!webhookSecret) {
+      // Fail closed: never process an unverified event. If the secret can't be
+      // read, that's a server misconfig — reject rather than trust the payload.
+      console.error("❌ Webhook: No webhook secret configured — rejecting event");
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
     }
+    if (!verifyStripeSignature(rawBody, sigHeader, webhookSecret)) {
+      console.error("❌ Webhook: Invalid Stripe signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+    console.log("✅ Webhook: Stripe signature verified");
 
     const event = JSON.parse(rawBody);
 

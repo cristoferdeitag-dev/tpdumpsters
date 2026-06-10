@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { requireAuth } from "@/lib/auth";
 
 /* ───────── Dumpster dimensions helper (shared source of truth) ───────── */
 const DIMS_MAP: Record<string, string> = {
@@ -62,6 +63,10 @@ const SERVICES: Record<string, Record<string, { price: number; dims: string; wei
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    // This route can finalize + email/SMS an invoice to a customer with a
+    // staff-set custom price. It must never be callable anonymously.
+    const unauthorized = requireAuth(request, body);
+    if (unauthorized) return unauthorized;
     const {
       customerName,
       customerEmail,

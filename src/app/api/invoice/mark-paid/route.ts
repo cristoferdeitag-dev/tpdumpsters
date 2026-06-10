@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { requireAuth, isValidBookingId } from "@/lib/auth";
 
 // Mark a Stripe invoice as paid out-of-band (cash, check, Zelle, manual
 // transfer — anything that didn't flow through Stripe). Per Asaí 2026-04-30:
@@ -10,13 +11,15 @@ import { getStripe } from "@/lib/stripe";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const unauthorized = requireAuth(request, body);
+    if (unauthorized) return unauthorized;
     const { bookingId, method, notes } = body as {
       bookingId?: string;
       method?: "cash" | "check" | "zelle" | "other";
       notes?: string;
     };
-    if (!bookingId) {
-      return NextResponse.json({ error: "Missing bookingId" }, { status: 400 });
+    if (!isValidBookingId(bookingId)) {
+      return NextResponse.json({ error: "Invalid or missing bookingId" }, { status: 400 });
     }
 
     const stripe = getStripe();
