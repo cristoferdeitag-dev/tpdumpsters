@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { createCalendarEvent } from "@/lib/calendar";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 
 export async function GET(req: NextRequest) {
   const auth = req.nextUrl.searchParams.get("auth");

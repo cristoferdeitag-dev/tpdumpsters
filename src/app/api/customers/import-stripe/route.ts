@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 import Stripe from "stripe";
 import { readFileSync } from "fs";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 
 function getStripeKey(): string {
   if (process.env.STRIPE_SECRET_KEY) return process.env.STRIPE_SECRET_KEY;

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { sendSMS } from "@/lib/twilio";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 
 // GET /api/sms/test?auth=<DASHBOARD_PASSWORD>&to=+15106502083
 // Sends a test SMS to the specified number

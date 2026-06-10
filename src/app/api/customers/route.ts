@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 
 function checkAuth(req: NextRequest): boolean {
   const headerAuth = req.headers.get("x-dashboard-auth");

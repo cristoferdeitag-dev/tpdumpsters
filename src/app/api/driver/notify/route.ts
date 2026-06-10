@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { sendSMS } from "@/lib/twilio";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("x-dashboard-auth");

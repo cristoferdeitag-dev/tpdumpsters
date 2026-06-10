@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getDashboardPassword } from "@/lib/auth";
 import { getCalendarEvents } from '@/lib/calendar';
 
 // Read-only feed of Google Calendar events for the Dumpsterin app's Schedule
@@ -14,7 +15,7 @@ import { getCalendarEvents } from '@/lib/calendar';
 // the Schedule UI needs. A trusted caller that passes the dashboard token
 // (`?auth=`, `Authorization: Bearer`, or that secret) gets the full detail.
 
-const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+const DASHBOARD_PASSWORD = getDashboardPassword();
 
 function isTrusted(req: NextRequest): boolean {
   if (!DASHBOARD_PASSWORD) return false;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { getPool } from "@/lib/db";
 
 // ── Dumpster inventory (in-memory for now, Phase 2 → MySQL) ────────────
@@ -31,7 +32,7 @@ async function getDb() {
 // ── GET: Fetch all dumpsters + today's bookings ────────────────────────
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("x-dashboard-auth");
-  if (auth !== (process.env.DASHBOARD_PASSWORD || "")) {
+  if (auth !== (getDashboardPassword())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -102,7 +103,7 @@ export async function GET(req: NextRequest) {
 // ── POST: Add or update a dumpster ─────────────────────────────────────
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("x-dashboard-auth");
-  if (auth !== (process.env.DASHBOARD_PASSWORD || "")) {
+  if (auth !== (getDashboardPassword())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

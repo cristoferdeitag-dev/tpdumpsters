@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import mysql from "mysql2/promise";
 
 const dbConfig = {
@@ -11,7 +12,7 @@ const dbConfig = {
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "";
 const DASHBOARD_URL = "https://tpdumpsters.com/dashboard/chats";
-const DASHBOARD_AUTH = process.env.DASHBOARD_PASSWORD || "";
+const DASHBOARD_AUTH = getDashboardPassword();
 
 // ── Telegram notification ──────────────────────────────────────
 async function sendTelegramNotification(

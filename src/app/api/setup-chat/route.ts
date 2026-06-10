@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import mysql from "mysql2/promise";
 
 const dbConfig = {
@@ -8,7 +9,7 @@ const dbConfig = {
   database: process.env.DB_NAME || "",
 };
 
-const AUTH_KEY = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_KEY = getDashboardPassword();
 
 export async function GET(request: NextRequest) {
   const auth = request.nextUrl.searchParams.get("auth");

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
+import { timingSafeEqual, randomBytes } from "crypto";
 import { readFileSync } from "fs";
 
 // The dashboard password is read from a file on the server (same pattern as the
@@ -7,18 +7,31 @@ import { readFileSync } from "fs";
 // inject env vars into the Node process, so process.env.DASHBOARD_PASSWORD is
 // empty in prod — reading from a file is the reliable source. Env is kept as a
 // fallback for local/dev. Cached after first read.
+//
+// FAIL-CLOSED: if no password can be resolved (file missing AND env empty) we
+// return an unguessable per-process random value instead of "". Many routes do
+// `incoming !== getDashboardPassword()`; returning "" there let anyone in with a
+// blank `?auth=`. A random sentinel makes every such comparison reject.
 const AUTH_FILE = "/home/u781187371/dashboard-auth.json";
+const UNCONFIGURED_SENTINEL = "__no_dashboard_password__" + randomBytes(24).toString("hex");
 let cachedPassword: string | null = null;
 
-function getDashboardPassword(): string {
+export function getDashboardPassword(): string {
   if (cachedPassword !== null) return cachedPassword;
+  let resolved = "";
   try {
     const parsed = JSON.parse(readFileSync(AUTH_FILE, "utf8"));
-    cachedPassword = typeof parsed.password === "string" ? parsed.password : "";
+    if (typeof parsed.password === "string") resolved = parsed.password;
   } catch {
-    cachedPassword = process.env.DASHBOARD_PASSWORD || "";
+    resolved = process.env.DASHBOARD_PASSWORD || "";
   }
+  cachedPassword = resolved || UNCONFIGURED_SENTINEL;
   return cachedPassword;
+}
+
+// True when a real password is configured (not the fail-closed sentinel).
+export function isDashboardPasswordConfigured(): boolean {
+  return getDashboardPassword() !== UNCONFIGURED_SENTINEL;
 }
 
 // Constant-time compare that won't throw on length mismatch.
@@ -49,11 +62,11 @@ export function requireAuth(
   request: NextRequest,
   body?: Record<string, unknown> | null
 ): NextResponse | null {
-  const password = getDashboardPassword();
-  if (!password) {
+  if (!isDashboardPasswordConfigured()) {
     // Fail closed: if the server has no password configured, deny mutations.
     return NextResponse.json({ error: "Server auth not configured" }, { status: 503 });
   }
+  const password = getDashboardPassword();
   const fromQuery = request.nextUrl.searchParams.get("auth") || "";
   const header = request.headers.get("authorization") || "";
   const fromHeader = header.toLowerCase().startsWith("bearer ")

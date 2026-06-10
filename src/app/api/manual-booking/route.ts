@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { createCalendarEvent } from "@/lib/calendar";
 import { sendSMS } from "@/lib/twilio";
 import * as mysql from "mysql2/promise";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 
 const TYPE_CODES: Record<string, string> = {
   "General Debris": "GD",

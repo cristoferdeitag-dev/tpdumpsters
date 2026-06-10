@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import * as mysql from "mysql2/promise";
 import { getCalendarAccessToken } from "@/lib/calendar";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 const CALENDAR_ID = "tppaver@gmail.com";
 
 // Type codes from calendar event format: "Name SizeTypeAction"

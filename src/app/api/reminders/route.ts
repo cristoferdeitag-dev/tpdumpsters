@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDashboardPassword } from "@/lib/auth";
 import { sendWhatsApp } from "@/lib/twilio";
 import { getCalendarEvents } from "@/lib/calendar";
 
-const AUTH_CODE = process.env.DASHBOARD_PASSWORD || "";
+const AUTH_CODE = getDashboardPassword();
 
 // Notify numbers — team members who receive daily reminders
 const NOTIFY_NUMBERS = [
