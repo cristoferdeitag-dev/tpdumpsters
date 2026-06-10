@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
+import { readFileSync } from "fs";
 
-const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || "";
+// The dashboard password is read from a file on the server (same pattern as the
+// Stripe/Twilio keys, which live in /home/u781187371/*.json). Hostinger does NOT
+// inject env vars into the Node process, so process.env.DASHBOARD_PASSWORD is
+// empty in prod — reading from a file is the reliable source. Env is kept as a
+// fallback for local/dev. Cached after first read.
+const AUTH_FILE = "/home/u781187371/dashboard-auth.json";
+let cachedPassword: string | null = null;
+
+function getDashboardPassword(): string {
+  if (cachedPassword !== null) return cachedPassword;
+  try {
+    const parsed = JSON.parse(readFileSync(AUTH_FILE, "utf8"));
+    cachedPassword = typeof parsed.password === "string" ? parsed.password : "";
+  } catch {
+    cachedPassword = process.env.DASHBOARD_PASSWORD || "";
+  }
+  return cachedPassword;
+}
 
 // Constant-time compare that won't throw on length mismatch.
 function safeEqual(a: string, b: string): boolean {
@@ -13,8 +31,11 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export function checkAuth(request: NextRequest): NextResponse | null {
+  const password = getDashboardPassword();
   const auth = request.nextUrl.searchParams.get("auth");
-  if (!safeEqual(auth || "", DASHBOARD_PASSWORD)) {
+  // Fail closed: never authorize against an empty password (previously an empty
+  // server password let anyone in with `?auth=`).
+  if (!password || !safeEqual(auth || "", password)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return null;
@@ -28,7 +49,8 @@ export function requireAuth(
   request: NextRequest,
   body?: Record<string, unknown> | null
 ): NextResponse | null {
-  if (!DASHBOARD_PASSWORD) {
+  const password = getDashboardPassword();
+  if (!password) {
     // Fail closed: if the server has no password configured, deny mutations.
     return NextResponse.json({ error: "Server auth not configured" }, { status: 503 });
   }
@@ -39,7 +61,7 @@ export function requireAuth(
     : "";
   const fromBody = body && typeof body.auth === "string" ? (body.auth as string) : "";
   const provided = fromQuery || fromHeader || fromBody;
-  if (!safeEqual(provided, DASHBOARD_PASSWORD)) {
+  if (!safeEqual(provided, password)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return null;
