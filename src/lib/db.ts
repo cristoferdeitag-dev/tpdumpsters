@@ -1,10 +1,26 @@
 import mysql from "mysql2/promise";
+import { readFileSync } from "fs";
+
+// The DB password is read from a file on the server (same pattern as the
+// Stripe/Twilio keys and the dashboard password). Hostinger does NOT inject env
+// vars into the Node process, so process.env.DB_PASSWORD is empty in prod, which
+// made every DB query fail with "Access denied (using password: NO)". Falls back
+// to env for local/dev.
+function getDbPassword(): string {
+  try {
+    const parsed = JSON.parse(readFileSync("/home/u781187371/db-creds.json", "utf8"));
+    if (typeof parsed.password === "string" && parsed.password) return parsed.password;
+  } catch {
+    // file missing (local/dev) — fall through to env
+  }
+  return process.env.DB_PASSWORD || "";
+}
 
 // Database config — Hostinger MySQL
 const DB_CONFIG = {
   host: process.env.DB_HOST || "127.0.0.1",
   user: process.env.DB_USER || "u781187371_cristoferdeita",
-  password: process.env.DB_PASSWORD || "",
+  password: getDbPassword(),
   database: process.env.DB_NAME || "u781187371_DumspterBookin",
   waitForConnections: true,
   connectionLimit: 5,
