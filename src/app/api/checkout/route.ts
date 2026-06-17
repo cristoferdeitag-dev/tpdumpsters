@@ -6,28 +6,34 @@ import { isDateBlocked, blockedReason } from "@/lib/availability";
 
 let dbInitialized = false;
 
-// Server-side source of truth for base prices (mirror of /api/invoice SERVICES).
-// Used to reject client-tampered totals — the browser sends booking.totalPrice,
-// so without this a direct POST could pay $1 for a dumpster.
-const BASE_PRICES: Record<string, Record<string, number>> = {
-  "General Debris": { "10": 649, "20": 699, "30": 749 },
-  "Household Clean Out": { "10": 599, "20": 699, "30": 749 },
-  "Construction Debris": { "10": 599, "20": 699, "30": 749 },
-  "Roofing": { "10": 599, "20": 699, "30": 749 },
-  "Green Waste": { "10": 599, "20": 699, "30": 749 },
-  "Clean Soil": { "10": 599 },
-  "Clean Concrete": { "10": 599 },
-  "Mixed Materials": { "10": 749 },
-  "Bricks": { "10": 749 },
-  "Clean Asphalt": { "10": 749 },
+// ── SERVER-AUTHORITATIVE PRICING ──────────────────────────────────────
+// The browser sends booking.totalPrice, but we DO NOT trust it for the
+// actual charge. A client-side bug (e.g. the old double-$50-online-discount
+// that undercharged booking TP-MQ5MS7Y0 / Louann $649 instead of $699 on
+// 2026-06-08) or a tampered POST could under/over-charge. The server
+// recomputes the real price from this ONE table — the ONLINE price the
+// customer is shown (sticker − $50 online discount) per service + size —
+// and charges THAT. Keep in sync with the booking flow (ServiceStep
+// GENERAL_SIZES) and /api/invoice.
+const ONLINE_PRICES: Record<string, Record<string, number>> = {
+  "General Debris":      { "10": 599, "20": 699, "30": 799 },
+  "Household Clean Out": { "10": 599, "20": 699, "30": 799 },
+  "Construction Debris": { "10": 599, "20": 699, "30": 799 },
+  "Roofing":             { "10": 599, "20": 699, "30": 799 },
+  "Green Waste":         { "10": 599, "20": 699, "30": 799 },
+  "Clean Soil":          { "10": 599 },
+  "Clean Concrete":      { "10": 599 },
+  "Mixed Materials":     { "10": 749 },
+  "Bricks":              { "10": 749 },
+  "Clean Asphalt":       { "10": 749 },
 };
 const EXTRA_DAY_FEE = 49;
 
-// Returns the minimum legitimate total for a booking, or null if the
-// service/size isn't in the catalog (then we don't block — just trust + log).
-function expectedMinTotal(serviceType: string, size: string, extraDays: number): number | null {
+// Authoritative total for a booking, or null if the service/size isn't in
+// the catalog (caller then falls back to the client value, logged loudly).
+function serverTotalFor(serviceType: string, size: string, extraDays: number): number | null {
   const sizeNum = String(size || "").replace(/[^0-9]/g, "");
-  const base = BASE_PRICES[serviceType]?.[sizeNum];
+  const base = ONLINE_PRICES[serviceType]?.[sizeNum];
   if (base == null) return null;
   const days = Number.isFinite(extraDays) && extraDays > 0 ? Math.min(extraDays, 60) : 0;
   return base + days * EXTRA_DAY_FEE;
@@ -52,30 +58,33 @@ export async function POST(request: Request) {
       );
     }
 
-    // PRICE INTEGRITY: the amount charged comes from booking.totalPrice (client
-    // supplied). Verify it isn't below the catalog minimum for this service +
-    // size + extra days. Blocks price-tampering; allows >= expected (legit
-    // add-ons/surcharges) and unknown services (logged, not blocked).
-    const expectedMin = expectedMinTotal(
+    // PRICE INTEGRITY (server-authoritative): never trust booking.totalPrice
+    // for the charge. Recompute from the catalog and charge THAT — this kills
+    // the old double-$50-discount bug and any client-side tampering at the
+    // source, regardless of what the (possibly stale/cached) browser sends.
+    // For an uncatalogued service we fall back to the client value but log it
+    // loudly so it can't slip by unnoticed.
+    const clientTotal = Number(booking.totalPrice);
+    const computedTotal = serverTotalFor(
       booking.service.serviceType,
       booking.service.size,
       Number(booking.extraDays)
     );
-    const clientTotal = Number(booking.totalPrice);
-    if (!Number.isFinite(clientTotal) || clientTotal <= 0) {
-      return NextResponse.json({ error: "Invalid total price" }, { status: 400 });
-    }
-    if (expectedMin == null) {
+    let chargeTotal: number;
+    if (computedTotal != null) {
+      chargeTotal = computedTotal;
+      if (!Number.isFinite(clientTotal) || Math.abs(clientTotal - computedTotal) > 1) {
+        console.warn(
+          `⚠️ CHECKOUT price corrected: ${booking.service.serviceType} ${booking.service.size} extraDays=${booking.extraDays} client=$${clientTotal} → charged server price $${computedTotal}`
+        );
+      }
+    } else {
+      if (!Number.isFinite(clientTotal) || clientTotal <= 0) {
+        return NextResponse.json({ error: "Invalid total price" }, { status: 400 });
+      }
+      chargeTotal = clientTotal;
       console.warn(
-        `⚠️ CHECKOUT price uncatalogued: ${booking.service.serviceType} ${booking.service.size} total=$${clientTotal} — allowed without floor check`
-      );
-    } else if (clientTotal < expectedMin - 1) {
-      console.error(
-        `🚨 CHECKOUT price tampering blocked: ${booking.service.serviceType} ${booking.service.size} extraDays=${booking.extraDays} sent=$${clientTotal} expected>=$${expectedMin}`
-      );
-      return NextResponse.json(
-        { error: "Price validation failed. Please restart your booking." },
-        { status: 400 }
+        `⚠️ CHECKOUT uncatalogued service — charging client total: ${booking.service.serviceType} ${booking.service.size} total=$${clientTotal}`
       );
     }
 
@@ -125,7 +134,7 @@ export async function POST(request: Request) {
           booking.service.basePrice,
           booking.extraDays,
           booking.extraDayFee,
-          booking.totalPrice,
+          chargeTotal,
           booking.deliveryDate,
           booking.pickupDate,
           booking.address,
@@ -308,7 +317,7 @@ export async function POST(request: Request) {
               description,
               images: ["https://tpdumpsters.com/images/hero/red-dumpster-construction.png"],
             },
-            unit_amount: Math.round(booking.totalPrice * 100), // cents
+            unit_amount: Math.round(chargeTotal * 100), // cents (server-authoritative)
           },
           quantity: 1,
         },
@@ -337,7 +346,7 @@ export async function POST(request: Request) {
     });
 
     console.log(
-      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${booking.totalPrice} | Session: ${session.id}`
+      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal} | Session: ${session.id}`
     );
 
     return NextResponse.json({
