@@ -73,7 +73,7 @@ const leftFaqs: FaqItem[] = [
           <li className="text-sm text-[#666] leading-[1.7] mb-1">20-yard: 2 tons</li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1">30-yard: 3 tons</li>
         </ul>
-        <p className="text-sm text-[#666] leading-[1.7] mb-2.5">Extra weight is charged at <strong>$125 per ton (prorated)</strong>. Fill to the marked line.</p>
+        <p className="text-sm text-[#666] leading-[1.7] mb-2.5">Extra weight is charged at <strong>$199 per ton (prorated)</strong>. Fill to the marked line.</p>
       </>
     ),
   },

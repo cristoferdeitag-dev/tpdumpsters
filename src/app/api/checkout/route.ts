@@ -265,7 +265,7 @@ export async function POST(request: Request) {
             sizeBullet,
             `Rental includes ${rentalDays} days — extra days: $75/day`,
             `Weight limit: ${weightLimit}`,
-            `Overweight fee: $135 per extra ton (prorated)`,
+            `Overweight fee: $199 per extra ton (prorated)`,
             `Mattresses / appliances / electronics / tires: $20-$60 each`,
             `Do not exceed the marked fill line`,
             `No prohibited materials`,

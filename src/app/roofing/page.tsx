@@ -249,7 +249,7 @@ const serviceCounties = [
 const extraFees = [
   
   { item: "Extra rental days", fee: "$75/day" },
-  { item: "Overweight charges", fee: "$125/ton (prorated)" },
+  { item: "Overweight charges", fee: "$199/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
   { item: "Tires", fee: "$20 each" },

@@ -142,7 +142,7 @@ const faqSchema = {
       name: "How much does a construction dumpster cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $749 (3 tons, 7 days). All prices include delivery, pickup, and disposal. Additional days are $75/day and overweight charges are $125/ton.",
+        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $749 (3 tons, 7 days). All prices include delivery, pickup, and disposal. Additional days are $75/day and overweight charges are $199/ton.",
       },
     },
     {
@@ -166,7 +166,7 @@ const faqSchema = {
       name: "How heavy can a construction dumpster get?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Each dumpster includes a weight allowance: 10-yard (1 ton), 20-yard (2 tons), 30-yard (3 tons). Construction materials like lumber and drywall are moderate in weight, but materials like tile, concrete, and roofing shingles are heavy. Overweight charges are $125/ton prorated.",
+        text: "Each dumpster includes a weight allowance: 10-yard (1 ton), 20-yard (2 tons), 30-yard (3 tons). Construction materials like lumber and drywall are moderate in weight, but materials like tile, concrete, and roofing shingles are heavy. Overweight charges are $199/ton prorated.",
       },
     },
     {
@@ -257,7 +257,7 @@ const serviceCounties = [
 
 const extraFees = [
   { item: "Extra rental days", fee: "$75/day" },
-  { item: "Overweight charges", fee: "$125/ton (prorated)" },
+  { item: "Overweight charges", fee: "$199/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
   { item: "Tires", fee: "$20 each" },
@@ -302,7 +302,7 @@ const faqsLeft = [
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          All prices include delivery, pickup, and disposal. Additional days are $75/day, and overweight charges are $125 per ton (prorated).
+          All prices include delivery, pickup, and disposal. Additional days are $75/day, and overweight charges are $199 per ton (prorated).
         </p>
       </>
     ),
@@ -337,7 +337,7 @@ const faqsRight = [
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> 3 tons (6,000 lbs)</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          Construction materials like lumber and drywall are moderate in weight, but tile, concrete, and roofing shingles are heavy. Overweight charges are <strong>$125/ton</strong> prorated.
+          Construction materials like lumber and drywall are moderate in weight, but tile, concrete, and roofing shingles are heavy. Overweight charges are <strong>$199/ton</strong> prorated.
         </p>
       </>
     ),

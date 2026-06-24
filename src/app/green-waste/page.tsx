@@ -255,7 +255,7 @@ const serviceCounties = [
 
 const extraFees = [
   { item: "Extra rental days", fee: "$75/day" },
-  { item: "Overweight charges", fee: "$125/ton (prorated)" },
+  { item: "Overweight charges", fee: "$199/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
   { item: "Tires", fee: "$20 each" },
@@ -300,7 +300,7 @@ const faqsLeft = [
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          All prices include delivery, pickup, and disposal. Additional days are $75/day, and overweight charges are $125 per ton (prorated).
+          All prices include delivery, pickup, and disposal. Additional days are $75/day, and overweight charges are $199 per ton (prorated).
         </p>
       </>
     ),

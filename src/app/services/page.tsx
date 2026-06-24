@@ -625,7 +625,7 @@ export default function ServicesPage() {
                 </h3>
                 <p className="text-gray-300 text-sm">
                   Exceeded your weight limit?{" "}
-                  <strong className="text-white">$125/ton</strong> prorated.
+                  <strong className="text-white">$199/ton</strong> prorated.
                   Heavy material dumpsters have no weight limit.
                 </p>
               </div>

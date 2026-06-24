@@ -165,7 +165,7 @@ const faqSchema = {
       name: "What happens if I go over the weight limit?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Extra weight is charged at $125 per additional ton (prorated). We weigh every load at the disposal facility and only charge for actual overage.",
+        text: "Extra weight is charged at $199 per additional ton (prorated). We weigh every load at the disposal facility and only charge for actual overage.",
       },
     },
     {
@@ -256,7 +256,7 @@ const serviceCounties = [
 
 const extraFees = [
   { item: "Extra rental days", fee: "$75/day" },
-  { item: "Overweight charges", fee: "$125/ton (prorated)" },
+  { item: "Overweight charges", fee: "$199/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
   { item: "Tires", fee: "$20 each" },
@@ -301,7 +301,7 @@ const faqsLeft = [
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          Additional days are $75/day, and overweight charges are $125 per ton (prorated). No hidden fees.
+          Additional days are $75/day, and overweight charges are $199 per ton (prorated). No hidden fees.
         </p>
       </>
     ),
@@ -329,7 +329,7 @@ const faqsRight = [
     question: "What happens if I go over the weight limit?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        If your dumpster exceeds the included weight allowance, you&apos;ll be charged <strong>$125 per additional ton</strong> (prorated). We weigh every load at the disposal facility and only charge for actual overage. To avoid surprises, keep heavy items like concrete, dirt, and tile to a minimum in general debris loads, and don&apos;t fill above the marked fill line.
+        If your dumpster exceeds the included weight allowance, you&apos;ll be charged <strong>$199 per additional ton</strong> (prorated). We weigh every load at the disposal facility and only charge for actual overage. To avoid surprises, keep heavy items like concrete, dirt, and tile to a minimum in general debris loads, and don&apos;t fill above the marked fill line.
       </p>
     ),
   },

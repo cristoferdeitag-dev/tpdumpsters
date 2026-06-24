@@ -256,7 +256,7 @@ export default function PricingTable({ cityName }: PricingTableProps) {
         )}
 
         <p className="text-center text-xs text-[#999] mt-6 font-[var(--font-poppins)]">
-          Prices may vary based on location and project specifics. Extra weight charged at $125/ton (prorated). Call for a personalized quote.
+          Prices may vary based on location and project specifics. Extra weight charged at $199/ton (prorated). Call for a personalized quote.
         </p>
       </div>
     </section>

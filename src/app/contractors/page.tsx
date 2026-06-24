@@ -103,7 +103,7 @@ const contractorFaqs = [
     question: "What happens if I exceed the weight limit?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Extra weight is charged at <strong>$125 per ton</strong> (prorated). We weigh every load
+        Extra weight is charged at <strong>$199 per ton</strong> (prorated). We weigh every load
         at the disposal facility. To avoid surprises, we recommend choosing the right dumpster
         size upfront — our team can help estimate based on your project type.
       </p>

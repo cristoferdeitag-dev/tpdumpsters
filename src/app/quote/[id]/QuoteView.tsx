@@ -257,7 +257,7 @@ export default function QuoteView({ quoteId }: { quoteId: string }) {
           <ul className="space-y-1">
             {[
               "Extra days: $75/day beyond the included rental period",
-              "Extra weight: $125/ton (prorated) beyond included tonnage",
+              "Extra weight: $199/ton (prorated) beyond included tonnage",
               "Cancellation: 24-hour notice required. $150 cancellation fee applies",
               "Mattresses, appliances & tires: $20–$60 each (special disposal required)",
               "Payment: Credit card (online) or Zelle (TP PAVERS SERVICE INC — 510 253 62 30)",

@@ -146,7 +146,7 @@ export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }:
           </div>
         </div>
         <p className="text-[10px] text-white/40 mt-3">
-          Delivery, pickup & disposal included. Extra weight: $135/ton (prorated).
+          Delivery, pickup & disposal included. Extra weight: $199/ton (prorated).
         </p>
       </div>
 
@@ -175,7 +175,7 @@ export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }:
             className="mt-1 w-4 h-4 accent-tp-red flex-shrink-0"
           />
           <span className="text-xs text-[#555] font-[var(--font-poppins)] leading-relaxed">
-            I authorize TP Dumpsters to charge my card for any additional fees incurred during the rental period, including but not limited to: extra weight ($135/ton prorated), additional rental days ($75/day), and prohibited/hazardous items found in the dumpster ($20–$60 per item). I understand these charges may be processed after the dumpster is picked up.
+            I authorize TP Dumpsters to charge my card for any additional fees incurred during the rental period, including but not limited to: extra weight ($199/ton prorated), additional rental days ($75/day), and prohibited/hazardous items found in the dumpster ($20–$60 per item). I understand these charges may be processed after the dumpster is picked up.
           </span>
         </label>
       </div>
