@@ -18,7 +18,6 @@ const SOLANO_CITIES: CityMarker[] = [
   { name: "Benicia", slug: "benicia", lat: 38.0494, lng: -122.1586 },
   { name: "American Canyon", slug: "american-canyon", lat: 38.1749, lng: -122.2608 },
   { name: "Suisun City", slug: "suisun-city", lat: 38.2388, lng: -122.0400 },
-  { name: "Dixon", slug: "dixon", lat: 38.4455, lng: -121.8233 },
 ];
 
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';

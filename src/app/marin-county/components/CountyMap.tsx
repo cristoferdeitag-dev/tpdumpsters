@@ -20,7 +20,6 @@ const MARIN_CITIES: CityMarker[] = [
   { name: "Corte Madera", slug: "corte-madera", lat: 37.9257, lng: -122.5272 },
   { name: "Larkspur", slug: "larkspur", lat: 37.9341, lng: -122.5353 },
   { name: "San Anselmo", slug: "san-anselmo", lat: 37.9746, lng: -122.5617 },
-  { name: "Fairfax", slug: "fairfax", lat: 37.9871, lng: -122.5889 },
 ];
 
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';

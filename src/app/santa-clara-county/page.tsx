@@ -59,18 +59,8 @@ export const metadata: Metadata = {
 
 // ── City Data ───────────────────────────────────────────────────────────────
 const CITIES = [
-  { name: "San Jose", slug: "san-jose", tagline: "Capital of Silicon Valley" },
-  { name: "Sunnyvale", slug: "sunnyvale", tagline: "Heart of Silicon Valley" },
   { name: "Santa Clara", slug: "santa-clara", tagline: "Mission City" },
-  { name: "Mountain View", slug: "mountain-view", tagline: "Tech Hub" },
   { name: "Milpitas", slug: "milpitas", tagline: "Gateway City" },
-  { name: "Palo Alto", slug: "palo-alto", tagline: "Stanford University" },
-  { name: "Cupertino", slug: "cupertino", tagline: "Home of Apple" },
-  { name: "Campbell", slug: "campbell", tagline: "Orchard City" },
-  { name: "Los Gatos", slug: "los-gatos", tagline: "Gem of the Foothills" },
-  { name: "Saratoga", slug: "saratoga", tagline: "Wine Country Living" },
-  { name: "Morgan Hill", slug: "morgan-hill", tagline: "South Valley Gateway" },
-  { name: "Gilroy", slug: "gilroy", tagline: "Garlic Capital" },
 ];
 
 // ── FAQs (using CityFaqsSection format) ─────────────────────────────────────

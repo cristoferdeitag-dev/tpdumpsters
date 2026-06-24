@@ -69,7 +69,6 @@ const CITIES = [
   { name: "Corte Madera", slug: "corte-madera", tagline: "Central Marin" },
   { name: "Larkspur", slug: "larkspur", tagline: "Ferry Landing" },
   { name: "San Anselmo", slug: "san-anselmo", tagline: "Ross Valley" },
-  { name: "Fairfax", slug: "fairfax", tagline: "West Marin" },
 ];
 
 // ── FAQs (using CityFaqsSection format) ─────────────────────────────────────

@@ -65,7 +65,6 @@ const CITIES = [
   { name: "Benicia", slug: "benicia", tagline: "Historic Capital" },
   { name: "American Canyon", slug: "american-canyon", tagline: "Wine Country Gateway" },
   { name: "Suisun City", slug: "suisun-city", tagline: "Waterfront City" },
-  { name: "Dixon", slug: "dixon", tagline: "Agricultural Hub" },
 ];
 
 // ── FAQs (using CityFaqsSection format) ─────────────────────────────────────

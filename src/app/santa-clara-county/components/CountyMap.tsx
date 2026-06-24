@@ -12,12 +12,8 @@ interface CityMarker {
 }
 
 const SANTA_CLARA_CITIES: CityMarker[] = [
-  { name: "San Jose", slug: "san-jose", lat: 37.3382, lng: -121.8863 },
-  { name: "Sunnyvale", slug: "sunnyvale", lat: 37.3688, lng: -122.0363 },
   { name: "Santa Clara", slug: "santa-clara", lat: 37.3541, lng: -121.9552 },
-  { name: "Mountain View", slug: "mountain-view", lat: 37.3861, lng: -122.0839 },
   { name: "Milpitas", slug: "milpitas", lat: 37.4323, lng: -121.8996 },
-  { name: "Palo Alto", slug: "palo-alto", lat: 37.4419, lng: -122.1430 },
 ];
 
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';

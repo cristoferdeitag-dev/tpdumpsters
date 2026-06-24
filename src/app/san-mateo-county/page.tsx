@@ -65,11 +65,9 @@ const CITIES = [
   { name: "Pacifica", slug: "pacifica", tagline: "Coastal Living" },
   { name: "Burlingame", slug: "burlingame", tagline: "City of Trees" },
   { name: "San Bruno", slug: "san-bruno", tagline: "Near SFO Airport" },
-  { name: "Menlo Park", slug: "menlo-park", tagline: "Tech Capital" },
   { name: "Foster City", slug: "foster-city", tagline: "Island City" },
   { name: "Belmont", slug: "belmont", tagline: "Hills & Views" },
   { name: "San Carlos", slug: "san-carlos", tagline: "City of Good Living" },
-  { name: "Half Moon Bay", slug: "half-moon-bay", tagline: "Coastal Charm" },
   { name: "Millbrae", slug: "millbrae", tagline: "Transit Hub" },
 ];
 

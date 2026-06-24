@@ -81,8 +81,6 @@ const CITIES = [
   { name: "Clayton", slug: "clayton", tagline: "Mt. Diablo Foothills" },
   { name: "Rodeo", slug: "rodeo", tagline: "North County" },
   { name: "Crockett", slug: "crockett", tagline: "Carquinez Strait" },
-  { name: "Discovery Bay", slug: "discovery-bay", tagline: "Delta Community" },
-  { name: "Bethel Island", slug: "bethel-island", tagline: "Delta Community" },
   { name: "Castro Valley", slug: "castro-valley", tagline: "Alameda County" },
 ];
 

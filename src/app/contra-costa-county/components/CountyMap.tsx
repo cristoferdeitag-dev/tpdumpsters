@@ -35,8 +35,6 @@ const CONTRA_COSTA_CITIES: CityMarker[] = [
   { name: "Clayton", slug: "clayton", lat: 37.9410, lng: -121.9358 },
   { name: "Rodeo", slug: "rodeo", lat: 38.0332, lng: -122.2669 },
   { name: "Crockett", slug: "crockett", lat: 38.0524, lng: -122.2136 },
-  { name: "Discovery Bay", slug: "discovery-bay", lat: 37.9085, lng: -121.6022 },
-  { name: "Bethel Island", slug: "bethel-island", lat: 38.0135, lng: -121.6411 },
   { name: "Castro Valley", slug: "castro-valley", lat: 37.6941, lng: -122.0864 },
 ];
 
