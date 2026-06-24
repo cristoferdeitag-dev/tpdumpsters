@@ -448,7 +448,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       )}
 
       <p className="text-center text-xs text-[#bbb] mt-8 mb-10 font-[var(--font-poppins)]">
-        Extra weight charged at $135/ton (prorated) · Extra days: $49/day
+        Extra weight charged at $135/ton (prorated) · Extra days: $75/day
       </p>
 
       {/* Spacer so sticky CTA never overlaps content above */}

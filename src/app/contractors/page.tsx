@@ -83,7 +83,7 @@ const contractorFaqs = [
     question: "Can I extend my rental if my project takes longer?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Absolutely. Extra days are just <strong>$49/day</strong>. Just call or text us before your
+        Absolutely. Extra days are just <strong>$75/day</strong>. Just call or text us before your
         rental period ends and we&apos;ll extend it — no paperwork, no hassle. We understand
         construction timelines change.
       </p>

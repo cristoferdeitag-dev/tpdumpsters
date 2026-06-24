@@ -27,7 +27,7 @@ const ONLINE_PRICES: Record<string, Record<string, number>> = {
   "Bricks":              { "10": 749 },
   "Clean Asphalt":       { "10": 749 },
 };
-const EXTRA_DAY_FEE = 49;
+const EXTRA_DAY_FEE = 75;
 
 // Authoritative total for a booking, or null if the service/size isn't in
 // the catalog (caller then falls back to the client value, logged loudly).
@@ -255,7 +255,7 @@ export async function POST(request: Request) {
       isLight
         ? [
             sizeBullet,
-            `Rental includes ${rentalDays} days — extra days: $49/day`,
+            `Rental includes ${rentalDays} days — extra days: $75/day`,
             `Weight limit: ${weightLimit}`,
             LIGHT_PURITY[booking.service.serviceType] || "Clean loads must be 95% pure",
             `Extra fee: $150 if prohibited items are added`,
@@ -263,7 +263,7 @@ export async function POST(request: Request) {
           ]
         : [
             sizeBullet,
-            `Rental includes ${rentalDays} days — extra days: $49/day`,
+            `Rental includes ${rentalDays} days — extra days: $75/day`,
             `Weight limit: ${weightLimit}`,
             `Overweight fee: $135 per extra ton (prorated)`,
             `Mattresses / appliances / electronics / tires: $20-$60 each`,

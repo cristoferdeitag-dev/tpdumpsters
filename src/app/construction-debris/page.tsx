@@ -142,7 +142,7 @@ const faqSchema = {
       name: "How much does a construction dumpster cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $749 (3 tons, 7 days). All prices include delivery, pickup, and disposal. Additional days are $49/day and overweight charges are $125/ton.",
+        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $749 (3 tons, 7 days). All prices include delivery, pickup, and disposal. Additional days are $75/day and overweight charges are $125/ton.",
       },
     },
     {
@@ -256,7 +256,7 @@ const serviceCounties = [
 ];
 
 const extraFees = [
-  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Extra rental days", fee: "$75/day" },
   { item: "Overweight charges", fee: "$125/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
@@ -302,7 +302,7 @@ const faqsLeft = [
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          All prices include delivery, pickup, and disposal. Additional days are $49/day, and overweight charges are $125 per ton (prorated).
+          All prices include delivery, pickup, and disposal. Additional days are $75/day, and overweight charges are $125 per ton (prorated).
         </p>
       </>
     ),

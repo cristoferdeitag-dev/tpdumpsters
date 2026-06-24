@@ -72,7 +72,7 @@ const COMMON_EXTRAS = [
   { name: "Appliance", price: 40 },
   { name: "Tire", price: 20 },
   { name: "Overweight (per ton)", price: 125 },
-  { name: "Extra Day", price: 49 },
+  { name: "Extra Day", price: 75 },
 ];
 
 function createExtra(): ExtraItem {

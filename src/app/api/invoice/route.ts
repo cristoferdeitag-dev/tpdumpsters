@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
 
     const termLines = [
       ...sizeBullets,
-      `• Rental includes ${rentalDaysForBullet} days; extra days: $49/day`,
+      `• Rental includes ${rentalDaysForBullet} days; extra days: $75/day`,
       `• Weight limit: ${weightSummary}${allLight ? "" : ". Overweight: $135 per extra ton (prorated)"}`,
       `• Mattresses/appliances/tires: $20-$60 each (size dependent)`,
       `• Do not exceed the marked fill line. No prohibited materials`,

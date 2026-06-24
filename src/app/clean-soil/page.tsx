@@ -202,7 +202,7 @@ const serviceCounties = [
 ];
 
 const extraFees = [
-  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Extra rental days", fee: "$75/day" },
   { item: "Contamination fee (load not 95% pure)", fee: "$125–$150" },
   { item: "Cancellation fee", fee: "$150 (24h notice required)" },
   { item: "Payment methods", fee: "Credit card online or Zelle" },
@@ -451,7 +451,7 @@ export default function CleanSoilPage() {
                 Because clean soil disposal is significantly cheaper than mixed waste, we pass those savings on to you: <strong>no weight limit</strong> on our 10-yard dumpsters. Soil is incredibly heavy — a single 10-yard load can weigh 10–14 tons — but you won&apos;t pay overage charges. Fill it up and we&apos;ll haul it away.
               </p>
               <p className="text-[15px] text-[#555] leading-[1.8] mb-4">
-                Our clean soil dumpsters come with a <strong>3-day rental period</strong>, which is perfect for excavation projects that generate large volumes of dirt quickly. Need more time? Additional days are available at $49/day.
+                Our clean soil dumpsters come with a <strong>3-day rental period</strong>, which is perfect for excavation projects that generate large volumes of dirt quickly. Need more time? Additional days are available at $75/day.
               </p>
               <Image src="/images/dumpsters/dumpster-dirt-sunny.jpg" alt="Clean soil dumpster rental Bay Area" width={500} height={300} className="rounded-xl mt-4 w-full object-cover" />
             </div>

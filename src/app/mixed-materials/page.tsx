@@ -202,7 +202,7 @@ const serviceCounties = [
 ];
 
 const extraFees = [
-  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Extra rental days", fee: "$75/day" },
   { item: "Hazardous material contamination", fee: "Load rejection + fee" },
   { item: "Cancellation fee", fee: "$150 (24h notice required)" },
   { item: "Payment methods", fee: "Credit card online or Zelle" },
@@ -451,7 +451,7 @@ export default function MixedMaterialsPage() {
                 The mixed materials dumpster is priced at <strong>$750</strong> — higher than clean soil or clean concrete ($599 each) — because mixed loads require processing at facilities that handle multiple material types. These facilities charge more for sorting and processing, but you still get <strong>no weight limit</strong>.
               </p>
               <p className="text-[15px] text-[#555] leading-[1.8] mb-4">
-                Like all our heavy material dumpsters, the mixed materials dumpster comes with a <strong>3-day rental period</strong> and includes delivery, pickup, and disposal. Need more time? Additional days are available at $49/day.
+                Like all our heavy material dumpsters, the mixed materials dumpster comes with a <strong>3-day rental period</strong> and includes delivery, pickup, and disposal. Need more time? Additional days are available at $75/day.
               </p>
               <Image src="/images/dumpsters/dumpster-dirt-sunny.jpg" alt="Mixed materials dumpster rental Bay Area" width={500} height={300} className="rounded-xl mt-4 w-full object-cover" />
             </div>

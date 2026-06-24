@@ -255,8 +255,8 @@ function generateResponse(message: string, language: string): string {
   // ── Extra day fee ──
   if (msg.includes("extra day") || msg.includes("additional day") || msg.includes("keep longer") || msg.includes("extend") || msg.includes("día extra") || msg.includes("dia extra") || msg.includes("más días") || msg.includes("mas dias") || msg.includes("extender")) {
     return es
-      ? "📅 **Tarifa por día extra:** **$49/día**\n\nSi necesitas el dumpster más tiempo del periodo incluido (7 días para General Debris, 3 días para materiales pesados), simplemente llámanos al **(510) 650-2083** para extender.\n\nNo hay límite de extensión — solo $49 por cada día adicional."
-      : "📅 **Extra day fee:** **$49/day**\n\nIf you need the dumpster longer than the included period (7 days for General Debris, 3 days for heavy materials), just call us at **(510) 650-2083** to extend.\n\nNo extension limit — just $49 per additional day.";
+      ? "📅 **Tarifa por día extra:** **$75/día**\n\nSi necesitas el dumpster más tiempo del periodo incluido (7 días para General Debris, 3 días para materiales pesados), simplemente llámanos al **(510) 650-2083** para extender.\n\nNo hay límite de extensión — solo $75 por cada día adicional."
+      : "📅 **Extra day fee:** **$75/day**\n\nIf you need the dumpster longer than the included period (7 days for General Debris, 3 days for heavy materials), just call us at **(510) 650-2083** to extend.\n\nNo extension limit — just $75 per additional day.";
   }
 
   // ── Overweight fee ──
@@ -269,8 +269,8 @@ function generateResponse(message: string, language: string): string {
   // ── Pricing questions ──
   if (msg.includes("price") || msg.includes("cost") || msg.includes("how much") || msg.includes("precio") || msg.includes("costo") || msg.includes("cuánto") || msg.includes("cuanto")) {
     return es
-      ? `💰 **Precios de TP Dumpsters:**\n\n🟢 **General Debris** (construcción, demolición)\n• 10 yard: $600 (7 días, 1 ton incluida)\n• 20 yard: $650 (7 días, 2 tons incluidas)\n• 30 yard: $700 (7 días, 3 tons incluidas)\n\n🟤 **Materiales Pesados** (10 yard, 3 días)\n• Clean Soil: $600 (sin límite de peso)\n• Clean Concrete: $600 (95% puro, sin varilla)\n• Mixed Materials: $750 (mezcla tierra/concreto)\n\n📌 **Extras:**\n• Días extra: $49/día\n• Sobrepeso: $125/ton prorrateado\n\n🎉 **¡Reserva en línea y obtén 5% de descuento!**\n\n[Reserva aquí](https://tpdumpsters.com/booking) o llámanos: **(510) 650-2083**`
-      : `💰 **TP Dumpsters Pricing:**\n\n🟢 **General Debris** (construction, demolition)\n• 10 yard: $600 (7 days, 1 ton included)\n• 20 yard: $650 (7 days, 2 tons included)\n• 30 yard: $700 (7 days, 3 tons included)\n\n🟤 **Heavy Materials** (10 yard, 3 days)\n• Clean Soil: $600 (no weight limit)\n• Clean Concrete: $600 (95% pure, no rebar)\n• Mixed Materials: $750 (soil & concrete mix)\n\n📌 **Extras:**\n• Extra days: $49/day\n• Overweight: $125/ton prorated\n\n🎉 **Book online and get 5% off!**\n\n[Book here](https://tpdumpsters.com/booking) or call us: **(510) 650-2083**`;
+      ? `💰 **Precios de TP Dumpsters:**\n\n🟢 **General Debris** (construcción, demolición)\n• 10 yard: $600 (7 días, 1 ton incluida)\n• 20 yard: $650 (7 días, 2 tons incluidas)\n• 30 yard: $700 (7 días, 3 tons incluidas)\n\n🟤 **Materiales Pesados** (10 yard, 3 días)\n• Clean Soil: $600 (sin límite de peso)\n• Clean Concrete: $600 (95% puro, sin varilla)\n• Mixed Materials: $750 (mezcla tierra/concreto)\n\n📌 **Extras:**\n• Días extra: $75/día\n• Sobrepeso: $125/ton prorrateado\n\n🎉 **¡Reserva en línea y obtén 5% de descuento!**\n\n[Reserva aquí](https://tpdumpsters.com/booking) o llámanos: **(510) 650-2083**`
+      : `💰 **TP Dumpsters Pricing:**\n\n🟢 **General Debris** (construction, demolition)\n• 10 yard: $600 (7 days, 1 ton included)\n• 20 yard: $650 (7 days, 2 tons included)\n• 30 yard: $700 (7 days, 3 tons included)\n\n🟤 **Heavy Materials** (10 yard, 3 days)\n• Clean Soil: $600 (no weight limit)\n• Clean Concrete: $600 (95% pure, no rebar)\n• Mixed Materials: $750 (soil & concrete mix)\n\n📌 **Extras:**\n• Extra days: $75/day\n• Overweight: $125/ton prorated\n\n🎉 **Book online and get 5% off!**\n\n[Book here](https://tpdumpsters.com/booking) or call us: **(510) 650-2083**`;
   }
 
   // ── Size / which dumpster ──

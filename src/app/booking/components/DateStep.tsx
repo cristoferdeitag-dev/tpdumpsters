@@ -112,7 +112,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
         <p className="text-sm text-blue-800 font-[var(--font-poppins)]">
           ℹ️ <strong>Pickup date is set automatically</strong> based on your rental period ({baseDays} days).
-          Need more time? You can select a later pickup date below — extra days are <strong>$49/day</strong>.
+          Need more time? You can select a later pickup date below — extra days are <strong>$75/day</strong>.
         </p>
       </div>
 

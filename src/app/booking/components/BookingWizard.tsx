@@ -46,7 +46,7 @@ export interface BookingData {
   authorizedCharges: boolean;
 }
 
-const EXTRA_DAY_FEE = 49; // $49/day — updated 2026-03-20
+const EXTRA_DAY_FEE = 75; // $75/day — updated 2026-06-24
 const ONLINE_DISCOUNT_FLAT = 50; // $50 flat discount for online booking
 
 const initialBooking: BookingData = {

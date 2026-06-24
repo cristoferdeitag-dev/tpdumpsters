@@ -174,7 +174,7 @@ const faqSchema = {
       name: "How long does a roofing project take?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Most residential roof replacements take 1-3 days. Our 7-day rental period gives roofing contractors plenty of time. If your project runs longer, additional days are available at $49/day.",
+        text: "Most residential roof replacements take 1-3 days. Our 7-day rental period gives roofing contractors plenty of time. If your project runs longer, additional days are available at $75/day.",
       },
     },
     {
@@ -248,7 +248,7 @@ const serviceCounties = [
 
 const extraFees = [
   
-  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Extra rental days", fee: "$75/day" },
   { item: "Overweight charges", fee: "$125/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
@@ -332,7 +332,7 @@ const faqsRight = [
     question: "How long does a roofing project take?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Most residential roof replacements take <strong>1-3 days</strong>. Our 7-day rental period gives roofing contractors plenty of time to complete the job without rushing. If your project runs longer due to weather delays or complexity, additional days are available at $49/day with 24-hour notice.
+        Most residential roof replacements take <strong>1-3 days</strong>. Our 7-day rental period gives roofing contractors plenty of time to complete the job without rushing. If your project runs longer due to weather delays or complexity, additional days are available at $75/day with 24-hour notice.
       </p>
     ),
   },

@@ -62,7 +62,7 @@ export async function initDB() {
       dumpster_size VARCHAR(20) NOT NULL,
       base_price DECIMAL(10,2) NOT NULL,
       extra_days INT DEFAULT 0,
-      extra_day_fee DECIMAL(10,2) DEFAULT 49,
+      extra_day_fee DECIMAL(10,2) DEFAULT 75,
       total_price DECIMAL(10,2) NOT NULL,
       delivery_date DATE NOT NULL,
       pickup_date DATE NOT NULL,

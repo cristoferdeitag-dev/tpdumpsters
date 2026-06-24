@@ -149,7 +149,7 @@ const faqSchema = {
       name: "How long can I keep the dumpster?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "All general debris dumpster rentals include a 7-day rental period. Additional days are available at $49/day with 24-hour notice.",
+        text: "All general debris dumpster rentals include a 7-day rental period. Additional days are available at $75/day with 24-hour notice.",
       },
     },
     {
@@ -255,7 +255,7 @@ const serviceCounties = [
 ];
 
 const extraFees = [
-  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Extra rental days", fee: "$75/day" },
   { item: "Overweight charges", fee: "$125/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
@@ -301,7 +301,7 @@ const faqsLeft = [
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          Additional days are $49/day, and overweight charges are $125 per ton (prorated). No hidden fees.
+          Additional days are $75/day, and overweight charges are $125 per ton (prorated). No hidden fees.
         </p>
       </>
     ),
@@ -310,7 +310,7 @@ const faqsLeft = [
     question: "How long can I keep the dumpster?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        All general debris dumpster rentals include a <strong>7-day rental period</strong>. Need more time? No problem — additional days are available at $49/day with 24-hour notice. Whether you&apos;re tackling a weekend cleanout or a multi-week renovation, we&apos;ll work with your timeline.
+        All general debris dumpster rentals include a <strong>7-day rental period</strong>. Need more time? No problem — additional days are available at $75/day with 24-hour notice. Whether you&apos;re tackling a weekend cleanout or a multi-week renovation, we&apos;ll work with your timeline.
       </p>
     ),
   },

@@ -256,7 +256,7 @@ export default function QuoteView({ quoteId }: { quoteId: string }) {
           </h4>
           <ul className="space-y-1">
             {[
-              "Extra days: $49/day beyond the included rental period",
+              "Extra days: $75/day beyond the included rental period",
               "Extra weight: $125/ton (prorated) beyond included tonnage",
               "Cancellation: 24-hour notice required. $150 cancellation fee applies",
               "Mattresses, appliances & tires: $20–$60 each (special disposal required)",

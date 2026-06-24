@@ -615,7 +615,7 @@ export default function ServicesPage() {
                 </h3>
                 <p className="text-gray-300 text-sm">
                   Need more time? No problem. Extra days are just{" "}
-                  <strong className="text-white">$49/day</strong> for any
+                  <strong className="text-white">$75/day</strong> for any
                   dumpster size.
                 </p>
               </div>

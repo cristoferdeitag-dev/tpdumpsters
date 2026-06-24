@@ -37,7 +37,7 @@ const leftFaqs: FaqItem[] = [
             <strong>7 days</strong> for all dumpsters used for debris (10, 20, and 30-yard).
           </li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1">
-            Need more time? Additional days are available at <strong>$49/day</strong> (24-hour notice required).
+            Need more time? Additional days are available at <strong>$75/day</strong> (24-hour notice required).
           </li>
         </ul>
       </>
