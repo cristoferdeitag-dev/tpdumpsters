@@ -38,22 +38,34 @@ export default function SuccessContent() {
   const sessionId = searchParams.get("session_id");
   const [info, setInfo] = useState<SessionInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tracked, setTracked] = useState(false);
 
+  // Fire the booking conversion ONCE, with the real amount paid (revenue) so
+  // Google optimizes toward actual sales value — not a $0 placeholder.
   useEffect(() => {
-    trackBookingCompleted(bookingIdParam, 0);
-  }, [bookingIdParam]);
+    if (tracked) return;
 
-  useEffect(() => {
     if (!sessionId) {
+      // No checkout session to read the amount from — still record the booking.
+      trackBookingCompleted(bookingIdParam, 0);
+      setTracked(true);
       setLoading(false);
       return;
     }
+
     fetch(`/api/checkout/session?id=${encodeURIComponent(sessionId)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: SessionInfo | null) => setInfo(data))
+      .then((data: SessionInfo | null) => {
+        setInfo(data);
+        trackBookingCompleted(
+          data?.bookingId || bookingIdParam,
+          data?.amountTotal || 0
+        );
+        setTracked(true);
+      })
       .catch(() => setInfo(null))
       .finally(() => setLoading(false));
-  }, [sessionId]);
+  }, [sessionId, bookingIdParam, tracked]);
 
   const bookingId = info?.bookingId || bookingIdParam;
   const fullAddress =

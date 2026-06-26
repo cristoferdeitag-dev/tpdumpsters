@@ -71,7 +71,10 @@ export default function GoogleAnalytics() {
         
         if (!alreadyCalled) {
           sessionStorage.setItem("tp_call_tracked", "1");
-          trackConversion();
+          // Only count as a Google Ads conversion on mobile — a tel: click on
+          // desktop rarely becomes a real call, so it would inflate the metric.
+          // Desktop clicks are still logged to GA4 below for visibility.
+          if (isMobile) trackConversion();
           safeGtag("event", "call_click", {
             page,
             button_location: location,

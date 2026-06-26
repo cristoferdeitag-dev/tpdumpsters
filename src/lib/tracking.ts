@@ -102,9 +102,11 @@ export function trackBookingCompleted(
     currency: "USD",
   });
 
-  // Also fire Google Ads conversion
+  // Also fire Google Ads conversion — dedicated "Online Booking (Purchase)"
+  // action (id 7662202532, PURCHASE) so bookings are counted with real revenue,
+  // separate from the call-click conversion.
   gtag("event", "conversion", {
-    send_to: "AW-17134217839/EtBFCMDt_-EaEO_Uneo_",
+    send_to: "AW-17134217839/l3BjCKTdz8UcEO_Uneo_",
     value: totalPrice,
     currency: "USD",
   });
