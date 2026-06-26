@@ -102,6 +102,15 @@ export function trackBookingCompleted(
     currency: "USD",
   });
 
+  // Standard GA4 ecommerce event so revenue shows in Analytics' Monetization
+  // reports ("Total revenue" / per-purchase value). A custom event alone does
+  // not populate GA4 revenue reporting — the "purchase" event name does.
+  gtag("event", "purchase", {
+    transaction_id: bookingId,
+    value: totalPrice,
+    currency: "USD",
+  });
+
   // Also fire Google Ads conversion — dedicated "Online Booking (Purchase)"
   // action (id 7662202532, PURCHASE) so bookings are counted with real revenue,
   // separate from the call-click conversion.
