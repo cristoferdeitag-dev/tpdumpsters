@@ -523,10 +523,68 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Radar Ads: upload the paid booking as an OFFLINE conversion tied to
+    // its gclid, so Google Ads learns which clicks become paying jobs. The
+    // Google Ads credentials live on the VPS endpoint; here we only hold a
+    // shared secret (radar-keys.json). Non-blocking — never affects the
+    // booking response.
+    let offlineConvUploaded = false;
+    try {
+      const gclid = (meta.gclid || "").trim();
+      if (gclid) {
+        let radar: {
+          offline_conv_secret?: string;
+          endpoint_url?: string;
+          tp_customer_id?: string;
+          tp_conversion_action?: string;
+        } | null = null;
+        try {
+          radar = JSON.parse(
+            fs.readFileSync("/home/u781187371/radar-keys.json", "utf8")
+          );
+        } catch {
+          radar = null;
+        }
+        if (radar?.offline_conv_secret && radar?.endpoint_url) {
+          const valueUsd = session.amount_total ? session.amount_total / 100 : 0;
+          const now = new Date();
+          const pad = (n: number) => String(n).padStart(2, "0");
+          const dt =
+            `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ` +
+            `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}+00:00`;
+          const resp = await fetch(radar.endpoint_url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              secret: radar.offline_conv_secret,
+              customerId: radar.tp_customer_id,
+              conversionAction: radar.tp_conversion_action,
+              gclid,
+              value: valueUsd,
+              currency: "USD",
+              conversionDateTime: dt,
+              orderId: bookingId,
+            }),
+          });
+          offlineConvUploaded = resp.ok;
+          console.log(
+            `🎯 Radar offline conversion: HTTP ${resp.status} (gclid=${gclid.slice(0, 12)}…, $${valueUsd})`
+          );
+        } else {
+          console.warn(
+            "🎯 Radar offline conversion skipped — radar-keys.json missing/incomplete"
+          );
+        }
+      }
+    } catch (radarErr) {
+      console.error("🎯 Radar offline conversion error (non-blocking):", radarErr);
+    }
+
     return NextResponse.json({
       received: true,
       bookingId,
       dbUpdated,
+      offlineConvUploaded,
       calendarEvents: {
         delivery: deliveryResult,
         pickup: pickupResult,

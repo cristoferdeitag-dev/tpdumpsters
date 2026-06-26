@@ -340,6 +340,7 @@ export async function POST(request: Request) {
         billing_city: booking.billingAddress?.city || "",
         billing_state: booking.billingAddress?.state || "",
         billing_zip: booking.billingAddress?.zip || "",
+        gclid: (booking.gclid || "").slice(0, 200),
       },
       success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
       cancel_url: `${origin}/booking?cancelled=true`,

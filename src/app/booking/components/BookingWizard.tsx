@@ -6,7 +6,7 @@ import DateStep from "./DateStep";
 import AddressStep from "./AddressStep";
 import SummaryStep from "./SummaryStep";
 import ConfirmationStep from "./ConfirmationStep";
-import { trackBookingStarted, trackBookingStep, trackBookingPayment } from "@/lib/tracking";
+import { trackBookingStarted, trackBookingStep, trackBookingPayment, getGclid } from "@/lib/tracking";
 
 /* ───────── Types ───────── */
 export interface BillingAddress {
@@ -128,7 +128,9 @@ export default function BookingWizard() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(booking),
+        // Attach the Google Ads click id so a paid booking can be uploaded
+        // back as an offline conversion (server-side, tied to the real click).
+        body: JSON.stringify({ ...booking, gclid: getGclid() }),
       });
       const data = await res.json();
       if (res.ok && data.checkoutUrl) {

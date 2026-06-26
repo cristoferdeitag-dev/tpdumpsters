@@ -21,6 +21,13 @@ function gtag(...args: unknown[]) {
   }
 }
 
+/** Read the captured Google Ads click id (gclid) from its cookie, if any. */
+export function getGclid(): string {
+  if (typeof document === "undefined") return "";
+  const m = document.cookie.match(/(?:^|;\s*)tp_gclid=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
 /** Get current page name from pathname */
 function getPageName(): string {
   if (typeof window === "undefined") return "unknown";

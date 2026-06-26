@@ -27,6 +27,20 @@ declare global {
 export default function GoogleAnalytics() {
   // Track conversions on link clicks (calls, CTAs, booking links)
   useEffect(() => {
+    // Capture the Google Ads click id (gclid/gbraid/wbraid) into a 90-day
+    // cookie so a later booking can carry it and be uploaded back as an
+    // offline conversion when the job is paid.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const gclid =
+        params.get("gclid") || params.get("gbraid") || params.get("wbraid");
+      if (gclid) {
+        document.cookie = `tp_gclid=${encodeURIComponent(
+          gclid
+        )};path=/;max-age=${60 * 60 * 24 * 90};SameSite=Lax`;
+      }
+    } catch {}
+
     function safeGtag(...args: unknown[]) {
       if (typeof window !== "undefined" && typeof window.gtag === "function") {
         window.gtag(...args);
