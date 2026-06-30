@@ -42,13 +42,15 @@ export async function GET(req: NextRequest) {
     endTime: "11:00:00",
   });
 
-  // Pickup: all-day event (no time window)
+  // Pickup: timed event 1pm-2pm (afternoon 1-hour slot)
   const pickupResult = await createCalendarEvent({
     summary: "TestBooking 20GDpickup",
     date: pickupDate,
     description: testDescription,
     location: "123 Test St, Oakland, CA 94601",
     colorId: "11",
+    startTime: "13:00:00",
+    endTime: "14:00:00",
   });
 
   return NextResponse.json({

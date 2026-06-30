@@ -145,8 +145,9 @@ export async function POST(req: NextRequest) {
       endTime: window.end,
     });
 
-    // Pickup event — timed 7am-6pm so Google doesn't render it as an
-    // all-day banner like a holiday. Same color as the delivery.
+    // Pickup event — timed 1pm-2pm. Pickups run in the afternoon (1pm
+    // onward), blocked as a 1-hour slot so the calendar stays readable.
+    // Same color as the delivery.
     const pickupSummary = `${customerName} ${size}${typeCode}pickup`;
     const pickupResult = await createCalendarEvent({
       summary: pickupSummary,
@@ -154,8 +155,8 @@ export async function POST(req: NextRequest) {
       description: `Manual Booking: ${bookingId}\nPickup for ${customerName}\nService: ${serviceType}\nSize: ${dumpsterSize}\nAddress: ${fullAddress}`,
       location: fullAddress,
       colorId: bookingColorId,
-      startTime: "07:00:00",
-      endTime: "18:00:00",
+      startTime: "13:00:00",
+      endTime: "14:00:00",
     });
 
     console.log(`📅 Calendar events created for ${bookingId}: delivery=${deliveryResult.eventId}, pickup=${pickupResult.eventId}`);
