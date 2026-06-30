@@ -242,7 +242,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
             )}
             {booking.onlineDiscount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>💰 Online booking discount (5%)</span>
+                <span>💰 Online booking discount ($50 OFF)</span>
                 <span className="font-semibold">-${booking.onlineDiscount.toFixed(2)}</span>
               </div>
             )}

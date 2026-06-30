@@ -86,7 +86,7 @@ export default function BookingWizard() {
   const updateBooking = (updates: Partial<BookingData>) => {
     setBooking((prev) => {
       const updated = { ...prev, ...updates };
-      // Recalculate total price with 5% online discount
+      // Recalculate total price with flat $50 online booking discount
       if (updated.service) {
         const subtotal = updated.service.basePrice + updated.extraDays * updated.extraDayFee;
         const discount = ONLINE_DISCOUNT_FLAT;
