@@ -54,9 +54,10 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     return d.toISOString().split("T")[0];
   }, []);
 
-  // Auto-calculated minimum pickup date
+  // Minimum pickup date = day after delivery (customers may pick up early;
+  // price stays the same up to the included rental period).
   const minPickupDate = booking.deliveryDate
-    ? addDays(booking.deliveryDate, baseDays)
+    ? addDays(booking.deliveryDate, 1)
     : "";
 
   // Inline error for unavailable delivery dates (yard fully booked).
@@ -96,7 +97,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     ? daysBetween(booking.deliveryDate, booking.pickupDate)
     : 0;
 
-  const canProceed = booking.deliveryDate && booking.deliveryWindow && booking.pickupDate && totalDays >= baseDays;
+  const canProceed = booking.deliveryDate && booking.deliveryWindow && booking.pickupDate && totalDays >= 1;
 
   return (
     <div>
@@ -112,7 +113,8 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
         <p className="text-sm text-blue-800 font-[var(--font-poppins)]">
           ℹ️ <strong>Pickup date is set automatically</strong> based on your rental period ({baseDays} days).
-          Need more time? You can select a later pickup date below — extra days are <strong>$75/day</strong>.
+          Done early? You can pick an <strong>earlier pickup date</strong> — same price, the {baseDays} days are always included.
+          Need more time? Pick a later date — extra days are <strong>$75/day</strong>.
         </p>
       </div>
 
