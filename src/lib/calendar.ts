@@ -143,6 +143,50 @@ export async function createCalendarEvent(params: {
 }
 
 /**
+ * Finds the next free 1-hour pickup slot on a given date.
+ * Pickups stack in 2-hour-spaced afternoon slots: 1-2pm, 3-4pm, 5-6pm, ...
+ * If a slot is already taken by another pickup that day, the next one is used.
+ * Falls back to the 1-2pm slot if the calendar can't be read.
+ */
+export async function findNextPickupSlot(
+  date: string
+): Promise<{ startTime: string; endTime: string }> {
+  const FIRST_HOUR = 13; // 1pm
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const slot = (h: number) => ({
+    startTime: `${pad(h)}:00:00`,
+    endTime: `${pad(h + 1)}:00:00`,
+  });
+
+  try {
+    // Wide window (-08:00 min, -07:00 max) covers the whole Pacific day
+    // regardless of PST/PDT; we filter by the literal date below.
+    const events = await getCalendarEvents(
+      `${date}T00:00:00-08:00`,
+      `${date}T23:59:59-07:00`
+    );
+
+    const taken = new Set<number>();
+    for (const ev of events) {
+      const summary = String(ev?.summary || "").toLowerCase();
+      if (!summary.includes("pickup")) continue;
+      const dt: string | undefined = ev?.start?.dateTime;
+      if (!dt || !dt.startsWith(date)) continue;
+      // dateTime is in the event's own zone, e.g. "2026-07-11T13:00:00-07:00";
+      // chars 11-12 are the local hour.
+      const hour = parseInt(dt.slice(11, 13), 10);
+      if (!Number.isNaN(hour)) taken.add(hour);
+    }
+
+    let hour = FIRST_HOUR;
+    while (taken.has(hour)) hour += 2; // 13, 15, 17, 19, 21, ...
+    return slot(hour);
+  } catch {
+    return slot(FIRST_HOUR);
+  }
+}
+
+/**
  * Fetches calendar events between timeMin and timeMax.
  * Returns array of Google Calendar event objects.
  */

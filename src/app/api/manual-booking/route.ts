@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDashboardPassword } from "@/lib/auth";
-import { createCalendarEvent } from "@/lib/calendar";
+import { createCalendarEvent, findNextPickupSlot } from "@/lib/calendar";
 import { sendSMS } from "@/lib/twilio";
 import * as mysql from "mysql2/promise";
 
@@ -145,9 +145,10 @@ export async function POST(req: NextRequest) {
       endTime: window.end,
     });
 
-    // Pickup event — timed 1pm-2pm. Pickups run in the afternoon (1pm
-    // onward), blocked as a 1-hour slot so the calendar stays readable.
+    // Pickup event — timed 1-hour afternoon slot that stacks: 1-2pm, then
+    // 3-4pm, then 5-6pm... so two pickups the same day don't overlap.
     // Same color as the delivery.
+    const pickupSlot = await findNextPickupSlot(pickupDate);
     const pickupSummary = `${customerName} ${size}${typeCode}pickup`;
     const pickupResult = await createCalendarEvent({
       summary: pickupSummary,
@@ -155,8 +156,8 @@ export async function POST(req: NextRequest) {
       description: `Manual Booking: ${bookingId}\nPickup for ${customerName}\nService: ${serviceType}\nSize: ${dumpsterSize}\nAddress: ${fullAddress}`,
       location: fullAddress,
       colorId: bookingColorId,
-      startTime: "13:00:00",
-      endTime: "14:00:00",
+      startTime: pickupSlot.startTime,
+      endTime: pickupSlot.endTime,
     });
 
     console.log(`📅 Calendar events created for ${bookingId}: delivery=${deliveryResult.eventId}, pickup=${pickupResult.eventId}`);
