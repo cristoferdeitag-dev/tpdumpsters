@@ -3,6 +3,7 @@ import { getStripe } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
 let dbInitialized = false;
 
@@ -41,6 +42,20 @@ function serverTotalFor(serviceType: string, size: string, extraDays: number): n
 
 export async function POST(request: Request) {
   try {
+    // ── Anti card-testing: throttle checkout attempts per IP ───────────
+    // A bot blasting stolen cards gets stopped before it can create Stripe
+    // customers / booking rows. 6 attempts / 10 min is generous for a real
+    // buyer (who books once) but shuts down automated carding.
+    const ip = clientIp(request.headers);
+    const rl = checkRateLimit(`checkout:${ip}`, 6, 10 * 60 * 1000);
+    if (!rl.allowed) {
+      console.warn(`🚦 Checkout rate limit hit for ${ip} (retry in ${rl.retryAfterSec}s)`);
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait a few minutes and try again." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
+      );
+    }
+
     const booking = await request.json();
 
     // Validate required fields
@@ -279,6 +294,10 @@ export async function POST(request: Request) {
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
+      // Require the card's billing address so Stripe runs AVS (address +
+      // ZIP match against the issuing bank). A Radar rule can then block
+      // mismatches — a strong, low-friction signal against stolen cards.
+      billing_address_collection: "required",
       // Auto-generate a finalized invoice on payment success with the same
       // formatting Asaí uses on her manual invoices (bulleted terms +
       // ship-to address visible).
