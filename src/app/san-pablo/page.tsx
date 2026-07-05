@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import SizesSection from "@/components/SizesSection";
-import DumpsterPhotosGrid from "@/components/DumpsterPhotosGrid";
+import PricingTable from "@/components/PricingTable";
 import FaqsSection from "@/components/FaqsSection";
 import CityFaqsSection from "@/components/CityFaqsSection";
 import AboutCitySection from "@/components/AboutCitySection";
@@ -207,9 +207,9 @@ export default function SanPabloPage() {
       <Header />
       <SanPabloHero />
       <div className="h-[60px] bg-tp-red w-full" />
-      <AboutCitySection {...sanPabloAbout} />
+      <PricingTable cityName="San Pablo" />
       <SizesSection />
-<DumpsterPhotosGrid />
+      <AboutCitySection {...sanPabloAbout} />
       <ErrorBoundary>
         <CityFaqsSection cityName="San Pablo" faqs={sanPabloFaqs} />
       </ErrorBoundary>

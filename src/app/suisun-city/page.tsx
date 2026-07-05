@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import SizesSection from "@/components/SizesSection";
-import DumpsterPhotosGrid from "@/components/DumpsterPhotosGrid";
+import PricingTable from "@/components/PricingTable";
 import FaqsSection from "@/components/FaqsSection";
 import CityFaqsSection from "@/components/CityFaqsSection";
 import AboutCitySection from "@/components/AboutCitySection";
@@ -222,9 +222,9 @@ export default function SuisunCityPage() {
       <SuisunCityHero />
       {/* Red Divider */}
       <div className="h-[60px] bg-tp-red w-full" />
-      <AboutCitySection {...suisunCityAbout} />
+      <PricingTable cityName="Suisun City" />
       <SizesSection />
-<DumpsterPhotosGrid />
+      <AboutCitySection {...suisunCityAbout} />
       <ErrorBoundary>
         <CityFaqsSection cityName="Suisun City" faqs={suisunCityFaqs} />
       </ErrorBoundary>
