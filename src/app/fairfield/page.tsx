@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import SizesSection from "@/components/SizesSection";
+import PricingTable from "@/components/PricingTable";
 import DumpsterPhotosGrid from "@/components/DumpsterPhotosGrid";
 import FaqsSection from "@/components/FaqsSection";
 import CityFaqsSection from "@/components/CityFaqsSection";
@@ -229,6 +230,7 @@ export default function FairfieldPage() {
       <div className="h-[60px] bg-tp-red w-full" />
       <AboutCitySection {...fairfieldAbout} />
 <SizesSection />
+      <PricingTable cityName="Fairfield" />
 <DumpsterPhotosGrid />
       <ErrorBoundary>
         <CityFaqsSection cityName="Fairfield" faqs={fairfieldFaqs} />
