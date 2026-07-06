@@ -6,7 +6,7 @@
 // (The "Mountain View" NEIGHBORHOOD of Martinez is unaffected: its Places
 // locality is "Martinez".)
 export const EXCLUDED_CITIES = ["mountain view"];
-export const EXCLUDED_ZIPS = ["94035", "94039", "94040", "94041", "94043"];
+export const EXCLUDED_ZIPS = ["94035", "94039", "94040", "94041", "94042", "94043"];
 
 export function isOutsideServiceArea(city?: string, zip?: string): boolean {
   const c = (city || "").trim().toLowerCase();
