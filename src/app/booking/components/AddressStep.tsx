@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { BookingData } from "./BookingWizard";
+import { isOutsideServiceArea } from "@/lib/service-area";
 
 interface Props {
   booking: BookingData;
@@ -303,7 +304,10 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
       !!booking.billingAddress.state &&
       !!booking.billingAddress.zip);
 
+  const outsideArea = isOutsideServiceArea(booking.city, booking.zipCode);
+
   const allValid =
+    !outsideArea &&
     booking.address.trim() !== "" &&
     booking.city.trim() !== "" &&
     booking.zipCode.trim() !== "" &&
@@ -459,6 +463,17 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             </div>
           </div>
         </div>
+        {outsideArea && (
+          <div className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3">
+            <p className="text-sm font-semibold text-red-600 font-[var(--font-poppins)]">
+              Sorry — we don&apos;t currently service {booking.city.trim() || "that area"}.
+            </p>
+            <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
+              We deliver to Contra Costa, Alameda, San Francisco, San Mateo, Marin, Solano
+              and nearby communities. Questions? Call (510) 650-2083.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Billing address (optional) */}

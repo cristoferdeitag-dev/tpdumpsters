@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { isOutsideServiceArea } from "@/lib/service-area";
 
 let dbInitialized = false;
 
@@ -69,6 +70,18 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Service-area guard: excluded cities/ZIPs (e.g. Mountain View) can't
+    // book even via a direct POST — the wizard already blocks them in the UI.
+    if (isOutsideServiceArea(booking.city, booking.zipCode)) {
+      console.warn(
+        `🚫 Checkout rejected — outside service area: ${booking.city} ${booking.zipCode}`
+      );
+      return NextResponse.json(
+        { error: "We don't currently service that address. Call (510) 650-2083 if you think this is a mistake." },
         { status: 400 }
       );
     }
