@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
+import { getDashboardPassword } from "@/lib/auth";
 
 let dbInitialized = false;
 
 export async function POST(request: Request) {
+  // Legacy endpoint with no current callers (public checkout uses /api/checkout).
+  // It writes customers/bookings straight into the DB, so gate it like the rest
+  // of the internal routes rather than leaving it open to anonymous inserts.
+  const auth = request.headers.get("x-dashboard-auth");
+  if (auth !== getDashboardPassword()) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const booking = await request.json();
 

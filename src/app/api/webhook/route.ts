@@ -244,6 +244,70 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // ── Radar Ads: TELEPHONE jobs (~90% of revenue). When Asaí's manually
+      // created invoice is PAID, upload it as an offline conversion matched by
+      // the customer's PHONE (Enhanced Conversions for Leads), so Google Ads
+      // finally learns which ad-driven CALLS become paying jobs — not just the
+      // 10% that book online. No gclid on a phone sale → we match by hashed
+      // phone/email. Non-blocking: never affects the webhook response.
+      try {
+        const phoneRaw = (
+          inv.customer_phone ||
+          inv.metadata?.customer_phone ||
+          ""
+        ).trim();
+        if (phoneRaw) {
+          let radar: {
+            offline_conv_secret?: string;
+            endpoint_url?: string;
+            tp_customer_id?: string;
+            tp_conversion_action?: string;
+          } | null = null;
+          try {
+            radar = JSON.parse(
+              fs.readFileSync("/home/u781187371/radar-keys.json", "utf8")
+            );
+          } catch {
+            radar = null;
+          }
+          if (radar?.offline_conv_secret && radar?.endpoint_url) {
+            const valueUsd = inv.amount_paid ? inv.amount_paid / 100 : 0;
+            const now = new Date();
+            const pad = (n: number) => String(n).padStart(2, "0");
+            const dt =
+              `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ` +
+              `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}+00:00`;
+            const resp = await fetch(radar.endpoint_url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                secret: radar.offline_conv_secret,
+                customerId: radar.tp_customer_id,
+                conversionAction: radar.tp_conversion_action,
+                phone: phoneRaw,
+                email: customerEmail || undefined,
+                value: valueUsd,
+                currency: "USD",
+                conversionDateTime: dt,
+                orderId: invoiceNumber || inv.id,
+              }),
+            });
+            console.log(
+              `🎯 Radar phone conversion: HTTP ${resp.status} (phone=***${phoneRaw.slice(-4)}, $${valueUsd})`
+            );
+          } else {
+            console.warn(
+              "🎯 Radar phone conversion skipped — radar-keys.json missing/incomplete"
+            );
+          }
+        }
+      } catch (radarErr) {
+        console.error(
+          "🎯 Radar phone conversion error (non-blocking):",
+          radarErr
+        );
+      }
+
       return NextResponse.json({
         received: true,
         type: "invoice.payment_succeeded",
