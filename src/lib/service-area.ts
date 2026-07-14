@@ -5,8 +5,13 @@
 // an online booking came in there 2026-07-06 and TP doesn't go that far south.
 // (The "Mountain View" NEIGHBORHOOD of Martinez is unaffected: its Places
 // locality is "Martinez".)
-export const EXCLUDED_CITIES = ["mountain view"];
-export const EXCLUDED_ZIPS = ["94035", "94039", "94040", "94041", "94042", "94043"];
+// Milpitas added 2026-07-14: booking TP-MRKVLJ3P came in there and TP doesn't
+// service it (Cris msg 2385). ZIPs 95035/95036 cover manual entry.
+export const EXCLUDED_CITIES = ["mountain view", "milpitas"];
+export const EXCLUDED_ZIPS = [
+  "94035", "94039", "94040", "94041", "94042", "94043", // Mountain View
+  "95035", "95036", // Milpitas
+];
 
 export function isOutsideServiceArea(city?: string, zip?: string): boolean {
   const c = (city || "").trim().toLowerCase();
