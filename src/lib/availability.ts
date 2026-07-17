@@ -15,6 +15,23 @@ export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
 // Set per Asaí 2026-05-20. If this ever changes, flip ALLOW_SUNDAY_DELIVERY.
 const ALLOW_SUNDAY_DELIVERY = false;
 
+// Standing rule (Asaí, 2026-07-17): online bookings need at least one day of
+// lead time — same-day (and past) dates are NOT accepted through the website.
+// Same-day service still happens by phone / manual booking, whose code paths
+// don't call isDateBlocked, so this only gates the public online flow.
+// Compare against "today" in Pacific, since the <input type="date"> value is a
+// Pacific wall-clock yyyy-mm-dd (the truck operates in PT).
+function pacificToday(): string {
+  // en-CA formats as yyyy-mm-dd, which sorts identically to chronological order.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles",
+  }).format(new Date());
+}
+
+function isSameDayOrPast(iso: string): boolean {
+  return iso <= pacificToday();
+}
+
 function isSunday(iso: string): boolean {
   // Parse the date as a Pacific local date — the <input type="date"> value is
   // already a wall-clock yyyy-mm-dd in Pacific. Using a plain Date(iso) would
@@ -27,11 +44,15 @@ function isSunday(iso: string): boolean {
 }
 
 export function isDateBlocked(iso: string): boolean {
+  if (isSameDayOrPast(iso)) return true;
   if (!ALLOW_SUNDAY_DELIVERY && isSunday(iso)) return true;
   return BLOCKED_DATES.has(iso);
 }
 
 export function blockedReason(iso: string): string {
+  if (isSameDayOrPast(iso)) {
+    return "Online bookings need at least one day's notice — please choose tomorrow or later. For same-day service, call us at (510) 650-2083.";
+  }
   if (!ALLOW_SUNDAY_DELIVERY && isSunday(iso)) {
     return "We don't deliver on Sundays. Please pick another day.";
   }
