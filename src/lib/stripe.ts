@@ -58,19 +58,30 @@ export function getPublishableKey(): string {
 // removing the config (env vars or JSON fields) is the rollback switch.
 export type PlatformConfig = { client: Stripe; account: string; feePct: number };
 
-let _platform: PlatformConfig | null | undefined;
+// Config is re-read at most once a minute so that editing stripe-keys.json
+// takes effect without restarting next-server — deleting the htm_* fields
+// really is an on-the-fly rollback switch, not a rollback-after-restart one.
+const PLATFORM_TTL_MS = 60_000;
+let _platform: PlatformConfig | null = null;
+let _platformReadAt = 0;
+let _platformSecret = "";
 
 export function getPlatform(): PlatformConfig | null {
-  if (_platform !== undefined) return _platform;
+  const now = Date.now();
+  if (now - _platformReadAt < PLATFORM_TTL_MS) return _platform;
+  _platformReadAt = now;
 
   let secret = process.env.HTM_PLATFORM_SECRET_KEY || "";
   let account = process.env.HTM_CONNECTED_ACCOUNT_ID || "";
   let feePct = Number(process.env.HTM_APPLICATION_FEE_PCT);
+  let anyFieldPresent = Boolean(secret || account || Number.isFinite(feePct));
 
   if (!secret || !account || !Number.isFinite(feePct)) {
     try {
       const raw = readFileSync("/home/u781187371/stripe-keys.json", "utf-8");
       const config = JSON.parse(raw);
+      anyFieldPresent = anyFieldPresent ||
+        "htm_platform_secret_key" in config || "htm_connected_account_id" in config || "htm_application_fee_pct" in config;
       secret = secret || config.htm_platform_secret_key || "";
       account = account || config.htm_connected_account_id || "";
       if (!Number.isFinite(feePct)) feePct = Number(config.htm_application_fee_pct);
@@ -79,17 +90,28 @@ export function getPlatform(): PlatformConfig | null {
     }
   }
 
-  // feePct sanity gate: a typo like 20 (meaning 20%) must never silently
-  // skim ten times the agreed commission off TP's payouts.
+  // Validity gate, incl. fee sanity: a typo like 20 (meaning 20%) must never
+  // silently skim ten times the agreed commission off TP's payouts.
   if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct <= 0 || feePct > 5) {
+    // Partial/broken config is NOT the same as no config: sales must keep
+    // flowing (legacy mode), but silently dropping the commission would look
+    // like "everything works" while HTM earns $0 — scream in the logs.
+    if (anyFieldPresent) {
+      console.error(
+        `🚨 HTM COMMISSION CONFIG INVALID — charging in legacy mode WITHOUT fee. Check htm_* fields (secret=${secret ? "set" : "MISSING"}, account=${account || "MISSING"}, feePct=${feePct})`
+      );
+    }
     _platform = null;
     return _platform;
   }
 
-  _platform = {
-    client: new Stripe(secret, { apiVersion: "2026-02-25.clover" }),
-    account,
-    feePct,
-  };
+  if (!_platform || _platformSecret !== secret || _platform.account !== account || _platform.feePct !== feePct) {
+    _platformSecret = secret;
+    _platform = {
+      client: new Stripe(secret, { apiVersion: "2026-02-25.clover" }),
+      account,
+      feePct,
+    };
+  }
   return _platform;
 }
