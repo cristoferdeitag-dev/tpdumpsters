@@ -48,3 +48,48 @@ export function getStripe(): Stripe {
 export function getPublishableKey(): string {
   return getKeys().publishable;
 }
+
+// ── HTM platform commission (Stripe Connect direct charges) ──────────
+// Optional config. When present, /api/checkout creates its sessions through
+// the HTM platform account with a Stripe-Account header pointing at TP's
+// connected account, plus an application fee — TP still collects in his own
+// account (same emails, same payout flow) and the fee is deducted pre-payout.
+// When absent, the checkout charges with TP's own key exactly as before, so
+// removing the config (env vars or JSON fields) is the rollback switch.
+export type PlatformConfig = { client: Stripe; account: string; feePct: number };
+
+let _platform: PlatformConfig | null | undefined;
+
+export function getPlatform(): PlatformConfig | null {
+  if (_platform !== undefined) return _platform;
+
+  let secret = process.env.HTM_PLATFORM_SECRET_KEY || "";
+  let account = process.env.HTM_CONNECTED_ACCOUNT_ID || "";
+  let feePct = Number(process.env.HTM_APPLICATION_FEE_PCT);
+
+  if (!secret || !account || !Number.isFinite(feePct)) {
+    try {
+      const raw = readFileSync("/home/u781187371/stripe-keys.json", "utf-8");
+      const config = JSON.parse(raw);
+      secret = secret || config.htm_platform_secret_key || "";
+      account = account || config.htm_connected_account_id || "";
+      if (!Number.isFinite(feePct)) feePct = Number(config.htm_application_fee_pct);
+    } catch {
+      // No config file — legacy single-account mode.
+    }
+  }
+
+  // feePct sanity gate: a typo like 20 (meaning 20%) must never silently
+  // skim ten times the agreed commission off TP's payouts.
+  if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct <= 0 || feePct > 5) {
+    _platform = null;
+    return _platform;
+  }
+
+  _platform = {
+    client: new Stripe(secret, { apiVersion: "2026-02-25.clover" }),
+    account,
+    feePct,
+  };
+  return _platform;
+}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, getPlatform } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
@@ -303,7 +303,14 @@ export async function POST(request: Request) {
     // Create Stripe Checkout Session
     const origin = request.headers.get("origin") || "https://tpdumpsters.com";
 
-    const session = await getStripe().checkout.sessions.create({
+    // HTM commission mode (Connect direct charge): when configured, the
+    // session is created via the HTM platform on TP's connected account —
+    // the charge, customer emails, and payout all stay on TP's account; the
+    // application fee is deducted pre-payout. Unconfigured = legacy mode.
+    const platform = getPlatform();
+    const amountCents = Math.round(chargeTotal * 100);
+
+    const session = await (platform?.client ?? getStripe()).checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
@@ -339,6 +346,9 @@ export async function POST(request: Request) {
         statement_descriptor: 'TP DUMPSTERS',
         statement_descriptor_suffix: 'DUMPSTER',
         receipt_email: booking.customerEmail,
+        ...(platform
+          ? { application_fee_amount: Math.round((amountCents * platform.feePct) / 100) }
+          : {}),
       },
       line_items: [
         {
@@ -349,7 +359,7 @@ export async function POST(request: Request) {
               description,
               images: ["https://tpdumpsters.com/images/hero/red-dumpster-construction.png"],
             },
-            unit_amount: Math.round(chargeTotal * 100), // cents (server-authoritative)
+            unit_amount: amountCents, // cents (server-authoritative)
           },
           quantity: 1,
         },
@@ -376,10 +386,10 @@ export async function POST(request: Request) {
       },
       success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
       cancel_url: `${origin}/booking?cancelled=true`,
-    });
+    }, platform ? { stripeAccount: platform.account } : undefined);
 
     console.log(
-      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal} | Session: ${session.id}`
+      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${platform.feePct}%` : ""} | Session: ${session.id}`
     );
 
     return NextResponse.json({
