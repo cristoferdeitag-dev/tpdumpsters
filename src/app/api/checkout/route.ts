@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { getStripe, getPlatform } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
@@ -310,7 +311,7 @@ export async function POST(request: Request) {
     const platform = getPlatform();
     const amountCents = Math.round(chargeTotal * 100);
 
-    const session = await (platform?.client ?? getStripe()).checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
@@ -386,7 +387,28 @@ export async function POST(request: Request) {
       },
       success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
       cancel_url: `${origin}/booking?cancelled=true`,
-    }, platform ? { stripeAccount: platform.account } : undefined);
+    };
+
+    // FAILSAFE: a real customer must never lose their booking to the
+    // commission plumbing. If the platform-mode create fails for any reason
+    // (e.g. Stripe rejecting the cross-border fee in practice), scream in the
+    // logs and retry once the legacy way — sale first, commission second.
+    let session;
+    if (platform) {
+      try {
+        session = await platform.client.checkout.sessions.create(sessionParams, {
+          stripeAccount: platform.account,
+        });
+      } catch (feeErr) {
+        console.error(
+          `🚨 HTM COMMISSION checkout create FAILED (${(feeErr as Error).message}) — retrying WITHOUT fee so the sale isn't lost`
+        );
+        delete sessionParams.payment_intent_data?.application_fee_amount;
+        session = await getStripe().checkout.sessions.create(sessionParams);
+      }
+    } else {
+      session = await getStripe().checkout.sessions.create(sessionParams);
+    }
 
     console.log(
       `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${platform.feePct}%` : ""} | Session: ${session.id}`
