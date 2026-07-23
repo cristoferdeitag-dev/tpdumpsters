@@ -27,6 +27,29 @@ function getDbConfig() {
   };
 }
 
+// Idempotency (Sol audit 2026-07-23): Stripe retries deliveries, and the
+// handlers below have side effects (calendar, SMS, Telegram, CRM mirror).
+// First claim of an event id wins; replays return early. The claim happens
+// BEFORE any side effect. On a DB hiccup we process anyway — a duplicate
+// SMS is cheaper than a paying customer's booking never being fulfilled.
+async function claimEvent(eventId: string): Promise<boolean> {
+  let conn: mysql.Connection | null = null;
+  try {
+    conn = await mysql.createConnection(getDbConfig());
+    await conn.execute(
+      "CREATE TABLE IF NOT EXISTS stripe_webhook_events (event_id VARCHAR(255) PRIMARY KEY, received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+    );
+    await conn.execute("INSERT INTO stripe_webhook_events (event_id) VALUES (?)", [eventId]);
+    return true;
+  } catch (err) {
+    if ((err as { code?: string }).code === "ER_DUP_ENTRY") return false;
+    console.error("⚠️ Webhook dedupe unavailable, processing anyway:", (err as Error).message);
+    return true;
+  } finally {
+    await conn?.end().catch(() => {});
+  }
+}
+
 function getWebhookSecret(): string | null {
   try {
     const keys = JSON.parse(fs.readFileSync("/home/u781187371/stripe-keys.json", "utf8"));
@@ -76,6 +99,11 @@ export async function POST(req: NextRequest) {
     console.log("✅ Webhook: Stripe signature verified");
 
     const event = JSON.parse(rawBody);
+
+    if (event.id && !(await claimEvent(event.id))) {
+      console.log(`⏭️ Webhook: duplicate delivery of ${event.id} — already processed`);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
 
     // Manual-invoice flow — Asaí or Thiago creates invoices in the Stripe
     // Dashboard and the customer pays them (Stripe link OR offline marked
@@ -325,6 +353,16 @@ export async function POST(req: NextRequest) {
     if (!session?.metadata) {
       console.error("⚠️ Webhook: no metadata in session");
       return NextResponse.json({ received: true, error: "no metadata" });
+    }
+
+    // Fulfill only PAID sessions (Sol audit): checkout.session.completed can
+    // arrive with payment_status=unpaid for delayed payment methods. Cards
+    // settle inline, so anything not "paid" here gets logged and skipped.
+    if (session.payment_status && session.payment_status !== "paid") {
+      console.warn(
+        `⏳ Webhook: session ${session.id} completed with payment_status=${session.payment_status} — not fulfilling`
+      );
+      return NextResponse.json({ received: true, awaiting_payment: true });
     }
 
     const meta = session.metadata;

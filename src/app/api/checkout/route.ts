@@ -108,12 +108,17 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      if (!Number.isFinite(clientTotal) || clientTotal <= 0) {
-        return NextResponse.json({ error: "Invalid total price" }, { status: 400 });
-      }
-      chargeTotal = clientTotal;
+      // No client-price fallback, ever (Sol audit 2026-07-23, CRITICAL): the
+      // old path charged whatever totalPrice the request claimed for any
+      // made-up serviceType/size — a direct POST could buy a booking for
+      // $0.50. The wizard only offers catalog services, so a miss here is a
+      // stale client or an attacker; both get a 400.
       console.warn(
-        `⚠️ CHECKOUT uncatalogued service — charging client total: ${booking.service.serviceType} ${booking.service.size} total=$${clientTotal}`
+        `🚫 CHECKOUT rejected — uncatalogued service: ${booking.service.serviceType} ${booking.service.size} (client claimed $${clientTotal})`
+      );
+      return NextResponse.json(
+        { error: "That service selection isn't available online. Please refresh the page, or call us at (510) 650-2083." },
+        { status: 400 }
       );
     }
 
@@ -301,8 +306,12 @@ export async function POST(request: Request) {
           ]
     ).map((line) => `• ${line}`).join("\n");
 
-    // Create Stripe Checkout Session
-    const origin = request.headers.get("origin") || "https://tpdumpsters.com";
+    // Create Stripe Checkout Session.
+    // success/cancel URLs are pinned to the production domain (Sol audit
+    // 2026-07-23): deriving them from the Origin header let an attacker have
+    // Stripe redirect the paying customer — session_id included — to a domain
+    // they control, then read the customer's PII from /api/checkout/session.
+    const origin = "https://tpdumpsters.com";
 
     // HTM commission mode (Connect direct charge): when configured, the
     // session is created via the HTM platform on TP's connected account —
@@ -394,11 +403,13 @@ export async function POST(request: Request) {
     // (e.g. Stripe rejecting the cross-border fee in practice), scream in the
     // logs and retry once the legacy way — sale first, commission second.
     let session;
+    let feeApplied = false;
     if (platform) {
       try {
         session = await platform.client.checkout.sessions.create(sessionParams, {
           stripeAccount: platform.account,
         });
+        feeApplied = true;
       } catch (feeErr) {
         console.error(
           `🚨 HTM COMMISSION checkout create FAILED (${(feeErr as Error).message}) — retrying WITHOUT fee so the sale isn't lost`
@@ -411,7 +422,7 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${platform.feePct}%` : ""} | Session: ${session.id}`
+      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${feeApplied ? `${platform.feePct}%` : "SKIPPED (failsafe)"}` : ""} | Session: ${session.id}`
     );
 
     return NextResponse.json({

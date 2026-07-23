@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ServiceStep from "./ServiceStep";
 import DateStep from "./DateStep";
 import AddressStep from "./AddressStep";
@@ -82,6 +82,19 @@ export default function BookingWizard() {
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const wizardTopRef = useRef<HTMLDivElement>(null);
+
+  // Each step has a different height, so the browser keeps a stale scroll
+  // offset on step change and the user lands way down by the footer. Snap
+  // back to the top of the wizard whenever the step changes (not on mount).
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
 
   const updateBooking = (updates: Partial<BookingData>) => {
     setBooking((prev) => {
@@ -151,7 +164,7 @@ export default function BookingWizard() {
   }
 
   return (
-    <div className="w-[92%] sm:w-[85%] max-w-[900px] mx-auto py-10">
+    <div ref={wizardTopRef} className="w-[92%] sm:w-[85%] max-w-[900px] mx-auto py-10 scroll-mt-24">
       {/* Progress bar */}
       <div className="flex items-center justify-between mb-10 px-2">
         {STEPS.map((s, i) => (

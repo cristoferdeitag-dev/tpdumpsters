@@ -41,24 +41,29 @@ const SERVICES: { label: string; href: string }[] = [
   { label: "Mixed Materials", href: "/mixed-materials" },
 ];
 
+// Compact by design (Cris, 2026-07-23): every link stays (SEO backbone —
+// do NOT remove entries), but the type scale, spacing and column layout are
+// tightened so the footer reads as a small closing strip, not a wall.
 function LinkCol({
   title,
   links,
+  twoCols = false,
 }: {
   title: string;
   links: { label: string; href: string }[];
+  twoCols?: boolean;
 }) {
   return (
     <div className="text-left">
-      <h3 className="text-white text-sm font-bold uppercase tracking-wide mb-3 font-[var(--font-poppins)]">
+      <h3 className="text-white text-[11px] font-bold uppercase tracking-wide mb-2 font-[var(--font-poppins)]">
         {title}
       </h3>
-      <ul className="space-y-1.5">
+      <ul className={twoCols ? "grid grid-cols-2 gap-x-3 gap-y-1" : "space-y-1"}>
         {links.map((l) => (
           <li key={l.href}>
             <a
               href={l.href}
-              className="text-[#ddd] text-sm hover:text-white transition-colors duration-200 font-[var(--font-poppins)]"
+              className="text-[#eec] text-xs leading-snug hover:text-white transition-colors duration-200 font-[var(--font-poppins)]"
             >
               {l.label}
             </a>
@@ -71,39 +76,39 @@ function LinkCol({
 
 export default function Footer() {
   return (
-    <footer className="bg-tp-red pt-12 pb-8">
+    <footer className="bg-tp-red pt-7 pb-4">
       <div className="w-[88%] max-w-[1200px] mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
-          <LinkCol title="Service Areas" links={SERVICE_AREAS} />
+        <div className="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-x-6 gap-y-5 mb-5">
+          <LinkCol title="Service Areas" links={SERVICE_AREAS} twoCols />
           <LinkCol title="Counties We Serve" links={COUNTIES} />
           <LinkCol title="Services" links={SERVICES} />
           <div className="text-left">
-            <h3 className="text-white text-sm font-bold uppercase tracking-wide mb-3 font-[var(--font-poppins)]">
+            <h3 className="text-white text-[11px] font-bold uppercase tracking-wide mb-2 font-[var(--font-poppins)]">
               TP Dumpsters
             </h3>
-            <ul className="space-y-1.5 text-sm font-[var(--font-poppins)]">
+            <ul className="space-y-1 text-xs font-[var(--font-poppins)]">
               <li>
-                <a href="/booking" className="text-[#ddd] hover:text-white transition-colors duration-200">
+                <a href="/booking" className="text-[#eec] hover:text-white transition-colors duration-200">
                   Book a Dumpster
                 </a>
               </li>
               <li>
-                <a href="/services" className="text-[#ddd] hover:text-white transition-colors duration-200">
+                <a href="/services" className="text-[#eec] hover:text-white transition-colors duration-200">
                   All Services
                 </a>
               </li>
               <li>
-                <a href="/blog" className="text-[#ddd] hover:text-white transition-colors duration-200">
+                <a href="/blog" className="text-[#eec] hover:text-white transition-colors duration-200">
                   Blog
                 </a>
               </li>
-              <li className="pt-2">
-                <a href="tel:+15106502083" className="text-[#ddd] hover:text-white transition-colors duration-200">
+              <li className="pt-1">
+                <a href="tel:+15106502083" className="text-white font-semibold hover:text-[#eec] transition-colors duration-200">
                   (510) 650-2083
                 </a>
               </li>
               <li>
-                <a href="mailto:contact@tpdumpsters.com" className="text-[#ddd] hover:text-white transition-colors duration-200 break-all">
+                <a href="mailto:contact@tpdumpsters.com" className="text-[#eec] hover:text-white transition-colors duration-200 break-all">
                   contact@tpdumpsters.com
                 </a>
               </li>
@@ -111,11 +116,11 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/20 pt-6 text-center">
-          <p className="text-[#ddd] text-sm font-[var(--font-poppins)]">
+        <div className="border-t border-white/20 pt-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-center sm:text-left">
+          <p className="text-[#eec] text-[11px] font-[var(--font-poppins)]">
             150 Brookside Dr, Richmond, California, 94801, United States
           </p>
-          <p className="text-[#bbb] text-xs mt-2 font-[var(--font-poppins)]">
+          <p className="text-[#e8c8c8] text-[11px] font-[var(--font-poppins)]">
             &copy; {new Date().getFullYear()} TP Dumpsters. All rights reserved.
           </p>
         </div>
