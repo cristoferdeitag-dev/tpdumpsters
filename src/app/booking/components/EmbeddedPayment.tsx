@@ -15,15 +15,11 @@ import type { BookingData } from "./BookingWizard";
 interface Props {
   clientSecret: string;
   publishableKey: string;
-  /** Connected account the session lives on (platform/commission mode). */
-  stripeAccount?: string;
-  /** Fallback landing if Stripe's own post-payment redirect doesn't fire. */
-  successUrl?: string;
   booking: BookingData;
   onBack: () => void;
 }
 
-export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAccount, successUrl, booking, onBack }: Props) {
+export default function EmbeddedPayment({ clientSecret, publishableKey, booking, onBack }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const checkoutRef = useRef<StripeCheckout | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -40,9 +36,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
 
     (async () => {
       try {
-        // Same key context that created the session: platform key + connected
-        // account in commission mode, plain key otherwise.
-        const stripe = await loadStripe(publishableKey, stripeAccount ? { stripeAccount } : undefined);
+        const stripe = await loadStripe(publishableKey);
         if (!stripe) throw new Error("Stripe.js failed to load");
         if (cancelled) return;
         const checkout = stripe.initCheckout({ clientSecret });
@@ -69,7 +63,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       checkoutRef.current?.getPaymentElement()?.destroy();
       checkoutRef.current = null;
     };
-  }, [clientSecret, publishableKey, stripeAccount]);
+  }, [clientSecret, publishableKey]);
 
   const handlePay = async () => {
     const checkout = checkoutRef.current;
@@ -100,10 +94,6 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       if (result && result.type === "error") {
         setPayError(result.error.message || "Your card was declined. Please try another card.");
         setPaying(false);
-      } else if (result && result.type === "success" && successUrl) {
-        // Belt-and-suspenders: if Stripe's own redirect didn't fire, land the
-        // customer on the success page rather than hanging on "Processing...".
-        window.location.href = successUrl;
       }
     } catch (err) {
       console.error("Payment confirm error:", err);

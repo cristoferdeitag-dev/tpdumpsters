@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaCreditCard } from "react-icons/fa6";
+import { FaCreditCard, FaPhone } from "react-icons/fa6";
 import type { BookingData } from "./BookingWizard";
 
 interface Props {
@@ -187,14 +187,22 @@ export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }:
         >
           ← Back
         </button>
-        <button
-          onClick={onSubmit}
-          disabled={isSubmitting || !authorizedCharges}
-          className="flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-base bg-tp-red text-white hover:bg-tp-red-dark shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <FaCreditCard />
-          {isSubmitting ? "Preparing secure payment..." : "💳 Pay & confirm booking"}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <a
+            href="tel:+15106502083"
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm border-2 border-tp-red text-tp-red hover:bg-tp-red hover:text-white transition-colors"
+          >
+            <FaPhone /> Call to book
+          </a>
+          <button
+            onClick={onSubmit}
+            disabled={isSubmitting || !authorizedCharges}
+            className="flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-base bg-tp-red text-white hover:bg-tp-red-dark shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaCreditCard />
+            {isSubmitting ? "Preparing secure payment..." : "💳 Pay & confirm booking"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -50,21 +50,6 @@ async function claimEvent(eventId: string): Promise<boolean> {
   }
 }
 
-// Counterpart to claimEvent (3-AI flow review 2026-07-24): if processing
-// dies AFTER the claim, the claim must be released — otherwise Stripe's
-// retry gets discarded as "duplicate" and the booking stays half-fulfilled.
-async function releaseEvent(eventId: string): Promise<void> {
-  let conn: mysql.Connection | null = null;
-  try {
-    conn = await mysql.createConnection(getDbConfig());
-    await conn.execute("DELETE FROM stripe_webhook_events WHERE event_id = ?", [eventId]);
-  } catch (err) {
-    console.error("⚠️ Webhook claim release failed:", (err as Error).message);
-  } finally {
-    await conn?.end().catch(() => {});
-  }
-}
-
 function getWebhookSecret(): string | null {
   try {
     const keys = JSON.parse(fs.readFileSync("/home/u781187371/stripe-keys.json", "utf8"));
@@ -95,7 +80,6 @@ function verifyStripeSignature(payload: string, sigHeader: string, secret: strin
 }
 
 export async function POST(req: NextRequest) {
-  let claimedEventId: string | null = null;
   try {
     // Verify Stripe webhook signature
     const rawBody = await req.text();
@@ -120,7 +104,6 @@ export async function POST(req: NextRequest) {
       console.log(`⏭️ Webhook: duplicate delivery of ${event.id} — already processed`);
       return NextResponse.json({ received: true, duplicate: true });
     }
-    claimedEventId = event.id || null;
 
     // Manual-invoice flow — Asaí or Thiago creates invoices in the Stripe
     // Dashboard and the customer pays them (Stripe link OR offline marked
@@ -716,9 +699,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("❌ Webhook error:", error);
-    // Give the claim back so Stripe's retry actually reprocesses this event
-    // instead of being swallowed as a duplicate.
-    if (claimedEventId) await releaseEvent(claimedEventId);
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 }

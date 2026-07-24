@@ -83,15 +83,7 @@ export default function BookingWizard() {
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [payment, setPayment] = useState<{
-    clientSecret: string;
-    publishableKey: string;
-    stripeAccount?: string;
-    successUrl?: string;
-    snapshot: string;
-    createdAt: number;
-  } | null>(null);
-  const [showPayment, setShowPayment] = useState(false);
+  const [payment, setPayment] = useState<{ clientSecret: string; publishableKey: string } | null>(null);
   const wizardTopRef = useRef<HTMLDivElement>(null);
 
   // Each step has a different height, so the browser keeps a stale scroll
@@ -147,18 +139,6 @@ export default function BookingWizard() {
         booking.totalPrice
       );
     }
-
-    // Back→Pay with nothing changed reuses the session already created —
-    // otherwise every click minted a fresh customer + booking row + payable
-    // session, and two of them could BOTH get paid (3-AI flow review).
-    // Sessions expire server-side at 30 min; refresh ours after 25.
-    const snapshot = JSON.stringify(booking);
-    if (payment && payment.snapshot === snapshot && Date.now() - payment.createdAt < 25 * 60 * 1000) {
-      setShowPayment(true);
-      wizardTopRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -173,15 +153,7 @@ export default function BookingWizard() {
       const data = await res.json();
       if (res.ok && data.clientSecret && data.publishableKey) {
         // Mount Stripe's payment form right here in the wizard
-        setPayment({
-          clientSecret: data.clientSecret,
-          publishableKey: data.publishableKey,
-          stripeAccount: data.stripeAccount,
-          successUrl: data.successUrl,
-          snapshot,
-          createdAt: Date.now(),
-        });
-        setShowPayment(true);
+        setPayment({ clientSecret: data.clientSecret, publishableKey: data.publishableKey });
         setIsSubmitting(false);
         wizardTopRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       } else if (res.ok && data.checkoutUrl) {
@@ -238,24 +210,22 @@ export default function BookingWizard() {
 
       {/* Step content */}
       <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 min-h-[400px]">
-        {showPayment && payment && (
+        {payment && (
           <EmbeddedPayment
             clientSecret={payment.clientSecret}
             publishableKey={payment.publishableKey}
-            stripeAccount={payment.stripeAccount}
-            successUrl={payment.successUrl}
             booking={booking}
-            onBack={() => setShowPayment(false)}
+            onBack={() => setPayment(null)}
           />
         )}
-        {!showPayment && step === 1 && (
+        {!payment && step === 1 && (
           <ServiceStep
             booking={booking}
             updateBooking={updateBooking}
             onNext={nextStep}
           />
         )}
-        {!showPayment && step === 2 && (
+        {!payment && step === 2 && (
           <DateStep
             booking={booking}
             updateBooking={updateBooking}
@@ -263,7 +233,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {!showPayment && step === 3 && (
+        {!payment && step === 3 && (
           <AddressStep
             booking={booking}
             updateBooking={updateBooking}
@@ -271,7 +241,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {!showPayment && step === 4 && (
+        {!payment && step === 4 && (
           <SummaryStep
             booking={booking}
             onBack={prevStep}

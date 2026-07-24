@@ -56,15 +56,7 @@ export function getPublishableKey(): string {
 // account (same emails, same payout flow) and the fee is deducted pre-payout.
 // When absent, the checkout charges with TP's own key exactly as before, so
 // removing the config (env vars or JSON fields) is the rollback switch.
-export type PlatformConfig = { client: Stripe; account: string; feePct: number; publishable: string };
-
-// The platform's PUBLISHABLE key (public by definition — it ships to every
-// browser). Sessions created through the platform can only be fetched
-// client-side with THIS key + the connected account header; TP's own
-// publishable key gets checkout_connect_mismatched_key. Overridable via
-// htm_platform_publishable_key in config.
-const HTM_PLATFORM_PUBLISHABLE_FALLBACK =
-  "pk_live_51PBk9SC9BbcBVhfTaE8sanJHzsPccpwsMN2Do315GGRUdNIcyoI81G6FyUFtWs58Sz5P4lTkmLLspv391D2z6Pyx00WeRJshZ2";
+export type PlatformConfig = { client: Stripe; account: string; feePct: number };
 
 // Config is re-read at most once a minute so that editing stripe-keys.json
 // takes effect without restarting next-server — deleting the htm_* fields
@@ -82,10 +74,9 @@ export function getPlatform(): PlatformConfig | null {
   let secret = process.env.HTM_PLATFORM_SECRET_KEY || "";
   let account = process.env.HTM_CONNECTED_ACCOUNT_ID || "";
   let feePct = Number(process.env.HTM_APPLICATION_FEE_PCT);
-  let publishable = process.env.HTM_PLATFORM_PUBLISHABLE_KEY || "";
   let anyFieldPresent = Boolean(secret || account || Number.isFinite(feePct));
 
-  if (!secret || !account || !Number.isFinite(feePct) || !publishable) {
+  if (!secret || !account || !Number.isFinite(feePct)) {
     try {
       const raw = readFileSync("/home/u781187371/stripe-keys.json", "utf-8");
       const config = JSON.parse(raw);
@@ -93,20 +84,15 @@ export function getPlatform(): PlatformConfig | null {
         "htm_platform_secret_key" in config || "htm_connected_account_id" in config || "htm_application_fee_pct" in config;
       secret = secret || config.htm_platform_secret_key || "";
       account = account || config.htm_connected_account_id || "";
-      publishable = publishable || config.htm_platform_publishable_key || "";
       if (!Number.isFinite(feePct)) feePct = Number(config.htm_application_fee_pct);
     } catch {
       // No config file — legacy single-account mode.
     }
   }
-  if (!publishable) publishable = HTM_PLATFORM_PUBLISHABLE_FALLBACK;
 
   // Validity gate, incl. fee sanity: a typo like 20 (meaning 20%) must never
-  // silently skim ten times the agreed commission off TP's payouts. 0 IS
-  // valid (Cris 2026-07-23): validation mode — everything flows through the
-  // platform but no fee is charged, so the whole pipeline proves itself
-  // before a single cent moves to HTM.
-  if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct < 0 || feePct > 5) {
+  // silently skim ten times the agreed commission off TP's payouts.
+  if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct <= 0 || feePct > 5) {
     // Partial/broken config is NOT the same as no config: sales must keep
     // flowing (legacy mode), but silently dropping the commission would look
     // like "everything works" while HTM earns $0 — scream in the logs.
@@ -125,7 +111,6 @@ export function getPlatform(): PlatformConfig | null {
       client: new Stripe(secret, { apiVersion: "2026-02-25.clover" }),
       account,
       feePct,
-      publishable,
     };
   }
   return _platform;

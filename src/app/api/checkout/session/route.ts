@@ -26,10 +26,6 @@ export async function GET(request: Request) {
     };
 
     return NextResponse.json({
-      // The success page must not celebrate (nor fire the Ads conversion)
-      // for a session that was never paid — anyone with the session id could
-      // open the URL of an open/abandoned session (3-AI flow review).
-      paymentStatus: session.payment_status || null,
       bookingId: md.booking_id || null,
       customerName: md.customer_name || null,
       customerEmail: session.customer_details?.email || null,
