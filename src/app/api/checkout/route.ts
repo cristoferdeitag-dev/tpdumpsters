@@ -365,7 +365,7 @@ export async function POST(request: Request) {
         statement_descriptor: 'TP DUMPSTERS',
         statement_descriptor_suffix: 'DUMPSTER',
         receipt_email: booking.customerEmail,
-        ...(platform
+        ...(platform && platform.feePct > 0
           ? { application_fee_amount: Math.round((amountCents * platform.feePct) / 100) }
           : {}),
       },
@@ -445,7 +445,7 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${feeApplied ? `${platform.feePct}%` : "SKIPPED (failsafe)"}` : ""} | Session: ${session.id}`
+      `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${feeApplied ? (platform.feePct > 0 ? `${platform.feePct}%` : "0% (validation mode)") : "SKIPPED (failsafe)"}` : ""} | Session: ${session.id}`
     );
 
     return NextResponse.json(

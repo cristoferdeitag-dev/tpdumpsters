@@ -102,8 +102,11 @@ export function getPlatform(): PlatformConfig | null {
   if (!publishable) publishable = HTM_PLATFORM_PUBLISHABLE_FALLBACK;
 
   // Validity gate, incl. fee sanity: a typo like 20 (meaning 20%) must never
-  // silently skim ten times the agreed commission off TP's payouts.
-  if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct <= 0 || feePct > 5) {
+  // silently skim ten times the agreed commission off TP's payouts. 0 IS
+  // valid (Cris 2026-07-23): validation mode — everything flows through the
+  // platform but no fee is charged, so the whole pipeline proves itself
+  // before a single cent moves to HTM.
+  if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct < 0 || feePct > 5) {
     // Partial/broken config is NOT the same as no config: sales must keep
     // flowing (legacy mode), but silently dropping the commission would look
     // like "everything works" while HTM earns $0 — scream in the logs.
