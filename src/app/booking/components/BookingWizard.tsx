@@ -87,15 +87,16 @@ export default function BookingWizard() {
   const wizardTopRef = useRef<HTMLDivElement>(null);
 
   // Each step has a different height, so the browser keeps a stale scroll
-  // offset on step change and the user lands way down by the footer. Snap
-  // back to the top of the wizard whenever the step changes (not on mount).
+  // offset on step change and the user lands way down by the footer. Jump
+  // back INSTANTLY (no smooth animation — seeing the footer flash by feels
+  // broken, per Cris 2026-07-23) whenever the step changes, not on mount.
   const mountedRef = useRef(false);
   useEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
       return;
     }
-    wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    wizardTopRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
   }, [step]);
 
   const updateBooking = (updates: Partial<BookingData>) => {
@@ -154,7 +155,7 @@ export default function BookingWizard() {
         // Mount Stripe's payment form right here in the wizard
         setPayment({ clientSecret: data.clientSecret, publishableKey: data.publishableKey });
         setIsSubmitting(false);
-        wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        wizardTopRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       } else if (res.ok && data.checkoutUrl) {
         // Server answered with the redirect flow (rollback safety net)
         window.location.href = data.checkoutUrl;
@@ -213,6 +214,7 @@ export default function BookingWizard() {
           <EmbeddedPayment
             clientSecret={payment.clientSecret}
             publishableKey={payment.publishableKey}
+            booking={booking}
             onBack={() => setPayment(null)}
           />
         )}

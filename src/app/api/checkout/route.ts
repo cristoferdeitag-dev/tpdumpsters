@@ -331,10 +331,12 @@ export async function POST(request: Request) {
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
-      // Require the card's billing address so Stripe runs AVS (address +
-      // ZIP match against the issuing bank). A Radar rule can then block
-      // mismatches — a strong, low-friction signal against stolen cards.
-      billing_address_collection: "required",
+      // AVS stays on in both modes (address + ZIP match against the issuing
+      // bank; Radar rules can block mismatches — the strongest low-friction
+      // signal against stolen cards). Redirect mode collects the billing
+      // address on Stripe's page; custom mode isn't allowed that param, so
+      // the wizard passes the already-collected billing address in confirm().
+      ...(wantsEmbedded ? {} : { billing_address_collection: "required" as const }),
       // Auto-generate a finalized invoice on payment success with the same
       // formatting Asaí uses on her manual invoices (bulleted terms +
       // ship-to address visible).
@@ -403,7 +405,10 @@ export async function POST(request: Request) {
       },
       ...(wantsEmbedded
         ? {
-            ui_mode: "embedded" as const,
+            // "custom" = our own UI with Stripe's PaymentElement: the customer
+            // only sees card fields inside the Summary step (Booking-style),
+            // while name/address collected earlier ride along in confirm().
+            ui_mode: "custom" as const,
             return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
           }
         : {
