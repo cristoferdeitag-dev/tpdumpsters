@@ -200,7 +200,7 @@ export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }:
             className="flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-base bg-tp-red text-white hover:bg-tp-red-dark shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaCreditCard />
-            {isSubmitting ? "Preparing secure payment..." : "💳 Pay & confirm booking"}
+            {isSubmitting ? "Redirecting to payment..." : "💳 Pay & confirm booking"}
           </button>
         </div>
       </div>

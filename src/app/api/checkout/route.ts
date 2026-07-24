@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe, getPlatform, getPublishableKey } from "@/lib/stripe";
+import { getStripe, getPlatform } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
@@ -320,23 +320,14 @@ export async function POST(request: Request) {
     const platform = getPlatform();
     const amountCents = Math.round(chargeTotal * 100);
 
-    // Embedded mode (2026-07-24): the new wizard mounts Stripe's payment form
-    // inside the Summary step instead of redirecting. Same Checkout Session
-    // (Radar, AVS, 3DS, invoice, application fee all identical) — only the
-    // presentation changes. Old/cached clients that don't send the flag keep
-    // getting the redirect flow.
-    const wantsEmbedded = booking.embedded === true;
-
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
-      // AVS stays on in both modes (address + ZIP match against the issuing
-      // bank; Radar rules can block mismatches — the strongest low-friction
-      // signal against stolen cards). Redirect mode collects the billing
-      // address on Stripe's page; custom mode isn't allowed that param, so
-      // the wizard passes the already-collected billing address in confirm().
-      ...(wantsEmbedded ? {} : { billing_address_collection: "required" as const }),
+      // Require the card's billing address so Stripe runs AVS (address +
+      // ZIP match against the issuing bank). A Radar rule can then block
+      // mismatches — a strong, low-friction signal against stolen cards.
+      billing_address_collection: "required",
       // Auto-generate a finalized invoice on payment success with the same
       // formatting Asaí uses on her manual invoices (bulleted terms +
       // ship-to address visible).
@@ -403,18 +394,8 @@ export async function POST(request: Request) {
         billing_zip: booking.billingAddress?.zip || "",
         gclid: (booking.gclid || "").slice(0, 200),
       },
-      ...(wantsEmbedded
-        ? {
-            // "custom" = our own UI with Stripe's PaymentElement: the customer
-            // only sees card fields inside the Summary step (Booking-style),
-            // while name/address collected earlier ride along in confirm().
-            ui_mode: "custom" as const,
-            return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
-          }
-        : {
-            success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
-            cancel_url: `${origin}/booking?cancelled=true`,
-          }),
+      success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+      cancel_url: `${origin}/booking?cancelled=true`,
     };
 
     // FAILSAFE: a real customer must never lose their booking to the
@@ -444,21 +425,11 @@ export async function POST(request: Request) {
       `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${feeApplied ? `${platform.feePct}%` : "SKIPPED (failsafe)"}` : ""} | Session: ${session.id}`
     );
 
-    return NextResponse.json(
-      wantsEmbedded
-        ? {
-            success: true,
-            bookingId,
-            clientSecret: session.client_secret,
-            // Publishable by definition; the embedded form needs it client-side.
-            publishableKey: getPublishableKey(),
-          }
-        : {
-            success: true,
-            bookingId,
-            checkoutUrl: session.url,
-          }
-    );
+    return NextResponse.json({
+      success: true,
+      bookingId,
+      checkoutUrl: session.url,
+    });
   } catch (error) {
     console.error("Checkout API error:", error);
     return NextResponse.json(
