@@ -410,6 +410,10 @@ export async function POST(request: Request) {
             // while name/address collected earlier ride along in confirm().
             ui_mode: "custom" as const,
             return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+            // 30 min (Stripe's minimum) instead of the 24h default: an
+            // abandoned in-page session shouldn't stay payable all day
+            // after dates/availability may have changed (3-AI flow review).
+            expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
           }
         : {
             success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
@@ -450,6 +454,10 @@ export async function POST(request: Request) {
             success: true,
             bookingId,
             clientSecret: session.client_secret,
+            // Stripe normally redirects to return_url on payment success; if
+            // it ever doesn't, the wizard uses this to land the customer on
+            // the success page instead of hanging on "Processing...".
+            successUrl: `${origin}/booking/success?session_id=${session.id}&booking_id=${bookingId}`,
             // The browser must init Stripe with the SAME key context that
             // created the session: platform publishable + connected account
             // when the fee path succeeded, TP's own key otherwise — a

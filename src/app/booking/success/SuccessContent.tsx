@@ -28,6 +28,7 @@ type SessionInfo = {
   dumpsterSize: string | null;
   serviceType: string | null;
   amountTotal: number | null;
+  paymentStatus?: string | null;
   hostedInvoiceUrl: string | null;
   invoicePdf: string | null;
 };
@@ -57,10 +58,15 @@ export default function SuccessContent() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data: SessionInfo | null) => {
         setInfo(data);
-        trackBookingCompleted(
-          data?.bookingId || bookingIdParam,
-          data?.amountTotal || 0
-        );
+        // Only count (and celebrate) PAID sessions — an open/abandoned
+        // session reaching this URL must not fire a false Ads conversion.
+        const paid = !data || data.paymentStatus == null || data.paymentStatus === "paid";
+        if (paid) {
+          trackBookingCompleted(
+            data?.bookingId || bookingIdParam,
+            data?.amountTotal || 0
+          );
+        }
         setTracked(true);
       })
       .catch(() => setInfo(null))
@@ -75,6 +81,34 @@ export default function SuccessContent() {
   const mapsUrl = fullAddress
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
     : null;
+
+  const unpaid = info != null && info.paymentStatus != null && info.paymentStatus !== "paid";
+
+  if (unpaid) {
+    return (
+      <section className="min-h-screen bg-[#f5f5f5] py-12">
+        <div className="w-[92%] sm:w-[85%] max-w-[700px] mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12 text-center">
+            <h1 className="font-[var(--font-poppins)] text-2xl font-bold text-[#333] mb-2">
+              Payment not completed
+            </h1>
+            <p className="font-[var(--font-poppins)] text-[#666] mb-6">
+              This booking hasn&apos;t been paid yet. If you just paid, give it a minute and refresh —
+              otherwise you can restart your booking or call us.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <a href="/booking" className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-sm bg-tp-red text-white hover:bg-tp-red-dark transition-colors">
+                Restart booking
+              </a>
+              <a href="tel:+15106502083" className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm border-2 border-tp-red text-tp-red hover:bg-tp-red hover:text-white transition-colors">
+                (510) 650-2083
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen bg-[#f5f5f5] py-12">
