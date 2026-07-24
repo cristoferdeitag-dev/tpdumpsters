@@ -63,14 +63,17 @@ export default function ChatWidget() {
     setShowQuickButtons(false);
 
     try {
-      const response = await fetch("/api/chat", {
+      // Gemini-powered assistant (2026-07-24): lives on HTM's server, keyed
+      // to TP's own Gemini project. Same request/response contract as the old
+      // rule-based /api/chat, which stays as an emergency fallback.
+      const response = await fetch("https://app.haztumarketing.com/api/tp-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMsg,
           sessionId,
           language,
-          history: messages.slice(-5), // Last 5 messages for context
+          history: messages.slice(-12), // context window for the quote flow
         }),
       });
 
