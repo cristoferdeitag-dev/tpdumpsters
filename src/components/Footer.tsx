@@ -56,8 +56,11 @@ function InlineLinks({
     <p className="text-[11px] leading-relaxed font-[var(--font-poppins)]">
       <span className="text-white font-bold uppercase tracking-wide mr-1.5">{title}:</span>
       {links.map((l, i) => (
-        <span key={l.href} className="whitespace-nowrap">
-          <a href={l.href} className="text-[#eec] hover:text-white transition-colors duration-200">
+        // The separator lives OUTSIDE the nowrap link and keeps real spaces:
+        // with it inside, the whole row became one unbreakable line and the
+        // page scrolled sideways on mobile (Cris, 2026-07-23).
+        <span key={l.href}>
+          <a href={l.href} className="text-[#eec] whitespace-nowrap hover:text-white transition-colors duration-200">
             {l.label}
           </a>
           {i < links.length - 1 && <span className="text-white/30"> · </span>}
