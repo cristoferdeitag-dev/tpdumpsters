@@ -15,11 +15,13 @@ import type { BookingData } from "./BookingWizard";
 interface Props {
   clientSecret: string;
   publishableKey: string;
+  /** Connected account the session lives on (platform/commission mode). */
+  stripeAccount?: string;
   booking: BookingData;
   onBack: () => void;
 }
 
-export default function EmbeddedPayment({ clientSecret, publishableKey, booking, onBack }: Props) {
+export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAccount, booking, onBack }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const checkoutRef = useRef<StripeCheckout | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -36,7 +38,9 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, booking,
 
     (async () => {
       try {
-        const stripe = await loadStripe(publishableKey);
+        // Same key context that created the session: platform key + connected
+        // account in commission mode, plain key otherwise.
+        const stripe = await loadStripe(publishableKey, stripeAccount ? { stripeAccount } : undefined);
         if (!stripe) throw new Error("Stripe.js failed to load");
         if (cancelled) return;
         const checkout = stripe.initCheckout({ clientSecret });
@@ -63,7 +67,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, booking,
       checkoutRef.current?.getPaymentElement()?.destroy();
       checkoutRef.current = null;
     };
-  }, [clientSecret, publishableKey]);
+  }, [clientSecret, publishableKey, stripeAccount]);
 
   const handlePay = async () => {
     const checkout = checkoutRef.current;

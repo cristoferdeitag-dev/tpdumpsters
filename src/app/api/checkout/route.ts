@@ -450,8 +450,13 @@ export async function POST(request: Request) {
             success: true,
             bookingId,
             clientSecret: session.client_secret,
-            // Publishable by definition; the embedded form needs it client-side.
-            publishableKey: getPublishableKey(),
+            // The browser must init Stripe with the SAME key context that
+            // created the session: platform publishable + connected account
+            // when the fee path succeeded, TP's own key otherwise — a
+            // mismatch throws checkout_connect_mismatched_key client-side.
+            ...(feeApplied && platform
+              ? { publishableKey: platform.publishable, stripeAccount: platform.account }
+              : { publishableKey: getPublishableKey() }),
           }
         : {
             success: true,

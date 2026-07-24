@@ -83,7 +83,7 @@ export default function BookingWizard() {
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [payment, setPayment] = useState<{ clientSecret: string; publishableKey: string } | null>(null);
+  const [payment, setPayment] = useState<{ clientSecret: string; publishableKey: string; stripeAccount?: string } | null>(null);
   const wizardTopRef = useRef<HTMLDivElement>(null);
 
   // Each step has a different height, so the browser keeps a stale scroll
@@ -153,7 +153,7 @@ export default function BookingWizard() {
       const data = await res.json();
       if (res.ok && data.clientSecret && data.publishableKey) {
         // Mount Stripe's payment form right here in the wizard
-        setPayment({ clientSecret: data.clientSecret, publishableKey: data.publishableKey });
+        setPayment({ clientSecret: data.clientSecret, publishableKey: data.publishableKey, stripeAccount: data.stripeAccount });
         setIsSubmitting(false);
         wizardTopRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
       } else if (res.ok && data.checkoutUrl) {
@@ -214,6 +214,7 @@ export default function BookingWizard() {
           <EmbeddedPayment
             clientSecret={payment.clientSecret}
             publishableKey={payment.publishableKey}
+            stripeAccount={payment.stripeAccount}
             booking={booking}
             onBack={() => setPayment(null)}
           />
