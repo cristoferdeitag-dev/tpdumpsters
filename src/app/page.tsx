@@ -11,7 +11,7 @@ import DynamicGallery from "@/components/DynamicGallery";
 import LocationSection from "@/components/LocationSection";
 import DynamicServiceAreaMap from '@/components/DynamicServiceAreaMap';
 import FloatingButtons from "@/components/FloatingButtons";
-import ChatWidget from "@/components/ChatWidget";
+// import ChatWidget from "@/components/ChatWidget"; // hidden during bot private testing
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
@@ -134,7 +134,8 @@ export default function Home() {
       <DynamicServiceAreaMap />
       {/* LocationSection removed — using ServiceAreaMap instead */}
       <FloatingButtons />
-      <ChatWidget />
+      {/* ChatWidget hidden while the new Gemini assistant is in private
+          testing (Cris, 2026-07-23) — re-mount when he approves it. */}
       <Footer />
     </>
   );
