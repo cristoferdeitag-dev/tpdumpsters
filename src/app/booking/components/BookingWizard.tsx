@@ -6,6 +6,7 @@ import DateStep from "./DateStep";
 import AddressStep from "./AddressStep";
 import SummaryStep from "./SummaryStep";
 import ConfirmationStep from "./ConfirmationStep";
+import EmbeddedPayment from "./EmbeddedPayment";
 import { trackBookingStarted, trackBookingStep, trackBookingPayment, getGclid } from "@/lib/tracking";
 
 /* ───────── Types ───────── */
@@ -82,6 +83,7 @@ export default function BookingWizard() {
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [payment, setPayment] = useState<{ clientSecret: string; publishableKey: string } | null>(null);
   const wizardTopRef = useRef<HTMLDivElement>(null);
 
   // Each step has a different height, so the browser keeps a stale scroll
@@ -143,11 +145,18 @@ export default function BookingWizard() {
         headers: { "Content-Type": "application/json" },
         // Attach the Google Ads click id so a paid booking can be uploaded
         // back as an offline conversion (server-side, tied to the real click).
-        body: JSON.stringify({ ...booking, gclid: getGclid() }),
+        // embedded:true asks for a client_secret to mount Stripe's form
+        // in-page instead of a redirect URL.
+        body: JSON.stringify({ ...booking, gclid: getGclid(), embedded: true }),
       });
       const data = await res.json();
-      if (res.ok && data.checkoutUrl) {
-        // Redirect to Stripe Checkout
+      if (res.ok && data.clientSecret && data.publishableKey) {
+        // Mount Stripe's payment form right here in the wizard
+        setPayment({ clientSecret: data.clientSecret, publishableKey: data.publishableKey });
+        setIsSubmitting(false);
+        wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (res.ok && data.checkoutUrl) {
+        // Server answered with the redirect flow (rollback safety net)
         window.location.href = data.checkoutUrl;
       } else {
         alert("Error creating payment session. Please call us at (510) 650-2083.");
@@ -200,14 +209,21 @@ export default function BookingWizard() {
 
       {/* Step content */}
       <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 min-h-[400px]">
-        {step === 1 && (
+        {payment && (
+          <EmbeddedPayment
+            clientSecret={payment.clientSecret}
+            publishableKey={payment.publishableKey}
+            onBack={() => setPayment(null)}
+          />
+        )}
+        {!payment && step === 1 && (
           <ServiceStep
             booking={booking}
             updateBooking={updateBooking}
             onNext={nextStep}
           />
         )}
-        {step === 2 && (
+        {!payment && step === 2 && (
           <DateStep
             booking={booking}
             updateBooking={updateBooking}
@@ -215,7 +231,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {step === 3 && (
+        {!payment && step === 3 && (
           <AddressStep
             booking={booking}
             updateBooking={updateBooking}
@@ -223,7 +239,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {step === 4 && (
+        {!payment && step === 4 && (
           <SummaryStep
             booking={booking}
             onBack={prevStep}

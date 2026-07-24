@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe, getPlatform } from "@/lib/stripe";
+import { getStripe, getPlatform, getPublishableKey } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
@@ -320,6 +320,13 @@ export async function POST(request: Request) {
     const platform = getPlatform();
     const amountCents = Math.round(chargeTotal * 100);
 
+    // Embedded mode (2026-07-24): the new wizard mounts Stripe's payment form
+    // inside the Summary step instead of redirecting. Same Checkout Session
+    // (Radar, AVS, 3DS, invoice, application fee all identical) — only the
+    // presentation changes. Old/cached clients that don't send the flag keep
+    // getting the redirect flow.
+    const wantsEmbedded = booking.embedded === true;
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       mode: "payment",
@@ -394,8 +401,15 @@ export async function POST(request: Request) {
         billing_zip: booking.billingAddress?.zip || "",
         gclid: (booking.gclid || "").slice(0, 200),
       },
-      success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
-      cancel_url: `${origin}/booking?cancelled=true`,
+      ...(wantsEmbedded
+        ? {
+            ui_mode: "embedded" as const,
+            return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+          }
+        : {
+            success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+            cancel_url: `${origin}/booking?cancelled=true`,
+          }),
     };
 
     // FAILSAFE: a real customer must never lose their booking to the
@@ -425,11 +439,21 @@ export async function POST(request: Request) {
       `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${feeApplied ? `${platform.feePct}%` : "SKIPPED (failsafe)"}` : ""} | Session: ${session.id}`
     );
 
-    return NextResponse.json({
-      success: true,
-      bookingId,
-      checkoutUrl: session.url,
-    });
+    return NextResponse.json(
+      wantsEmbedded
+        ? {
+            success: true,
+            bookingId,
+            clientSecret: session.client_secret,
+            // Publishable by definition; the embedded form needs it client-side.
+            publishableKey: getPublishableKey(),
+          }
+        : {
+            success: true,
+            bookingId,
+            checkoutUrl: session.url,
+          }
+    );
   } catch (error) {
     console.error("Checkout API error:", error);
     return NextResponse.json(
