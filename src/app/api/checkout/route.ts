@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe, getPlatform } from "@/lib/stripe";
+import { getStripe, getPlatform, getPublishableKey } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
@@ -192,7 +192,12 @@ export async function POST(request: Request) {
     // Create Stripe Customer with full billing AND shipping address so the
     // generated invoice renders both "Bill to" and "Ship to" sections, just
     // like Asaí's manual invoices.
-    const stripeCustomer = await getStripe().customers.create({
+    // The customer must exist in the MERCHANT account — the one the charge is
+    // created on. In commission mode that's the connected account (via the
+    // platform + Stripe-Account header); in legacy mode it's the site key's
+    // account. In prod both paths land on TP's account either way.
+    const platform = getPlatform();
+    const stripeCustomer = await (platform?.client ?? getStripe()).customers.create({
       email: booking.customerEmail,
       name: booking.customerName,
       phone: booking.customerPhone,
@@ -215,7 +220,7 @@ export async function POST(request: Request) {
         },
       },
       metadata: { booking_id: bookingId },
-    });
+    }, platform ? { stripeAccount: platform.account } : undefined);
 
     // Build line item description
     // Map delivery window to label
@@ -311,23 +316,41 @@ export async function POST(request: Request) {
     // 2026-07-23): deriving them from the Origin header let an attacker have
     // Stripe redirect the paying customer — session_id included — to a domain
     // they control, then read the customer's PII from /api/checkout/session.
-    const origin = "https://tpdumpsters.com";
+    // Fixed origin (Sol audit 23-jul: never trust the client's Origin header
+    // for redirect URLs). The ONLY exception is our own staging host, taken
+    // from X-Forwarded-Host — set by our proxy, not client-controllable —
+    // and validated against an allowlist, so test payments stay on staging.
+    // The staging exception only exists where the STAGING_HOST_ALLOWED env
+    // var is set (the staging systemd unit). Prod never sets it, so a client
+    // spoofing X-Forwarded-Host there gets the pinned origin (Hermes audit).
+    const fwdHost = request.headers.get("x-forwarded-host");
+    const origin =
+      fwdHost && fwdHost === process.env.STAGING_HOST_ALLOWED
+        ? `https://${fwdHost}`
+        : "https://tpdumpsters.com";
 
     // HTM commission mode (Connect direct charge): when configured, the
     // session is created via the HTM platform on TP's connected account —
     // the charge, customer emails, and payout all stay on TP's account; the
     // application fee is deducted pre-payout. Unconfigured = legacy mode.
-    const platform = getPlatform();
     const amountCents = Math.round(chargeTotal * 100);
+
+    // Embedded mode (2026-07-24, resucitado 28-jul sobre plataforma Booking):
+    // the wizard mounts Stripe's payment form inside the Summary step instead
+    // of redirecting. Same Checkout Session (Radar, AVS, 3DS, invoice,
+    // application fee identical) — only the presentation changes. Old/cached
+    // clients without the flag keep the redirect flow (= rollback path).
+    const wantsEmbedded = booking.embedded === true;
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
-      // Require the card's billing address so Stripe runs AVS (address +
-      // ZIP match against the issuing bank). A Radar rule can then block
-      // mismatches — a strong, low-friction signal against stolen cards.
-      billing_address_collection: "required",
+      // AVS stays on in both modes (address + ZIP match against the issuing
+      // bank; Radar rules can block mismatches). Redirect mode collects the
+      // billing address on Stripe's page; custom mode isn't allowed that
+      // param, so the wizard passes the already-collected address in confirm().
+      ...(wantsEmbedded ? {} : { billing_address_collection: "required" as const }),
       // Auto-generate a finalized invoice on payment success with the same
       // formatting Asaí uses on her manual invoices (bulleted terms +
       // ship-to address visible).
@@ -356,7 +379,9 @@ export async function POST(request: Request) {
         statement_descriptor: 'TP DUMPSTERS',
         statement_descriptor_suffix: 'DUMPSTER',
         receipt_email: booking.customerEmail,
-        ...(platform
+        // feePct 0 = validation mode: the session still goes through the
+        // platform (exercising the whole Connect pipe) but no fee is charged.
+        ...(platform && platform.feePct > 0
           ? { application_fee_amount: Math.round((amountCents * platform.feePct) / 100) }
           : {}),
       },
@@ -394,8 +419,18 @@ export async function POST(request: Request) {
         billing_zip: booking.billingAddress?.zip || "",
         gclid: (booking.gclid || "").slice(0, 200),
       },
-      success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
-      cancel_url: `${origin}/booking?cancelled=true`,
+      ...(wantsEmbedded
+        ? {
+            // "custom" = our own UI with Stripe's PaymentElement: the customer
+            // only sees card fields inside the Summary step, while
+            // name/address collected earlier ride along in confirm().
+            ui_mode: "custom" as const,
+            return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+          }
+        : {
+            success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+            cancel_url: `${origin}/booking?cancelled=true`,
+          }),
     };
 
     // FAILSAFE: a real customer must never lose their booking to the
@@ -425,11 +460,26 @@ export async function POST(request: Request) {
       `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${feeApplied ? `${platform.feePct}%` : "SKIPPED (failsafe)"}` : ""} | Session: ${session.id}`
     );
 
-    return NextResponse.json({
-      success: true,
-      bookingId,
-      checkoutUrl: session.url,
-    });
+    return NextResponse.json(
+      wantsEmbedded
+        ? {
+            success: true,
+            bookingId,
+            clientSecret: session.client_secret,
+            // The browser must init Stripe with the SAME key context that
+            // created the session: platform publishable + connected account
+            // when the fee path succeeded, the site's own key otherwise — a
+            // mismatch throws checkout_connect_mismatched_key client-side.
+            ...(feeApplied && platform
+              ? { publishableKey: platform.publishable, stripeAccount: platform.account }
+              : { publishableKey: getPublishableKey() }),
+          }
+        : {
+            success: true,
+            bookingId,
+            checkoutUrl: session.url,
+          }
+    );
   } catch (error) {
     console.error("Checkout API error:", error);
     return NextResponse.json(
