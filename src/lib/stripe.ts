@@ -92,7 +92,8 @@ export function getPlatform(): PlatformConfig | null {
 
   // Validity gate, incl. fee sanity: a typo like 20 (meaning 20%) must never
   // silently skim ten times the agreed commission off TP's payouts.
-  if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct <= 0 || feePct > 5) {
+  // feePct 0 is VALID: validation mode — platform session without a fee.
+  if (!secret || !account.startsWith("acct_") || !Number.isFinite(feePct) || feePct < 0 || feePct > 5) {
     // Partial/broken config is NOT the same as no config: sales must keep
     // flowing (legacy mode), but silently dropping the commission would look
     // like "everything works" while HTM earns $0 — scream in the logs.

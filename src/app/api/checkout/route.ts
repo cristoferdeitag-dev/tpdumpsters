@@ -356,7 +356,9 @@ export async function POST(request: Request) {
         statement_descriptor: 'TP DUMPSTERS',
         statement_descriptor_suffix: 'DUMPSTER',
         receipt_email: booking.customerEmail,
-        ...(platform
+        // feePct 0 = validation mode: the session still goes through the
+        // platform (exercising the whole Connect pipe) but no fee is charged.
+        ...(platform && platform.feePct > 0
           ? { application_fee_amount: Math.round((amountCents * platform.feePct) / 100) }
           : {}),
       },
