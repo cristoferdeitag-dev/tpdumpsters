@@ -192,7 +192,12 @@ export async function POST(request: Request) {
     // Create Stripe Customer with full billing AND shipping address so the
     // generated invoice renders both "Bill to" and "Ship to" sections, just
     // like Asaí's manual invoices.
-    const stripeCustomer = await getStripe().customers.create({
+    // The customer must exist in the MERCHANT account — the one the charge is
+    // created on. In commission mode that's the connected account (via the
+    // platform + Stripe-Account header); in legacy mode it's the site key's
+    // account. In prod both paths land on TP's account either way.
+    const platform = getPlatform();
+    const stripeCustomer = await (platform?.client ?? getStripe()).customers.create({
       email: booking.customerEmail,
       name: booking.customerName,
       phone: booking.customerPhone,
@@ -215,7 +220,7 @@ export async function POST(request: Request) {
         },
       },
       metadata: { booking_id: bookingId },
-    });
+    }, platform ? { stripeAccount: platform.account } : undefined);
 
     // Build line item description
     // Map delivery window to label
@@ -317,7 +322,6 @@ export async function POST(request: Request) {
     // session is created via the HTM platform on TP's connected account —
     // the charge, customer emails, and payout all stay on TP's account; the
     // application fee is deducted pre-payout. Unconfigured = legacy mode.
-    const platform = getPlatform();
     const amountCents = Math.round(chargeTotal * 100);
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
