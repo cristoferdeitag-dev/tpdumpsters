@@ -21,6 +21,21 @@ interface Props {
   onBack: () => void;
 }
 
+// Fire-and-forget error reporter — a browser-side failure becomes a line in
+// the server log, so support can see WHY a customer's form didn't load.
+function beacon(where: string, err: string) {
+  try {
+    fetch("/api/client-log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ where, err, ua: navigator.userAgent }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* never break payment over logging */
+  }
+}
+
 export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAccount, booking, onBack }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const checkoutRef = useRef<StripeCheckout | null>(null);
@@ -35,6 +50,15 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
 
   useEffect(() => {
     let cancelled = false;
+    // Never leave an infinite spinner (the 24-jul symptom): if the element
+    // hasn't mounted after 12s, flip to the failed state (retry + phone) and
+    // report the stall server-side.
+    const stallTimer = setTimeout(() => {
+      if (!cancelled) {
+        beacon("embedded-mount-timeout", "PaymentElement not ready after 12s");
+        setFailed(true);
+      }
+    }, 12_000);
 
     (async () => {
       try {
@@ -56,17 +80,20 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         if (containerRef.current) {
           paymentElement.mount(containerRef.current);
           paymentElement.on("ready", () => {
+            clearTimeout(stallTimer);
             if (!cancelled) setMounted(true);
           });
         }
       } catch (err) {
         console.error("In-page payment failed to mount:", err);
+        beacon("embedded-mount-error", String(err));
         if (!cancelled) setFailed(true);
       }
     })();
 
     return () => {
       cancelled = true;
+      clearTimeout(stallTimer);
       checkoutRef.current?.getPaymentElement()?.destroy();
       checkoutRef.current = null;
     };
