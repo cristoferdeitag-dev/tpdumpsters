@@ -81,13 +81,19 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         // the delivery address as billing would hardcode state "CA" and could
         // fail AVS for out-of-state cards (Hermes audit).
         const hasExplicitBilling = Boolean(booking.billingAddress?.line1);
+        // With an explicit billing address, OUR name input + the wizard data
+        // ride along at confirm() and the element collects nothing. Without
+        // one, the element collects BOTH (confirm() rejects a name-only
+        // contact) — the customer's name is still prefilled via defaultValues.
         const paymentElement = checkout.createPaymentElement({
           fields: {
-            billingDetails: {
-              name: "never",
-              address: hasExplicitBilling ? "never" : "auto",
-            },
+            billingDetails: hasExplicitBilling
+              ? { name: "never", address: "never" }
+              : { name: "auto", address: "auto" },
           },
+          ...(hasExplicitBilling
+            ? {}
+            : { defaultValues: { billingDetails: { name: booking.customerName || "" } } }),
         });
         if (containerRef.current) {
           paymentElement.mount(containerRef.current);
@@ -135,23 +141,18 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       // customer gave one, else the delivery address) + the cardholder name
       // from the field above — full AVS/Radar signal without re-typing.
       const b = booking.billingAddress;
-      const explicitBilling: StripeCheckoutContact | null = b?.line1
-        ? {
-            name: cardName.trim() || booking.customerName,
-            address: { line1: b.line1, city: b.city, state: b.state || "CA", postal_code: b.zip, country: "US" },
-          }
-        : null;
-
       // The email is NOT passed here: the session's customer already carries
       // it, and current Stripe.js rejects setting it twice at confirm().
-      // Without an explicit billing address the element collected it, so only
-      // the cardholder name rides along (typed loosely: the SDK contact type
-      // demands address, but confirm() accepts name-only billing details).
-      const result = await loaded.actions.confirm(
-        explicitBilling
-          ? { billingAddress: explicitBilling }
-          : ({ billingAddress: { name: cardName.trim() || booking.customerName } } as never)
-      );
+      // Without an explicit billing address the element collected name AND
+      // address itself, so confirm() takes no contact at all.
+      const result = b?.line1
+        ? await loaded.actions.confirm({
+            billingAddress: {
+              name: cardName.trim() || booking.customerName,
+              address: { line1: b.line1, city: b.city, state: b.state || "CA", postal_code: b.zip, country: "US" },
+            },
+          })
+        : await loaded.actions.confirm();
       // On success Stripe redirects to return_url; reaching here with an
       // error type means the charge didn't go through (declined, 3DS fail…).
       if (result && result.type === "error") {
@@ -217,7 +218,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         </div>
       )}
 
-      {mounted && (
+      {mounted && Boolean(booking.billingAddress?.line1) && (
         <div className="mb-4">
           <label className="block text-[13px] font-semibold text-[#333] mb-1.5 font-[var(--font-poppins)]">
             Name on card
