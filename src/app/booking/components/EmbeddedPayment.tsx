@@ -92,9 +92,10 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
           : { line1: booking.address, city: booking.city, state: "CA", postal_code: booking.zipCode, country: "US" },
       };
 
+      // The email is NOT passed here: the session's customer already carries
+      // it, and current Stripe.js rejects setting it twice at confirm().
       const result = await loaded.actions.confirm({
         billingAddress,
-        ...(booking.customerEmail ? { email: booking.customerEmail } : {}),
       });
       // On success Stripe redirects to return_url; reaching here with an
       // error type means the charge didn't go through (declined, 3DS fail…).
