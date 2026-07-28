@@ -48,7 +48,10 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         // We collect the cardholder name with our own input; hide Stripe's
         // duplicate so the form stays as lean as possible.
         const paymentElement = checkout.createPaymentElement({
-          fields: { billingDetails: { name: "never" } },
+          // name AND address come from the wizard (attached at confirm());
+          // letting the element also collect them throws IntegrationError
+          // "may also be collecting this field" at confirm time.
+          fields: { billingDetails: { name: "never", address: "never" } },
         });
         if (containerRef.current) {
           paymentElement.mount(containerRef.current);
