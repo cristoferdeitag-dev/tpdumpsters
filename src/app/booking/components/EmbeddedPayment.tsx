@@ -80,20 +80,12 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         // the element collects the card's real billing address itself — using
         // the delivery address as billing would hardcode state "CA" and could
         // fail AVS for out-of-state cards (Hermes audit).
-        const hasExplicitBilling = Boolean(booking.billingAddress?.line1);
-        // With an explicit billing address, OUR name input + the wizard data
-        // ride along at confirm() and the element collects nothing. Without
-        // one, the element collects BOTH (confirm() rejects a name-only
-        // contact) — the customer's name is still prefilled via defaultValues.
+        // The wizard already knows the name and an address (explicit billing
+        // if given, else delivery) — the element collects card fields only,
+        // and everything else rides prefilled at confirm(). AVS nuance for
+        // out-of-state cards documented in the BITACORA (watch declines).
         const paymentElement = checkout.createPaymentElement({
-          fields: {
-            billingDetails: hasExplicitBilling
-              ? { name: "never", address: "never" }
-              : { name: "auto", address: "auto" },
-          },
-          ...(hasExplicitBilling
-            ? {}
-            : { defaultValues: { billingDetails: { name: booking.customerName || "" } } }),
+          fields: { billingDetails: { name: "never", address: "never" } },
         });
         if (containerRef.current) {
           paymentElement.mount(containerRef.current);
@@ -140,19 +132,22 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       // Billing address from the wizard (the dedicated billing address if the
       // customer gave one, else the delivery address) + the cardholder name
       // from the field above — full AVS/Radar signal without re-typing.
+      // Billing contact: the explicit billing address if the customer gave
+      // one, else the delivery address (with its REAL state from the wizard,
+      // not a hardcoded CA — Hermes audit). The email is NOT passed here: the
+      // session's customer already carries it.
       const b = booking.billingAddress;
-      // The email is NOT passed here: the session's customer already carries
-      // it, and current Stripe.js rejects setting it twice at confirm().
-      // Without an explicit billing address the element collected name AND
-      // address itself, so confirm() takes no contact at all.
-      const result = b?.line1
-        ? await loaded.actions.confirm({
-            billingAddress: {
-              name: cardName.trim() || booking.customerName,
-              address: { line1: b.line1, city: b.city, state: b.state || "CA", postal_code: b.zip, country: "US" },
-            },
-          })
-        : await loaded.actions.confirm();
+      const result = await loaded.actions.confirm({
+        billingAddress: {
+          name: cardName.trim() || booking.customerName,
+          address: b?.line1
+            ? { line1: b.line1, city: b.city, state: b.state || "CA", postal_code: b.zip, country: "US" }
+            : // Delivery addresses are CA-only by service area, so CA is the
+              // real state here, not a guess. Out-of-state cards have the
+              // optional explicit billing section as their correct path.
+              { line1: booking.address, city: booking.city, state: "CA", postal_code: booking.zipCode, country: "US" },
+        },
+      });
       // On success Stripe redirects to return_url; reaching here with an
       // error type means the charge didn't go through (declined, 3DS fail…).
       if (result && result.type === "error") {
@@ -218,7 +213,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         </div>
       )}
 
-      {mounted && Boolean(booking.billingAddress?.line1) && (
+      {mounted && (
         <div className="mb-4">
           <label className="block text-[13px] font-semibold text-[#333] mb-1.5 font-[var(--font-poppins)]">
             Name on card
