@@ -80,6 +80,13 @@ export default function SuccessContent() {
     <section className="min-h-screen bg-[#f5f5f5] py-12">
       <div className="w-[92%] sm:w-[85%] max-w-[700px] mx-auto">
         <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12 text-center">
+          {/* TP logo — same asset as the site header (Asaí, 28-jul) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/logo/TP.png"
+            alt="TP Dumpsters"
+            className="h-14 w-auto mx-auto mb-5"
+          />
           {/* Success icon */}
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <FaCircleCheck className="text-tp-green text-4xl" />
@@ -177,12 +184,13 @@ export default function SuccessContent() {
               </li>
             </ul>
             <p className="text-xs text-[#666] mt-3">
-              Don&apos;t see them? Check your spam folder or
-              {info?.hostedInvoiceUrl ? (
-                <>
-                  {" "}view your invoice now:
-                </>
-              ) : null}
+              {/* The sentence must close on its own: with no invoice URL the
+                  old wording dangled at "…or" (Asaí's test, 28-jul). */}
+              Don&apos;t see them? Check your spam folder, or call us at{" "}
+              <a href="tel:+15106502083" className="font-semibold text-blue-700">
+                (510) 650-2083
+              </a>
+              .
             </p>
             {info?.hostedInvoiceUrl && (
               <a
