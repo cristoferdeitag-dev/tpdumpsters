@@ -316,7 +316,14 @@ export async function POST(request: Request) {
     // 2026-07-23): deriving them from the Origin header let an attacker have
     // Stripe redirect the paying customer — session_id included — to a domain
     // they control, then read the customer's PII from /api/checkout/session.
-    const origin = "https://tpdumpsters.com";
+    // Fixed origin (Sol audit 23-jul: never trust the client's Origin header
+    // for redirect URLs). The ONLY exception is our own staging host, taken
+    // from X-Forwarded-Host — set by our proxy, not client-controllable —
+    // and validated against an allowlist, so test payments stay on staging.
+    const fwdHost = request.headers.get("x-forwarded-host");
+    const origin = fwdHost === "staging-tp.haztumarketing.com"
+      ? `https://${fwdHost}`
+      : "https://tpdumpsters.com";
 
     // HTM commission mode (Connect direct charge): when configured, the
     // session is created via the HTM platform on TP's connected account —
