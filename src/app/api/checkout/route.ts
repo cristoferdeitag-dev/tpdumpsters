@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe, getPlatform } from "@/lib/stripe";
+import { getStripe, getPlatform, getPublishableKey } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
@@ -324,14 +324,22 @@ export async function POST(request: Request) {
     // application fee is deducted pre-payout. Unconfigured = legacy mode.
     const amountCents = Math.round(chargeTotal * 100);
 
+    // Embedded mode (2026-07-24, resucitado 28-jul sobre plataforma Booking):
+    // the wizard mounts Stripe's payment form inside the Summary step instead
+    // of redirecting. Same Checkout Session (Radar, AVS, 3DS, invoice,
+    // application fee identical) — only the presentation changes. Old/cached
+    // clients without the flag keep the redirect flow (= rollback path).
+    const wantsEmbedded = booking.embedded === true;
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
       mode: "payment",
       customer: stripeCustomer.id,
-      // Require the card's billing address so Stripe runs AVS (address +
-      // ZIP match against the issuing bank). A Radar rule can then block
-      // mismatches — a strong, low-friction signal against stolen cards.
-      billing_address_collection: "required",
+      // AVS stays on in both modes (address + ZIP match against the issuing
+      // bank; Radar rules can block mismatches). Redirect mode collects the
+      // billing address on Stripe's page; custom mode isn't allowed that
+      // param, so the wizard passes the already-collected address in confirm().
+      ...(wantsEmbedded ? {} : { billing_address_collection: "required" as const }),
       // Auto-generate a finalized invoice on payment success with the same
       // formatting Asaí uses on her manual invoices (bulleted terms +
       // ship-to address visible).
@@ -400,8 +408,18 @@ export async function POST(request: Request) {
         billing_zip: booking.billingAddress?.zip || "",
         gclid: (booking.gclid || "").slice(0, 200),
       },
-      success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
-      cancel_url: `${origin}/booking?cancelled=true`,
+      ...(wantsEmbedded
+        ? {
+            // "custom" = our own UI with Stripe's PaymentElement: the customer
+            // only sees card fields inside the Summary step, while
+            // name/address collected earlier ride along in confirm().
+            ui_mode: "custom" as const,
+            return_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+          }
+        : {
+            success_url: `${origin}/booking/success?session_id={CHECKOUT_SESSION_ID}&booking_id=${bookingId}`,
+            cancel_url: `${origin}/booking?cancelled=true`,
+          }),
     };
 
     // FAILSAFE: a real customer must never lose their booking to the
@@ -431,11 +449,26 @@ export async function POST(request: Request) {
       `💳 CHECKOUT: ${bookingId} | ${booking.service.serviceType} ${booking.service.size} | ${booking.customerName} | $${chargeTotal}${platform ? ` | HTM fee ${feeApplied ? `${platform.feePct}%` : "SKIPPED (failsafe)"}` : ""} | Session: ${session.id}`
     );
 
-    return NextResponse.json({
-      success: true,
-      bookingId,
-      checkoutUrl: session.url,
-    });
+    return NextResponse.json(
+      wantsEmbedded
+        ? {
+            success: true,
+            bookingId,
+            clientSecret: session.client_secret,
+            // The browser must init Stripe with the SAME key context that
+            // created the session: platform publishable + connected account
+            // when the fee path succeeded, the site's own key otherwise — a
+            // mismatch throws checkout_connect_mismatched_key client-side.
+            ...(feeApplied && platform
+              ? { publishableKey: platform.publishable, stripeAccount: platform.account }
+              : { publishableKey: getPublishableKey() }),
+          }
+        : {
+            success: true,
+            bookingId,
+            checkoutUrl: session.url,
+          }
+    );
   } catch (error) {
     console.error("Checkout API error:", error);
     return NextResponse.json(
