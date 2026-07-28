@@ -64,11 +64,15 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       try {
         // Same key context that created the session: platform key + connected
         // account in commission mode, plain key otherwise.
+        // Stage beacons: when a mount stalls in a customer's browser, the log
+        // shows exactly how far it got.
         const stripe = await loadStripe(publishableKey, stripeAccount ? { stripeAccount } : undefined);
         if (!stripe) throw new Error("Stripe.js failed to load");
         if (cancelled) return;
+        beacon("embedded-stage", "1-stripejs-loaded");
         const checkout = stripe.initCheckout({ clientSecret });
         checkoutRef.current = checkout;
+        beacon("embedded-stage", "2-initCheckout-returned");
         // We collect the cardholder name with our own input; hide Stripe's
         // duplicate so the form stays as lean as possible.
         const paymentElement = checkout.createPaymentElement({
@@ -79,8 +83,13 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         });
         if (containerRef.current) {
           paymentElement.mount(containerRef.current);
+          beacon("embedded-stage", "3-mount-called");
+          paymentElement.on("loaderror" as never, (ev: unknown) => {
+            beacon("embedded-loaderror", JSON.stringify(ev).slice(0, 400));
+          });
           paymentElement.on("ready", () => {
             clearTimeout(stallTimer);
+            beacon("embedded-stage", "4-READY");
             if (!cancelled) setMounted(true);
           });
         }
