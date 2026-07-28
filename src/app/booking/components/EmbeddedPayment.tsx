@@ -75,11 +75,19 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         beacon("embedded-stage", "2-initCheckout-returned");
         // We collect the cardholder name with our own input; hide Stripe's
         // duplicate so the form stays as lean as possible.
+        // If the wizard collected an EXPLICIT billing address we attach it at
+        // confirm() and the element must not double-collect it. Without one,
+        // the element collects the card's real billing address itself — using
+        // the delivery address as billing would hardcode state "CA" and could
+        // fail AVS for out-of-state cards (Hermes audit).
+        const hasExplicitBilling = Boolean(booking.billingAddress?.line1);
         const paymentElement = checkout.createPaymentElement({
-          // name AND address come from the wizard (attached at confirm());
-          // letting the element also collect them throws IntegrationError
-          // "may also be collecting this field" at confirm time.
-          fields: { billingDetails: { name: "never", address: "never" } },
+          fields: {
+            billingDetails: {
+              name: "never",
+              address: hasExplicitBilling ? "never" : "auto",
+            },
+          },
         });
         if (containerRef.current) {
           paymentElement.mount(containerRef.current);
@@ -103,7 +111,13 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
     return () => {
       cancelled = true;
       clearTimeout(stallTimer);
-      checkoutRef.current?.getPaymentElement()?.destroy();
+      try {
+        // getPaymentElement can throw if unmounting before init finished
+        // (Hermes audit) — never break the React tree over cleanup.
+        checkoutRef.current?.getPaymentElement()?.destroy();
+      } catch {
+        /* already gone */
+      }
       checkoutRef.current = null;
     };
   }, [clientSecret, publishableKey, stripeAccount]);
@@ -121,18 +135,23 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       // customer gave one, else the delivery address) + the cardholder name
       // from the field above — full AVS/Radar signal without re-typing.
       const b = booking.billingAddress;
-      const billingAddress: StripeCheckoutContact = {
-        name: cardName.trim() || booking.customerName,
-        address: b?.line1
-          ? { line1: b.line1, city: b.city, state: b.state || "CA", postal_code: b.zip, country: "US" }
-          : { line1: booking.address, city: booking.city, state: "CA", postal_code: booking.zipCode, country: "US" },
-      };
+      const explicitBilling: StripeCheckoutContact | null = b?.line1
+        ? {
+            name: cardName.trim() || booking.customerName,
+            address: { line1: b.line1, city: b.city, state: b.state || "CA", postal_code: b.zip, country: "US" },
+          }
+        : null;
 
       // The email is NOT passed here: the session's customer already carries
       // it, and current Stripe.js rejects setting it twice at confirm().
-      const result = await loaded.actions.confirm({
-        billingAddress,
-      });
+      // Without an explicit billing address the element collected it, so only
+      // the cardholder name rides along (typed loosely: the SDK contact type
+      // demands address, but confirm() accepts name-only billing details).
+      const result = await loaded.actions.confirm(
+        explicitBilling
+          ? { billingAddress: explicitBilling }
+          : ({ billingAddress: { name: cardName.trim() || booking.customerName } } as never)
+      );
       // On success Stripe redirects to return_url; reaching here with an
       // error type means the charge didn't go through (declined, 3DS fail…).
       if (result && result.type === "error") {
@@ -141,6 +160,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       }
     } catch (err) {
       console.error("Payment confirm error:", err);
+      beacon("embedded-confirm-error", String(err));
       setPayError("We couldn't process the payment. Please try again or call us.");
       setPaying(false);
     }

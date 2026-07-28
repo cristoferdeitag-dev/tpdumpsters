@@ -320,10 +320,14 @@ export async function POST(request: Request) {
     // for redirect URLs). The ONLY exception is our own staging host, taken
     // from X-Forwarded-Host — set by our proxy, not client-controllable —
     // and validated against an allowlist, so test payments stay on staging.
+    // The staging exception only exists where the STAGING_HOST_ALLOWED env
+    // var is set (the staging systemd unit). Prod never sets it, so a client
+    // spoofing X-Forwarded-Host there gets the pinned origin (Hermes audit).
     const fwdHost = request.headers.get("x-forwarded-host");
-    const origin = fwdHost === "staging-tp.haztumarketing.com"
-      ? `https://${fwdHost}`
-      : "https://tpdumpsters.com";
+    const origin =
+      fwdHost && fwdHost === process.env.STAGING_HOST_ALLOWED
+        ? `https://${fwdHost}`
+        : "https://tpdumpsters.com";
 
     // HTM commission mode (Connect direct charge): when configured, the
     // session is created via the HTM platform on TP's connected account —
