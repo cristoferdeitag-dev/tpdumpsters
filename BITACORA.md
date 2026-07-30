@@ -1,3 +1,10 @@
+## 2026-07-30 (~17:35Z) — cris — ✅ SAN JOSÉ BLOQUEADO EN VIVO (sitio + Ads) — cierre del incidente TP-MS3QJP2U
+- **Deploy prod verificado:** commit 91334f1 → build local KCA6fhAaBVvY9WHbOPGCF = BUILD_ID en Hostinger (rsync .next + kill next-server). Smoke: / y /booking 200.
+- **Prueba de fuego en PROD:** POST directo a /api/checkout con San Jose/95124 → 400 "We don't currently service that address" · con ZIP solo (95131, ciudad vacía) → 400. El rechazo ocurre ANTES de crear sesión de Stripe.
+- **Google Ads aplicado (validateOnly→apply→read-back):** negativa PHRASE "san jose" agregada a la lista compartida 12168899479 (Negativas Globales TP) + campaña Marca TP — Search (24080847340) VINCULADA a esa lista (no lo estaba: nació después del 27-jul). La lista queda en 10 negativas, ligada a las 4 campañas. El match de Google ignora acentos → cubre "san josé".
+- **Rollback:** revertir commit 91334f1 + redeploy; en Ads, quitar shared_criterion "san jose" del set 12168899479 y el campaign_shared_set de Marca.
+- **PENDIENTE VIVO (decisión de Cris, urge hoy):** reserva pagada de Emily Cooper TP-MS3QJP2U ($699, entrega agendada 31-jul PM) — ¿surtir como excepción o reembolso completo + llamada al (408) 784-5317? · Santa Rosa y San Carlos siguen sin decidir (negativas en espera).
+
 ## 2026-07-30 (~17:15Z) — cris — 🚫 SAN JOSÉ FUERA DEL ÁREA (decisión de Cris msg 17440) tras reserva pagada TP-MS3QJP2U
 - **Detonante:** Cris reportó "no pueden reservar en San José y parece que lo hicieron". Verificado en Stripe: **TP-MS3QJP2U, Emily Cooper, 3158 Julio Ave, San José 95124, 20yd Household Clean Out, $699 PAGADA 27-jul, entrega agendada 31-jul PM** — y llegó por clic de Ads (gclid). San José era una de las 3 ciudades pendientes de decisión desde el 29-jul.
 - **Fix:** `service-area.ts` — "san jose"/"san josé" en EXCLUDED_CITIES + 28 ZIPs residenciales (95110-95139, 95148). Mismo doble candado que Milpitas: AddressStep + /api/checkout.
