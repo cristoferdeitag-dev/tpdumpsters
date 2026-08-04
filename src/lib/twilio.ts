@@ -62,6 +62,8 @@ export async function sendSMS(to: string, body: string): Promise<{ success: bool
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: postData,
+        // Twilio hanging must not pin a worker (Hermes M4)
+        signal: AbortSignal.timeout(10_000),
       }
     );
 
@@ -111,6 +113,8 @@ export async function sendWhatsApp(to: string, body: string): Promise<{ success:
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: postData,
+        // Twilio hanging must not pin a worker (Hermes M4)
+        signal: AbortSignal.timeout(10_000),
       }
     );
 

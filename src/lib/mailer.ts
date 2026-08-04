@@ -73,6 +73,11 @@ export async function sendEmail(
       port: config.port,
       secure: config.port === 465,
       auth: { user: config.user, pass: config.pass },
+      // A hung SMTP server must not pin a serverless worker (Hermes M4) —
+      // fail the send and let the watcher's retry model handle it.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
     });
     await transporter.sendMail({
       from: `"${config.fromName}" <${config.user}>`,

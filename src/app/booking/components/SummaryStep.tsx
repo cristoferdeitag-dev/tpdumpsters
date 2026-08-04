@@ -6,6 +6,7 @@ import type { BookingData } from "./BookingWizard";
 
 interface Props {
   booking: BookingData;
+  updateBooking: (updates: Partial<BookingData>) => void;
   onBack: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -30,8 +31,13 @@ const WINDOW_LABELS: Record<string, string> = {
   afternoon: "Afternoon (1:00 PM - 6:00 PM)",
 };
 
-export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }: Props) {
-  const [authorizedCharges, setAuthorizedCharges] = useState(false);
+export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, isSubmitting }: Props) {
+  // Mirrors booking.authorizedCharges so the consent actually reaches
+  // /api/checkout and lands in the Stripe metadata as dispute evidence —
+  // before (Hermes A4, 4-ago) this lived only in local state and every
+  // booking shipped authorized_charges:"false" no matter what the customer
+  // checked. Initialized from the booking so a restored session keeps it.
+  const [authorizedCharges, setAuthorizedCharges] = useState(booking.authorizedCharges || false);
   const baseDays = booking.service?.baseDays || 7;
 
   return (
@@ -171,7 +177,10 @@ export default function SummaryStep({ booking, onBack, onSubmit, isSubmitting }:
           <input
             type="checkbox"
             checked={authorizedCharges}
-            onChange={(e) => setAuthorizedCharges(e.target.checked)}
+            onChange={(e) => {
+              setAuthorizedCharges(e.target.checked);
+              updateBooking({ authorizedCharges: e.target.checked });
+            }}
             className="mt-1 w-4 h-4 accent-tp-red flex-shrink-0"
           />
           <span className="text-xs text-[#555] font-[var(--font-poppins)] leading-relaxed">

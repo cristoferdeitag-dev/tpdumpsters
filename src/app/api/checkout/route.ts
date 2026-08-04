@@ -465,6 +465,9 @@ export async function POST(request: Request) {
         ? {
             success: true,
             bookingId,
+            // The wizard persists this to validate the session server-side
+            // before re-mounting a restored payment step (Hermes B3).
+            sessionId: session.id,
             clientSecret: session.client_secret,
             // The browser must init Stripe with the SAME key context that
             // created the session: platform publishable + connected account

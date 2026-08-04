@@ -1,18 +1,20 @@
-import { createHmac, timingSafeEqual, randomBytes } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { readFileSync } from "fs";
 
 // Booking IDs are sequential-ish (base36 timestamp), so a bare
 // /booking?resume=TP-XXX would let anyone enumerate ids and read customer
 // PII (name, phone, email, address) through the resume API. Every resume
-// link therefore carries an HMAC of the booking id; only holders of the
-// emailed link can open it.
+// link therefore carries an HMAC over booking id + expiry; only holders of
+// the emailed link can open it, and only while it's fresh (Hermes audit
+// 4-ago: an eternal token that lands in URLs is a standing capability —
+// 72h covers every realistic "finish your booking" window).
 //
 // The secret lives in a server file (Hostinger doesn't inject env vars),
-// env is the local/dev fallback. FAIL-CLOSED: with no secret configured we
-// sign with a per-process random value — links can't be minted or verified,
-// so the resume feature is simply off instead of open.
+// env is the local/dev fallback. FAIL-CLOSED for real (Hermes A2): with no
+// secret configured, minting returns null and verification always fails —
+// the feature is OFF, not running on an ephemeral secret.
 const SECRET_PATH = "/home/u781187371/resume-secret.json";
-const UNCONFIGURED_SENTINEL = randomBytes(32).toString("hex");
+const TOKEN_TTL_SECONDS = 72 * 60 * 60;
 let cachedSecret: string | null = null;
 
 function getSecret(): string {
@@ -20,28 +22,43 @@ function getSecret(): string {
   let resolved = "";
   try {
     const parsed = JSON.parse(readFileSync(SECRET_PATH, "utf8"));
-    if (typeof parsed.secret === "string" && parsed.secret.length >= 16) {
+    if (typeof parsed.secret === "string" && parsed.secret.length >= 32) {
       resolved = parsed.secret;
     }
   } catch {
     resolved = process.env.RESUME_SECRET || "";
   }
-  cachedSecret = resolved || UNCONFIGURED_SENTINEL;
+  cachedSecret = resolved;
   return cachedSecret;
 }
 
-export function signBookingId(bookingId: string): string {
-  return createHmac("sha256", getSecret()).update(bookingId).digest("hex").slice(0, 32);
+export function isResumeConfigured(): boolean {
+  return getSecret().length >= 32;
 }
 
-export function verifyBookingToken(bookingId: string, token: string): boolean {
+function sign(bookingId: string, exp: number): string {
+  return createHmac("sha256", getSecret())
+    .update(`${bookingId}.${exp}`)
+    .digest("hex")
+    .slice(0, 32);
+}
+
+export function verifyBookingToken(bookingId: string, token: string, exp: string): boolean {
+  if (!isResumeConfigured()) return false;
   if (!bookingId || !token || token.length !== 32) return false;
-  const expected = Buffer.from(signBookingId(bookingId));
+  const expNum = Number(exp);
+  if (!Number.isInteger(expNum) || expNum <= 0) return false;
+  if (expNum * 1000 < Date.now()) return false; // link expired
+  const expected = Buffer.from(sign(bookingId, expNum));
   const provided = Buffer.from(token);
   if (expected.length !== provided.length) return false;
   return timingSafeEqual(expected, provided);
 }
 
-export function buildResumeUrl(bookingId: string): string {
-  return `https://tpdumpsters.com/booking?resume=${encodeURIComponent(bookingId)}&t=${signBookingId(bookingId)}`;
+// Null when the server secret isn't configured — callers (the watcher) must
+// then skip the email link instead of shipping a dead URL.
+export function buildResumeUrl(bookingId: string): string | null {
+  if (!isResumeConfigured()) return null;
+  const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
+  return `https://tpdumpsters.com/booking?resume=${encodeURIComponent(bookingId)}&e=${exp}&t=${sign(bookingId, exp)}`;
 }

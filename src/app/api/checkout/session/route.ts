@@ -26,6 +26,10 @@ export async function GET(request: Request) {
     };
 
     return NextResponse.json({
+      // Session lifecycle for the wizard's restore check (Hermes B3): open =
+      // safe to re-mount, complete = already paid, expired = start a new one.
+      status: session.status || null,
+      paymentStatus: session.payment_status || null,
       bookingId: md.booking_id || null,
       customerName: md.customer_name || null,
       customerEmail: session.customer_details?.email || null,
