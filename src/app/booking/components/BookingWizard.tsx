@@ -78,13 +78,91 @@ const STEPS = [
   { id: 4, label: "Summary", icon: "📋" },
 ];
 
+// Wizard progress survives a page reload. The failure this kills (Aug-2026
+// audit): mobile customers leave the tab to fetch their card, the browser
+// discards the page, and coming back wiped everything — 4 of 5 customers had
+// to redo the whole wizard, and 2 walked away. Saved on every change, cleared
+// by the success page; stale saves (>20h — Stripe sessions die at 24h) are
+// dropped on restore. SuccessContent clears this same key.
+export const WIZARD_STORAGE_KEY = "tp_wizard_v1";
+const STORAGE_MAX_AGE_MS = 20 * 60 * 60 * 1000;
+
 export default function BookingWizard() {
   const [step, setStep] = useState(1);
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [payment, setPayment] = useState<{ clientSecret: string; publishableKey: string; stripeAccount?: string } | null>(null);
+  // Gates saving until the one-time restore ran, so an empty initial render
+  // can't clobber a saved session. resumeNote surfaces the state of an email
+  // resume link (welcome back / already paid / date passed).
+  const [restored, setRestored] = useState(false);
+  const [resumeNote, setResumeNote] = useState<string | null>(null);
   const wizardTopRef = useRef<HTMLDivElement>(null);
+
+  // One-time restore: an email resume link (?resume=TP-X&t=sig) wins over the
+  // local save; otherwise reload continues exactly where the customer left
+  // off — including the payment step, re-mounting the SAME Stripe session.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resumeBid = params.get("resume");
+    const resumeTok = params.get("t");
+    if (resumeBid && resumeTok) {
+      (async () => {
+        try {
+          const res = await fetch(
+            `/api/checkout/resume?bid=${encodeURIComponent(resumeBid)}&t=${encodeURIComponent(resumeTok)}`
+          );
+          const data = await res.json();
+          if (res.ok && data.success && data.booking) {
+            setBooking({ ...initialBooking, ...data.booking });
+            setStep(4);
+            setResumeNote("Welcome back! Your booking is saved — review it and pay below.");
+          } else if (data.alreadyHandled) {
+            setResumeNote("This booking was already completed. Questions? Call us at (510) 650-2083.");
+          } else if (data.expired) {
+            setResumeNote("The delivery date on this booking already passed — call us at (510) 650-2083 and we'll set you up with a new date.");
+          }
+        } catch {
+          /* fall through to a normal blank wizard */
+        } finally {
+          setRestored(true);
+        }
+      })();
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(WIZARD_STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.v === 1 && Date.now() - saved.ts < STORAGE_MAX_AGE_MS && saved.booking) {
+          setBooking(saved.booking);
+          if (typeof saved.step === "number" && saved.step >= 1 && saved.step <= 4) setStep(saved.step);
+          if (saved.payment?.clientSecret && saved.payment?.publishableKey) setPayment(saved.payment);
+        } else {
+          localStorage.removeItem(WIZARD_STORAGE_KEY);
+        }
+      }
+    } catch {
+      /* corrupt/blocked storage — start clean */
+    }
+    setRestored(true);
+  }, []);
+
+  // Persist on every change (post-restore). A blank wizard isn't saved, so
+  // simply visiting the page never overwrites a meaningful session.
+  useEffect(() => {
+    if (!restored) return;
+    if (!booking.service && !payment) return;
+    try {
+      localStorage.setItem(
+        WIZARD_STORAGE_KEY,
+        JSON.stringify({ v: 1, ts: Date.now(), step, booking, payment })
+      );
+    } catch {
+      /* storage full/blocked — feature degrades to the old behavior */
+    }
+  }, [restored, step, booking, payment]);
 
   // Each step has a different height, so the browser keeps a stale scroll
   // offset on step change and the user lands way down by the footer. Jump
@@ -207,6 +285,12 @@ export default function BookingWizard() {
           </div>
         ))}
       </div>
+
+      {resumeNote && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <p className="text-sm text-amber-900 font-[var(--font-poppins)]">{resumeNote}</p>
+        </div>
+      )}
 
       {/* Step content */}
       <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 min-h-[400px]">

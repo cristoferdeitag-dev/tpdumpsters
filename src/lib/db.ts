@@ -28,6 +28,19 @@ const DB_CONFIG = {
 
 let pool: mysql.Pool | null = null;
 
+// DATE columns come back from mysql2 as JS Date objects (midnight in the
+// server's timezone). Format via the LOCAL components so the stored calendar
+// day is reproduced exactly — converting through another timezone (or
+// toISOString) can shift the day by one.
+export function dateToYMD(v: unknown): string {
+  if (v instanceof Date) {
+    const m = String(v.getMonth() + 1).padStart(2, "0");
+    const d = String(v.getDate()).padStart(2, "0");
+    return `${v.getFullYear()}-${m}-${d}`;
+  }
+  return String(v ?? "").slice(0, 10);
+}
+
 export function getPool(): mysql.Pool {
   if (!pool) {
     pool = mysql.createPool(DB_CONFIG);

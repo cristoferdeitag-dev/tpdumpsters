@@ -40,6 +40,18 @@ export default function SuccessContent() {
   const [loading, setLoading] = useState(true);
   const [tracked, setTracked] = useState(false);
 
+  // Payment is done — drop the saved wizard progress so the next visit to
+  // /booking starts clean instead of resuming a paid session. Key mirrors
+  // WIZARD_STORAGE_KEY in BookingWizard (kept as a literal: importing the
+  // wizard bundle here just for a constant isn't worth it).
+  useEffect(() => {
+    try {
+      localStorage.removeItem("tp_wizard_v1");
+    } catch {
+      /* storage blocked — harmless, restore has its own staleness guard */
+    }
+  }, []);
+
   // Fire the booking conversion ONCE, with the real amount paid (revenue) so
   // Google optimizes toward actual sales value — not a $0 placeholder.
   useEffect(() => {
