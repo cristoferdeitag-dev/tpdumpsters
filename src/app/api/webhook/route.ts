@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createCalendarEvent, findNextPickupSlot } from "@/lib/calendar";
-import { sendSMS } from "@/lib/twilio";
+// sendSMS import removed — customer SMS disabled by Cris 2026-08-04 (msg
+// 4487); re-add the import from "@/lib/twilio" when SMS comes back.
 import { notifyAdminsTelegram } from "@/lib/telegram";
 import * as mysql from "mysql2/promise";
 import * as fs from "fs";
@@ -489,9 +490,11 @@ export async function POST(req: NextRequest) {
           `Questions? Call (510) 650-2083\n` +
           `— TP Dumpsters`;
 
-        const smsResult = await sendSMS(customerPhone, smsBody);
-        smsSent = smsResult.success;
-        console.log(`📱 Confirmation SMS: ${smsResult.success ? "sent" : "failed"}`);
+        // Customer SMS OFF by Cris (2026-08-04 msg 4487, "ahorita no tenemos
+        // sistema para hacerlo") — keep the body build so re-enabling is a
+        // one-line change when SMS comes back.
+        void smsBody;
+        console.log("📱 Confirmation SMS skipped (disabled by Cris 2026-08-04)");
       } catch (smsErr) {
         console.error("📱 SMS error (non-blocking):", smsErr);
       }
