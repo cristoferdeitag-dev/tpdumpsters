@@ -110,7 +110,7 @@ export default function RootLayout({
             so the token moves to sessionStorage (where the wizard picks it up)
             and vanishes from the address bar, history and analytics. */}
         <Script id="resume-scrub" strategy="beforeInteractive">
-          {`(function(){try{var raw="";if(location.hash.indexOf("resume=")>-1){raw=location.hash.slice(1);}else if(location.search.indexOf("resume=")>-1){raw=location.search;}if(!raw)return;var p=new URLSearchParams(raw),b=p.get("resume"),e=p.get("e"),t=p.get("t");history.replaceState(null,"",location.pathname);if(b&&e&&t){try{sessionStorage.setItem("tp_resume",JSON.stringify({b:b,e:e,t:t}));}catch(s){}}}catch(x){}})();`}
+          {`(function(){try{var raw="";if(location.hash.indexOf("resume=")>-1){raw=location.hash.slice(1);}else if(location.search.indexOf("resume=")>-1){raw=location.search;}if(!raw)return;var p=new URLSearchParams(raw),b=p.get("resume"),e=p.get("e"),t=p.get("t");if(b&&e&&t){window.__tpResume={b:b,e:e,t:t};}history.replaceState(null,"",location.pathname);if(b&&e&&t){try{sessionStorage.setItem("tp_resume",JSON.stringify({b:b,e:e,t:t}));}catch(s){}}}catch(x){}})();`}
         </Script>
         <GoogleAnalytics />
         {children}

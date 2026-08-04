@@ -197,15 +197,19 @@ export default function BookingWizard() {
         resumeParamsRef.current = null;
         setRestoringPayment(false);
         setResumeNote("The delivery date on this booking already passed — call us at (510) 650-2083 and we'll set you up with a new date.");
-      } else if (data.blocked) {
-        retryKindRef.current = "resume";
-        setRestoringPayment(false);
-        setRestoreBlocked(true);
-      } else {
-        // invalid/expired token — a fresh wizard is safe (no session context)
+      } else if (res.status === 404) {
+        // ONLY an explicit 404 means invalid/expired token — that's the one
+        // case where a fresh wizard is safe (there's no session context).
         resumeParamsRef.current = null;
         setRestoringPayment(false);
         setResumeNote("That link expired. You can book again below in a couple of minutes, or call us at (510) 650-2083.");
+      } else {
+        // blocked/503, 429, 5xx, malformed JSON — the original session's
+        // state is UNKNOWN, so no new wizard (Hermes round-4): blocked panel,
+        // params kept for retry.
+        retryKindRef.current = "resume";
+        setRestoringPayment(false);
+        setRestoreBlocked(true);
       }
     } catch {
       retryKindRef.current = "resume";
@@ -271,19 +275,37 @@ export default function BookingWizard() {
     let resumeBid: string | null = null;
     let resumeTok: string | null = null;
     let resumeExp: string | null = null;
+    // 1st: the scrub's ephemeral in-page memory — survives even when
+    // sessionStorage is blocked (Hermes round-4: losing the token after the
+    // URL was already cleaned silently dropped the gate).
     try {
-      const stashed = sessionStorage.getItem("tp_resume");
-      if (stashed) {
-        sessionStorage.removeItem("tp_resume");
-        const parsed = JSON.parse(stashed);
-        if (typeof parsed?.b === "string" && typeof parsed?.t === "string" && typeof parsed?.e === "string") {
-          resumeBid = parsed.b;
-          resumeTok = parsed.t;
-          resumeExp = parsed.e;
-        }
+      const w = window as unknown as { __tpResume?: { b?: unknown; t?: unknown; e?: unknown } };
+      const mem = w.__tpResume;
+      if (mem && typeof mem.b === "string" && typeof mem.t === "string" && typeof mem.e === "string") {
+        resumeBid = mem.b;
+        resumeTok = mem.t;
+        resumeExp = mem.e;
       }
+      delete w.__tpResume;
     } catch {
-      /* fall through to URL params */
+      /* fall through */
+    }
+    // 2nd: sessionStorage (set by the scrub; survives an in-tab reload)
+    if (!resumeBid) {
+      try {
+        const stashed = sessionStorage.getItem("tp_resume");
+        if (stashed) {
+          sessionStorage.removeItem("tp_resume");
+          const parsed = JSON.parse(stashed);
+          if (typeof parsed?.b === "string" && typeof parsed?.t === "string" && typeof parsed?.e === "string") {
+            resumeBid = parsed.b;
+            resumeTok = parsed.t;
+            resumeExp = parsed.e;
+          }
+        }
+      } catch {
+        /* fall through to URL params */
+      }
     }
     if (!resumeBid) {
       // Fallback for any path that skipped the layout scrub. Links use the
@@ -489,13 +511,13 @@ export default function BookingWizard() {
 
       {/* Step content */}
       <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 min-h-[400px]">
-        {restoringPayment && (
+        {(!restored || restoringPayment) && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <div className="animate-spin w-10 h-10 border-4 border-tp-red border-t-transparent rounded-full" />
-            <p className="text-sm text-[#666] font-[var(--font-poppins)]">Restoring your session...</p>
+            <p className="text-sm text-[#666] font-[var(--font-poppins)]">Loading...</p>
           </div>
         )}
-        {!restoringPayment && restoreBlocked && (
+        {restored && !restoringPayment && restoreBlocked && (
           <div className="text-center py-10">
             <p className="text-[#333] font-[var(--font-poppins)] font-semibold mb-2">
               We couldn&apos;t verify your previous payment session.
@@ -529,7 +551,7 @@ export default function BookingWizard() {
             </div>
           </div>
         )}
-        {!restoringPayment && !restoreBlocked && payment && (
+        {restored && !restoringPayment && !restoreBlocked && payment && (
           <EmbeddedPayment
             clientSecret={payment.clientSecret}
             publishableKey={payment.publishableKey}
@@ -538,14 +560,14 @@ export default function BookingWizard() {
             onBack={() => setPayment(null)}
           />
         )}
-        {!restoringPayment && !restoreBlocked && !payment && step === 1 && (
+        {restored && !restoringPayment && !restoreBlocked && !payment && step === 1 && (
           <ServiceStep
             booking={booking}
             updateBooking={updateBooking}
             onNext={nextStep}
           />
         )}
-        {!restoringPayment && !restoreBlocked && !payment && step === 2 && (
+        {restored && !restoringPayment && !restoreBlocked && !payment && step === 2 && (
           <DateStep
             booking={booking}
             updateBooking={updateBooking}
@@ -553,7 +575,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {!restoringPayment && !restoreBlocked && !payment && step === 3 && (
+        {restored && !restoringPayment && !restoreBlocked && !payment && step === 3 && (
           <AddressStep
             booking={booking}
             updateBooking={updateBooking}
@@ -561,7 +583,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {!restoringPayment && !restoreBlocked && !payment && step === 4 && (
+        {restored && !restoringPayment && !restoreBlocked && !payment && step === 4 && (
           <SummaryStep
             booking={booking}
             updateBooking={updateBooking}
