@@ -173,8 +173,10 @@ export default function BookingWizard() {
         // logs (Hermes round-2).
         body: JSON.stringify({ bid: params.b, t: params.t, e: params.e }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success && data.booking) {
+      // null = body wasn't JSON at all (proxy error pages etc.) — that's
+      // never a semantic answer from our endpoint, so it can only block.
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success && data.booking) {
         resumeParamsRef.current = null;
         setBooking({ ...initialBooking, ...data.booking });
         if (typeof data.gclid === "string") resumeGclidRef.current = data.gclid;
@@ -189,17 +191,19 @@ export default function BookingWizard() {
           setResumeNote("Welcome back! Please confirm your delivery date and time window — the rest of your booking is already filled in.");
         }
         setRestoringPayment(false);
-      } else if (data.alreadyHandled) {
+      } else if (res.ok && data?.alreadyHandled) {
         resumeParamsRef.current = null;
         setRestoringPayment(false);
         setResumeNote("This booking was already completed. Questions? Call us at (510) 650-2083.");
-      } else if (data.expired) {
+      } else if (res.ok && data?.expired) {
         resumeParamsRef.current = null;
         setRestoringPayment(false);
         setResumeNote("The delivery date on this booking already passed — call us at (510) 650-2083 and we'll set you up with a new date.");
-      } else if (res.status === 404) {
-        // ONLY an explicit 404 means invalid/expired token — that's the one
-        // case where a fresh wizard is safe (there's no session context).
+      } else if (res.status === 404 && data?.error === "Not found") {
+        // ONLY our endpoint's own 404 payload means invalid/expired token —
+        // the one case where a fresh wizard is safe (no session context).
+        // An infra 404 (HTML error page, missing route) is NOT semantic and
+        // falls through to blocked (Hermes round-5).
         resumeParamsRef.current = null;
         setRestoringPayment(false);
         setResumeNote("That link expired. You can book again below in a couple of minutes, or call us at (510) 650-2083.");
@@ -285,6 +289,14 @@ export default function BookingWizard() {
         resumeBid = mem.b;
         resumeTok = mem.t;
         resumeExp = mem.e;
+        // The scrub wrote the same token to sessionStorage as a reload
+        // backup — consume BOTH so a later mount can't replay it and expire
+        // a newer session mid-payment (Hermes round-5 M).
+        try {
+          sessionStorage.removeItem("tp_resume");
+        } catch {
+          /* storage blocked — nothing stored anyway */
+        }
       }
       delete w.__tpResume;
     } catch {
