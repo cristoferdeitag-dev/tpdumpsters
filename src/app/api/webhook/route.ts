@@ -20,11 +20,24 @@ const TYPE_CODES: Record<string, string> = {
 };
 
 function getDbConfig() {
+  // Hostinger does NOT inject env vars, so the env-only version of this ran
+  // with user ''/password '' in prod — every webhook DB write (dedupe AND the
+  // status→confirmed UPDATE) failed with "Access denied ''@127.0.0.1". Found
+  // 4-ago-2026 on the first live event after the webhook-secret fix. Same
+  // file-based creds pattern as lib/db (which was fixed on 10-jun; this
+  // route's own copy was missed). Env stays as the local/dev fallback.
+  let password = process.env.DB_PASSWORD || "";
+  try {
+    const parsed = JSON.parse(fs.readFileSync("/home/u781187371/db-creds.json", "utf8"));
+    if (typeof parsed.password === "string" && parsed.password) password = parsed.password;
+  } catch {
+    /* file missing (local/dev) — env fallback stands */
+  }
   return {
     host: process.env.DB_HOST || "127.0.0.1",
-    user: process.env.DB_USER || "",
-    password: process.env.DB_PASSWORD || "",
-    database: process.env.DB_NAME || "",
+    user: process.env.DB_USER || "u781187371_cristoferdeita",
+    password,
+    database: process.env.DB_NAME || "u781187371_DumspterBookin",
   };
 }
 
