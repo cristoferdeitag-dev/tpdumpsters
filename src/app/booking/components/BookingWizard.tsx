@@ -148,21 +148,70 @@ export default function BookingWizard() {
   // device (where the tp_gclid cookie doesn't exist).
   const resumeGclidRef = useRef("");
 
-  const startOver = () => {
-    try {
-      localStorage.removeItem(WIZARD_STORAGE_KEY);
-    } catch {
-      /* ignore */
+  // What "Try again" on the blocked panel retries: the local session check
+  // or the email-resume exchange.
+  const retryKindRef = useRef<"session" | "resume" | null>(null);
+  const resumeParamsRef = useRef<{ b: string; t: string; e: string } | null>(null);
+
+  // Email-resume exchange, fully gated (Hermes round-3): the wizard stays on
+  // the blocking loader from first render until the server answers. blocked /
+  // network error → blocked panel (retry or call) — never a silent fresh
+  // wizard over a session in unknown state. A success here is already
+  // reconciled server-side (the original session was completed → refused, or
+  // expired before we got data), so paying from Summary can't double-charge.
+  const runResumeFetch = async () => {
+    const params = resumeParamsRef.current;
+    if (!params) {
+      setRestoringPayment(false);
+      return;
     }
-    saveCreatedAtRef.current = null;
-    pendingPaymentRef.current = null;
-    resumeGclidRef.current = "";
-    setBooking(initialBooking);
-    setStep(1);
-    setPayment(null);
-    setResumeNote(null);
-    setRestoringPayment(false);
-    setRestoreBlocked(false);
+    try {
+      const res = await fetch("/api/checkout/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // POST body, not query string — the token must not reach access
+        // logs (Hermes round-2).
+        body: JSON.stringify({ bid: params.b, t: params.t, e: params.e }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success && data.booking) {
+        resumeParamsRef.current = null;
+        setBooking({ ...initialBooking, ...data.booking });
+        if (typeof data.gclid === "string") resumeGclidRef.current = data.gclid;
+        if (data.booking.deliveryWindow) {
+          setStep(4);
+          setResumeNote("Welcome back! Your booking is saved — review it and pay below.");
+        } else {
+          // The original delivery window couldn't be recovered — never
+          // charge with an incomplete order (Hermes B4): one quick
+          // re-pick on the Dates step, everything else stays filled.
+          setStep(2);
+          setResumeNote("Welcome back! Please confirm your delivery date and time window — the rest of your booking is already filled in.");
+        }
+        setRestoringPayment(false);
+      } else if (data.alreadyHandled) {
+        resumeParamsRef.current = null;
+        setRestoringPayment(false);
+        setResumeNote("This booking was already completed. Questions? Call us at (510) 650-2083.");
+      } else if (data.expired) {
+        resumeParamsRef.current = null;
+        setRestoringPayment(false);
+        setResumeNote("The delivery date on this booking already passed — call us at (510) 650-2083 and we'll set you up with a new date.");
+      } else if (data.blocked) {
+        retryKindRef.current = "resume";
+        setRestoringPayment(false);
+        setRestoreBlocked(true);
+      } else {
+        // invalid/expired token — a fresh wizard is safe (no session context)
+        resumeParamsRef.current = null;
+        setRestoringPayment(false);
+        setResumeNote("That link expired. You can book again below in a couple of minutes, or call us at (510) 650-2083.");
+      }
+    } catch {
+      retryKindRef.current = "resume";
+      setRestoringPayment(false);
+      setRestoreBlocked(true);
+    }
   };
 
   // Server-side verdict on a restored session before any card fields render:
@@ -202,6 +251,7 @@ export default function BookingWizard() {
         setRestoringPayment(false);
       }
     } catch {
+      retryKindRef.current = "session";
       setRestoringPayment(false);
       setRestoreBlocked(true);
     }
@@ -236,49 +286,26 @@ export default function BookingWizard() {
       /* fall through to URL params */
     }
     if (!resumeBid) {
-      const params = new URLSearchParams(window.location.search);
+      // Fallback for any path that skipped the layout scrub. Links use the
+      // hash (never sent to the server); query is legacy-defensive. URL is
+      // cleaned before anything else can observe it.
+      const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : "";
+      const raw = hash.includes("resume=") ? hash : window.location.search;
+      const params = new URLSearchParams(raw);
       resumeBid = params.get("resume");
       resumeTok = params.get("t");
       resumeExp = params.get("e");
       if (resumeBid) window.history.replaceState(null, "", window.location.pathname);
     }
     if (resumeBid && resumeTok && resumeExp) {
-      (async () => {
-        try {
-          const res = await fetch("/api/checkout/resume", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            // POST body, not query string — the token must not reach access
-            // logs (Hermes round-2).
-            body: JSON.stringify({ bid: resumeBid, t: resumeTok, e: resumeExp }),
-          });
-          const data = await res.json();
-          if (res.ok && data.success && data.booking) {
-            setBooking({ ...initialBooking, ...data.booking });
-            if (typeof data.gclid === "string") resumeGclidRef.current = data.gclid;
-            if (data.booking.deliveryWindow) {
-              setStep(4);
-              setResumeNote("Welcome back! Your booking is saved — review it and pay below.");
-            } else {
-              // The original delivery window couldn't be recovered — never
-              // charge with an incomplete order (Hermes B4): one quick
-              // re-pick on the Dates step, everything else stays filled.
-              setStep(2);
-              setResumeNote("Welcome back! Please confirm your delivery date and time window — the rest of your booking is already filled in.");
-            }
-          } else if (data.alreadyHandled) {
-            setResumeNote("This booking was already completed. Questions? Call us at (510) 650-2083.");
-          } else if (data.expired) {
-            setResumeNote("The delivery date on this booking already passed — call us at (510) 650-2083 and we'll set you up with a new date.");
-          } else {
-            setResumeNote("That link expired. You can book again below in a couple of minutes, or call us at (510) 650-2083.");
-          }
-        } catch {
-          /* fall through to a normal blank wizard */
-        } finally {
-          setRestored(true);
-        }
-      })();
+      // Gate the whole wizard behind the loader from the FIRST render until
+      // the exchange resolves (Hermes round-3): a usable blank wizard here
+      // could start a second checkout over a session in unknown state.
+      resumeParamsRef.current = { b: resumeBid, t: resumeTok, e: resumeExp };
+      retryKindRef.current = "resume";
+      setRestoringPayment(true);
+      setRestored(true);
+      void runResumeFetch();
       return;
     }
     try {
@@ -308,7 +335,6 @@ export default function BookingWizard() {
       /* corrupt/blocked storage — start clean */
     }
     setRestored(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist on every change (post-restore). A blank wizard isn't saved, so
@@ -475,25 +501,24 @@ export default function BookingWizard() {
               We couldn&apos;t verify your previous payment session.
             </p>
             <p className="text-sm text-[#888] font-[var(--font-poppins)] mb-6">
-              To avoid any double charge we paused here. Try again, start a new
-              booking, or call us and we&apos;ll sort it out.
+              To make sure you&apos;re never charged twice, we paused here.
+              Try again, or call us and we&apos;ll sort it out on the spot.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <button
                 onClick={() => {
+                  // Retries the SAME pending verification (local session or
+                  // email resume) — a brand-new booking is deliberately not
+                  // offered while the previous session's state is unknown
+                  // (Hermes round-3: no new session without reconciling).
                   setRestoreBlocked(false);
                   setRestoringPayment(true);
-                  void checkRestoredSession();
+                  if (retryKindRef.current === "resume") void runResumeFetch();
+                  else void checkRestoredSession();
                 }}
                 className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-sm bg-tp-red text-white hover:bg-tp-red-dark transition-colors"
               >
                 Try again
-              </button>
-              <button
-                onClick={startOver}
-                className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm text-[#666] bg-gray-100 hover:bg-gray-200 transition-colors"
-              >
-                Start a new booking
               </button>
               <a
                 href="tel:+15106502083"

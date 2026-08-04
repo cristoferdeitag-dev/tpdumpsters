@@ -59,8 +59,11 @@ export function verifyBookingToken(bookingId: string, token: string, exp: string
 
 // Null when the server secret isn't configured — callers (the watcher) must
 // then skip the email link instead of shipping a dead URL.
+// The token rides the URL FRAGMENT (Hermes round-3): fragments never leave
+// the browser, so the capability can't reach server access logs, CDN logs or
+// the Referer header — only the layout's scrub script ever reads it.
 export function buildResumeUrl(bookingId: string): string | null {
   if (!isResumeConfigured()) return null;
   const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;
-  return `https://tpdumpsters.com/booking?resume=${encodeURIComponent(bookingId)}&e=${exp}&t=${sign(bookingId, exp)}`;
+  return `https://tpdumpsters.com/booking#resume=${encodeURIComponent(bookingId)}&e=${exp}&t=${sign(bookingId, exp)}`;
 }

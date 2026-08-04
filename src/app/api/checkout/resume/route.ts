@@ -113,6 +113,11 @@ export async function POST(request: NextRequest) {
     // Session (matched by metadata.booking_id among sessions created since
     // the booking row). Best-effort — a miss degrades to re-asking the
     // delivery window, never to a wrong charge.
+    // The original session's STATE decides what resuming even means, and the
+    // lookup is FAIL-CLOSED (Hermes round-3 bloqueante): if Stripe can't be
+    // consulted, the session can't be found, or an open session can't be
+    // expired, we refuse to enable a new payable session — the customer gets
+    // a "try again / call us" screen instead of a path to a double charge.
     let deliveryWindow = "";
     let gclid = "";
     let authorizedCharges = false;
@@ -122,40 +127,41 @@ export async function POST(request: NextRequest) {
       const createdSec = Math.floor(new Date(row.created_at as string | Date).getTime() / 1000) - 300;
       const sessions = await stripe.checkout.sessions.list({ created: { gte: createdSec }, limit: 100 });
       const match = sessions.data.find((s) => s.metadata?.booking_id === bid);
-      if (match) {
-        // The original session's STATE decides what resuming even means
-        // (Hermes round-2 bloqueante): a completed session = the customer
-        // already paid and only the webhook's DB update is missing — never
-        // offer to pay again. An open one is expired here so exactly one
-        // payable session can exist once the customer hits Pay.
-        if (match.status === "complete") {
-          console.error(`🚨 Resume ${bid}: session ${match.id} is COMPLETE but booking is awaiting_payment in MySQL — webhook missed an update, check it`);
-          return NextResponse.json({ alreadyHandled: true });
-        }
-        if (match.status === "open") {
-          try {
-            await stripe.checkout.sessions.expire(match.id);
-          } catch (expireErr) {
-            console.warn(`Resume ${bid}: couldn't expire open session ${match.id}: ${String(expireErr).slice(0, 120)}`);
-          }
-        }
-        const md = match.metadata;
-        if (md) {
-          deliveryWindow = md.delivery_window || "";
-          gclid = md.gclid || "";
-          authorizedCharges = md.authorized_charges === "true";
-          if (md.billing_line1) {
-            billingAddress = {
-              line1: md.billing_line1,
-              city: md.billing_city || "",
-              state: md.billing_state || "",
-              zip: md.billing_zip || "",
-            };
-          }
+      if (!match) {
+        // awaiting_payment booking with no findable session = anomaly —
+        // never guess. (Bookings whose session creation failed outright land
+        // here too; a human sorts those out by phone.)
+        console.warn(`Resume ${bid}: no session found among ${sessions.data.length} since booking creation — blocking resume`);
+        return NextResponse.json({ blocked: true }, { status: 503 });
+      }
+      if (match.status === "complete") {
+        // Customer already paid and only the webhook's DB update is missing —
+        // never offer to pay again.
+        console.error(`🚨 Resume ${bid}: session ${match.id} is COMPLETE but booking is awaiting_payment in MySQL — webhook missed an update, check it`);
+        return NextResponse.json({ alreadyHandled: true });
+      }
+      if (match.status === "open") {
+        // Expire it so exactly one payable session can exist once the
+        // customer hits Pay. If Stripe refuses, we refuse too.
+        await stripe.checkout.sessions.expire(match.id);
+      }
+      const md = match.metadata;
+      if (md) {
+        deliveryWindow = md.delivery_window || "";
+        gclid = md.gclid || "";
+        authorizedCharges = md.authorized_charges === "true";
+        if (md.billing_line1) {
+          billingAddress = {
+            line1: md.billing_line1,
+            city: md.billing_city || "",
+            state: md.billing_state || "",
+            zip: md.billing_zip || "",
+          };
         }
       }
     } catch (err) {
-      console.warn(`Resume ${bid}: session metadata recovery failed (${String(err).slice(0, 120)})`);
+      console.warn(`Resume ${bid}: session reconciliation failed, blocking resume (${String(err).slice(0, 120)})`);
+      return NextResponse.json({ blocked: true }, { status: 503 });
     }
 
     const sizeNum = String(row.dumpster_size || "").replace(/[^0-9]/g, "");
