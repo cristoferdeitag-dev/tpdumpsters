@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins, Oswald, Red_Hat_Display, Open_Sans } from "next/font/google";
+import Script from "next/script";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import AppBottomNav from "@/components/AppBottomNav";
 import "./globals.css";
@@ -103,6 +104,14 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${oswald.variable} ${redHatDisplay.variable} ${openSans.variable} font-[var(--font-open-sans)] text-sm text-[#666] bg-white leading-[1.7em] font-medium antialiased`}
       >
+        {/* Resume-token scrub — MUST run before GTM/GA can snapshot the URL
+            (Hermes round-2): the abandoned-cart email link carries a signed
+            token that reads customer PII; beforeInteractive runs pre-hydration,
+            so the token moves to sessionStorage (where the wizard picks it up)
+            and vanishes from the address bar, history and analytics. */}
+        <Script id="resume-scrub" strategy="beforeInteractive">
+          {`(function(){try{var q=location.search;if(q.indexOf("resume=")>-1){var p=new URLSearchParams(q);var b=p.get("resume"),e=p.get("e"),t=p.get("t");if(b&&e&&t){sessionStorage.setItem("tp_resume",JSON.stringify({b:b,e:e,t:t}));history.replaceState(null,"",location.pathname);}}}catch(x){}})();`}
+        </Script>
         <GoogleAnalytics />
         {children}
         <AppBottomNav />

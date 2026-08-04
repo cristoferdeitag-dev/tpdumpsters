@@ -124,21 +124,22 @@ function recoveryEmail(name: string, sizeNum: string, serviceType: string, deliv
   return { subject, text, html };
 }
 
-// True when Stripe shows a PAID invoice for this booking — the source of
-// truth the DB status can lag behind (webhook UPDATE can fail after a real
-// charge). Online bookings auto-create an invoice carrying booking_id in
-// metadata (see /api/checkout invoice_creation).
-async function paidInStripe(bookingId: string): Promise<boolean> {
-  if (!isValidBookingId(bookingId)) return false;
+// Stripe is the source of truth the DB status can lag behind (webhook UPDATE
+// can fail after a real charge). Online bookings auto-create an invoice
+// carrying booking_id in metadata (see /api/checkout invoice_creation).
+// Tri-state (Hermes round-2): an unreachable Stripe is UNKNOWN, and unknown
+// must DEFER the send — never authorize it.
+async function stripePaymentState(bookingId: string): Promise<"paid" | "unpaid" | "unknown"> {
+  if (!isValidBookingId(bookingId)) return "unknown";
   try {
     const found = await getStripe().invoices.search({
       query: `metadata['booking_id']:'${bookingId}' AND status:'paid'`,
       limit: 1,
     });
-    return found.data.length > 0;
+    return found.data.length > 0 ? "paid" : "unpaid";
   } catch (err) {
     console.warn(`abandoned-watch: Stripe check failed for ${bookingId}: ${String(err).slice(0, 120)}`);
-    return false; // fail open on the CHECK; the DB status was already verified
+    return "unknown";
   }
 }
 
@@ -245,16 +246,18 @@ export async function POST(request: NextRequest) {
       }
 
       // Cooldown: this customer already got a recovery notice in the last
-      // days (for another booking attempt) — one nudge is marketing, two is
-      // harassment.
+      // days (for ANOTHER booking attempt) — one nudge is marketing, two is
+      // harassment. Excludes this booking's own row so a per-channel retry
+      // isn't blocked by its own partial success.
       const [cooled] = await db.execute<RowDataPacket[]>(
         `SELECT 1 FROM recovery_notices
-          WHERE claimed_at >= NOW() - INTERVAL ${COOLDOWN_DAYS} DAY
+          WHERE booking_id != ?
+            AND claimed_at >= NOW() - INTERVAL ${COOLDOWN_DAYS} DAY
             AND (emailed = 1 OR whatsapp = 1)
             AND ((customer_phone != '' AND customer_phone = ?)
                  OR (customer_email != '' AND customer_email = ?))
           LIMIT 1`,
-        [phone, email]
+        [row.booking_id, phone, email]
       );
       if (cooled.length > 0) {
         await markSkip("cooldown");
@@ -284,8 +287,12 @@ export async function POST(request: NextRequest) {
       }
 
       // CLAIM before any external effect (Hermes B1): exactly one concurrent
-      // run wins the INSERT; a lost claim is only retryable when every
-      // channel failed, after a cooldown, up to MAX_ATTEMPTS.
+      // run wins the INSERT. A claim with any failed channel becomes
+      // retryable after RETRY_AFTER_MINUTES (per channel — a delivered email
+      // never blocks retrying a failed WhatsApp or vice versa, Hermes M2/round-2),
+      // up to MAX_ATTEMPTS.
+      let priorEmailed = 0;
+      let priorWhatsapp = 0;
       const [claimed] = await db.execute<ResultSetHeader>(
         "INSERT IGNORE INTO recovery_notices (booking_id, customer_email, customer_phone) VALUES (?, ?, ?)",
         [row.booking_id, email, phone]
@@ -295,7 +302,7 @@ export async function POST(request: NextRequest) {
           `UPDATE recovery_notices
               SET claimed_at = NOW(), attempts = attempts + 1
             WHERE booking_id = ?
-              AND emailed = 0 AND whatsapp = 0 AND skip_reason IS NULL
+              AND (emailed = 0 OR whatsapp = 0) AND skip_reason IS NULL
               AND attempts < ${MAX_ATTEMPTS}
               AND claimed_at <= NOW() - INTERVAL ${RETRY_AFTER_MINUTES} MINUTE`,
           [row.booking_id]
@@ -304,12 +311,19 @@ export async function POST(request: NextRequest) {
           report.push({ booking: row.booking_id, action: "skip:already_claimed" });
           continue;
         }
+        const [prior] = await db.execute<RowDataPacket[]>(
+          "SELECT emailed, whatsapp FROM recovery_notices WHERE booking_id = ? LIMIT 1",
+          [row.booking_id]
+        );
+        priorEmailed = Number(prior[0]?.emailed) || 0;
+        priorWhatsapp = Number(prior[0]?.whatsapp) || 0;
       }
       sends++;
 
       // REVALIDATE post-claim (Hermes B2): the candidate list is a snapshot —
       // the customer may have paid seconds ago, or paid while the webhook's
-      // DB update failed. MySQL first, then Stripe as the source of truth.
+      // DB update failed. MySQL first, then Stripe as the source of truth;
+      // an UNKNOWN Stripe answer defers (claim stays retryable), never sends.
       const [fresh] = await db.execute<RowDataPacket[]>(
         "SELECT status FROM bookings WHERE booking_id = ? LIMIT 1",
         [row.booking_id]
@@ -319,10 +333,16 @@ export async function POST(request: NextRequest) {
         report.push({ booking: row.booking_id, action: "skip:paid_db" });
         continue;
       }
-      if (await paidInStripe(row.booking_id)) {
+      const stripeState = await stripePaymentState(row.booking_id);
+      if (stripeState === "paid") {
         await markSkip("paid_stripe");
         console.error(`🚨 abandoned-watch: ${row.booking_id} is PAID in Stripe but awaiting_payment in MySQL — webhook missed an update, check it`);
         report.push({ booking: row.booking_id, action: "skip:paid_stripe_DB_STALE" });
+        continue;
+      }
+      if (stripeState === "unknown") {
+        // Claim keeps emailed/whatsapp as-is → next run retries after the lease.
+        report.push({ booking: row.booking_id, action: "deferred:stripe_unknown" });
         continue;
       }
 
@@ -331,27 +351,30 @@ export async function POST(request: NextRequest) {
       const deliveryDay = dateToYMD(row.delivery_date);
       const total = Number(row.total_price) || 0;
 
-      // 1. Customer email (needs an address, SMTP creds AND a signable link)
-      let emailed = 0;
-      let emailNote = !row.cust_email ? "no email on file" : !resumeUrl ? "resume secret not configured" : "";
-      if (row.cust_email && resumeUrl) {
+      // 1. Customer email (needs an address, SMTP creds AND a signable link;
+      //    skipped when a previous attempt already delivered it)
+      let emailed = priorEmailed;
+      let emailNote = priorEmailed ? "already sent (prior attempt)" : !row.cust_email ? "no email on file" : !resumeUrl ? "resume secret not configured" : "";
+      if (!priorEmailed && row.cust_email && resumeUrl) {
         const msg = recoveryEmail(row.cust_name, sizeNum, row.service_type, deliveryDay, total, resumeUrl);
         const sent = await sendEmail(row.cust_email, msg.subject, msg.html, msg.text);
         emailed = sent.success ? 1 : 0;
         emailNote = sent.success ? "sent" : `failed: ${sent.error}`;
       }
 
-      // 2. Team alert for the closing call
-      const alertMsg =
-        `🛒 *Carrito abandonado — TP Dumpsters*\n` +
-        `${row.cust_name} · ${row.cust_phone}\n` +
-        `${sizeNum}yd ${row.service_type} · $${total.toFixed(0)} · entrega ${deliveryDay} · ${row.city}\n` +
-        `📧 Correo de rescate: ${emailed ? "enviado ✅" : emailNote}\n` +
-        (resumeUrl ? `🔗 Link para reanudar (se lo pueden reenviar): ${resumeUrl}` : `🔗 Sin link de reanudar (falta configurar el secreto)`);
-      let whatsapp = 0;
-      for (const phoneTo of TEAM_NUMBERS) {
-        const r = await sendWhatsApp(phoneTo, alertMsg);
-        if (r.success) whatsapp = 1;
+      // 2. Team alert for the closing call (skipped if already delivered)
+      let whatsapp = priorWhatsapp;
+      if (!priorWhatsapp) {
+        const alertMsg =
+          `🛒 *Carrito abandonado — TP Dumpsters*\n` +
+          `${row.cust_name} · ${row.cust_phone}\n` +
+          `${sizeNum}yd ${row.service_type} · $${total.toFixed(0)} · entrega ${deliveryDay} · ${row.city}\n` +
+          `📧 Correo de rescate: ${emailed ? "enviado ✅" : emailNote}\n` +
+          (resumeUrl ? `🔗 Link para reanudar (se lo pueden reenviar): ${resumeUrl}` : `🔗 Sin link de reanudar (falta configurar el secreto)`);
+        for (const phoneTo of TEAM_NUMBERS) {
+          const r = await sendWhatsApp(phoneTo, alertMsg);
+          if (r.success) whatsapp = 1;
+        }
       }
 
       await db.execute(

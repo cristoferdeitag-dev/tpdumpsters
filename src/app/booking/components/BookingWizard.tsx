@@ -114,6 +114,8 @@ function isValidSave(s: unknown): s is { v: 1; createdAt: number; step: number; 
   if (o.payment !== null && o.payment !== undefined) {
     const p = o.payment as Record<string, unknown>;
     if (typeof p !== "object" || typeof p.clientSecret !== "string" || typeof p.publishableKey !== "string") return false;
+    if (p.sessionId !== undefined && typeof p.sessionId !== "string") return false;
+    if (p.stripeAccount !== undefined && typeof p.stripeAccount !== "string") return false;
   }
   return true;
 }
@@ -129,13 +131,81 @@ export default function BookingWizard() {
   // resume link (welcome back / already paid / date passed).
   const [restored, setRestored] = useState(false);
   const [resumeNote, setResumeNote] = useState<string | null>(null);
+  // While a saved payment step is being validated server-side the whole
+  // wizard is blocked (Hermes round-2 bloqueante: a usable Summary during
+  // the async check let the customer create a SECOND session before knowing
+  // whether the first was already paid). restoreBlocked = the check failed;
+  // the customer gets retry / start over / phone — never a silent new session.
+  const [restoringPayment, setRestoringPayment] = useState(false);
+  const [restoreBlocked, setRestoreBlocked] = useState(false);
   const wizardTopRef = useRef<HTMLDivElement>(null);
   // createdAt of the current journey's save — immutable across restores.
   const saveCreatedAtRef = useRef<number | null>(null);
+  // Payment blob waiting for its server-side session check.
+  const pendingPaymentRef = useRef<SavedPayment | null>(null);
   // gclid recovered from the original session on an email resume: the click
   // attribution survives even when the customer opens the email on another
   // device (where the tp_gclid cookie doesn't exist).
   const resumeGclidRef = useRef("");
+
+  const startOver = () => {
+    try {
+      localStorage.removeItem(WIZARD_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    saveCreatedAtRef.current = null;
+    pendingPaymentRef.current = null;
+    resumeGclidRef.current = "";
+    setBooking(initialBooking);
+    setStep(1);
+    setPayment(null);
+    setResumeNote(null);
+    setRestoringPayment(false);
+    setRestoreBlocked(false);
+  };
+
+  // Server-side verdict on a restored session before any card fields render:
+  // open → re-mount the SAME session; complete → already paid, clear and say
+  // so; expired → Summary with the data intact (Pay creates a fresh session);
+  // unreachable → blocked state, never a blind new session.
+  const checkRestoredSession = async () => {
+    const p = pendingPaymentRef.current;
+    if (!p?.sessionId) {
+      pendingPaymentRef.current = null;
+      setRestoringPayment(false);
+      return;
+    }
+    try {
+      const r = await fetch(`/api/checkout/session?id=${encodeURIComponent(p.sessionId)}`);
+      if (!r.ok) throw new Error(`session check ${r.status}`);
+      const info: { status?: string } = await r.json();
+      if (info.status === "open") {
+        pendingPaymentRef.current = null;
+        setPayment(p);
+        setRestoringPayment(false);
+      } else if (info.status === "complete") {
+        try {
+          localStorage.removeItem(WIZARD_STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+        saveCreatedAtRef.current = null;
+        pendingPaymentRef.current = null;
+        setBooking(initialBooking);
+        setStep(1);
+        setRestoringPayment(false);
+        setResumeNote("Looks like that booking was already paid — check your email for the confirmation. Need another dumpster? Book below, or call us at (510) 650-2083.");
+      } else {
+        // expired (or any terminal state): drop the payment, keep the data
+        pendingPaymentRef.current = null;
+        setRestoringPayment(false);
+      }
+    } catch {
+      setRestoringPayment(false);
+      setRestoreBlocked(true);
+    }
+  };
 
   // One-time restore: an email resume link (?resume=TP-X&e=exp&t=sig) wins
   // over the local save; otherwise reload continues exactly where the
@@ -144,20 +214,44 @@ export default function BookingWizard() {
   // completed session clears everything, an expired one falls back to the
   // Summary with the data intact.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const resumeBid = params.get("resume");
-    const resumeTok = params.get("t");
-    const resumeExp = params.get("e");
+    // Email resume tokens normally arrive via sessionStorage: the layout's
+    // beforeInteractive scrub script moved them there and cleaned the URL
+    // before GTM/GA could snapshot it (Hermes A1). The URL params remain as
+    // a fallback for any path that skipped the scrub — cleaned here too.
+    let resumeBid: string | null = null;
+    let resumeTok: string | null = null;
+    let resumeExp: string | null = null;
+    try {
+      const stashed = sessionStorage.getItem("tp_resume");
+      if (stashed) {
+        sessionStorage.removeItem("tp_resume");
+        const parsed = JSON.parse(stashed);
+        if (typeof parsed?.b === "string" && typeof parsed?.t === "string" && typeof parsed?.e === "string") {
+          resumeBid = parsed.b;
+          resumeTok = parsed.t;
+          resumeExp = parsed.e;
+        }
+      }
+    } catch {
+      /* fall through to URL params */
+    }
+    if (!resumeBid) {
+      const params = new URLSearchParams(window.location.search);
+      resumeBid = params.get("resume");
+      resumeTok = params.get("t");
+      resumeExp = params.get("e");
+      if (resumeBid) window.history.replaceState(null, "", window.location.pathname);
+    }
     if (resumeBid && resumeTok && resumeExp) {
-      // Scrub the token from the address bar FIRST — analytics (GTM/GA load
-      // in the layout) snapshot the URL, and a PII-reading capability must
-      // not end up in Analytics or browser history (Hermes A1).
-      window.history.replaceState(null, "", window.location.pathname);
       (async () => {
         try {
-          const res = await fetch(
-            `/api/checkout/resume?bid=${encodeURIComponent(resumeBid)}&t=${encodeURIComponent(resumeTok)}&e=${encodeURIComponent(resumeExp)}`
-          );
+          const res = await fetch("/api/checkout/resume", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            // POST body, not query string — the token must not reach access
+            // logs (Hermes round-2).
+            body: JSON.stringify({ bid: resumeBid, t: resumeTok, e: resumeExp }),
+          });
           const data = await res.json();
           if (res.ok && data.success && data.booking) {
             setBooking({ ...initialBooking, ...data.booking });
@@ -197,25 +291,15 @@ export default function BookingWizard() {
           if (saved.step >= 1 && saved.step <= 4) setStep(saved.step);
           const p = saved.payment;
           if (p?.clientSecret && p?.publishableKey && p.sessionId) {
-            // Ask the server whether the session is still payable before
-            // showing card fields again. Conservative on any failure: stay
-            // on Summary (data intact), never re-mount blind.
-            fetch(`/api/checkout/session?id=${encodeURIComponent(p.sessionId)}`)
-              .then((r) => (r.ok ? r.json() : null))
-              .then((info: { status?: string } | null) => {
-                if (info?.status === "open") {
-                  setPayment(p);
-                } else if (info?.status === "complete") {
-                  localStorage.removeItem(WIZARD_STORAGE_KEY);
-                  saveCreatedAtRef.current = null;
-                  setBooking(initialBooking);
-                  setStep(1);
-                  setResumeNote("Looks like that booking was already paid — check your email for the confirmation. Need another dumpster? Book below, or call us at (510) 650-2083.");
-                }
-                /* expired → stay on Summary; Pay creates a fresh session */
-              })
-              .catch(() => {});
+            // Block the wizard until the server says whether the session is
+            // still payable — a usable Summary here could mint a second
+            // session before the verdict (Hermes round-2).
+            pendingPaymentRef.current = p;
+            setRestoringPayment(true);
+            void checkRestoredSession();
           }
+          // A payment blob without sessionId can't be validated — treated
+          // as expired: Summary with the data intact, Pay starts fresh.
         } else {
           localStorage.removeItem(WIZARD_STORAGE_KEY);
         }
@@ -224,6 +308,7 @@ export default function BookingWizard() {
       /* corrupt/blocked storage — start clean */
     }
     setRestored(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist on every change (post-restore). A blank wizard isn't saved, so
@@ -232,6 +317,10 @@ export default function BookingWizard() {
   // refreshes it, so the 20h staleness cutoff is absolute.
   useEffect(() => {
     if (!restored) return;
+    // While a restored payment awaits its verdict, saving would overwrite
+    // the stored blob (payment state is still null) and lose the session —
+    // hold off until the check resolves.
+    if (restoringPayment || restoreBlocked) return;
     if (!booking.service && !payment) return;
     try {
       if (saveCreatedAtRef.current === null) saveCreatedAtRef.current = Date.now();
@@ -242,7 +331,7 @@ export default function BookingWizard() {
     } catch {
       /* storage full/blocked — feature degrades to the old behavior */
     }
-  }, [restored, step, booking, payment]);
+  }, [restored, restoringPayment, restoreBlocked, step, booking, payment]);
 
   // Each step has a different height, so the browser keeps a stale scroll
   // offset on step change and the user lands way down by the footer. Jump
@@ -374,7 +463,48 @@ export default function BookingWizard() {
 
       {/* Step content */}
       <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 min-h-[400px]">
-        {payment && (
+        {restoringPayment && (
+          <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="animate-spin w-10 h-10 border-4 border-tp-red border-t-transparent rounded-full" />
+            <p className="text-sm text-[#666] font-[var(--font-poppins)]">Restoring your session...</p>
+          </div>
+        )}
+        {!restoringPayment && restoreBlocked && (
+          <div className="text-center py-10">
+            <p className="text-[#333] font-[var(--font-poppins)] font-semibold mb-2">
+              We couldn&apos;t verify your previous payment session.
+            </p>
+            <p className="text-sm text-[#888] font-[var(--font-poppins)] mb-6">
+              To avoid any double charge we paused here. Try again, start a new
+              booking, or call us and we&apos;ll sort it out.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <button
+                onClick={() => {
+                  setRestoreBlocked(false);
+                  setRestoringPayment(true);
+                  void checkRestoredSession();
+                }}
+                className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-sm bg-tp-red text-white hover:bg-tp-red-dark transition-colors"
+              >
+                Try again
+              </button>
+              <button
+                onClick={startOver}
+                className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm text-[#666] bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                Start a new booking
+              </button>
+              <a
+                href="tel:+15106502083"
+                className="flex items-center justify-center px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm border-2 border-tp-red text-tp-red hover:bg-tp-red hover:text-white transition-colors"
+              >
+                (510) 650-2083
+              </a>
+            </div>
+          </div>
+        )}
+        {!restoringPayment && !restoreBlocked && payment && (
           <EmbeddedPayment
             clientSecret={payment.clientSecret}
             publishableKey={payment.publishableKey}
@@ -383,14 +513,14 @@ export default function BookingWizard() {
             onBack={() => setPayment(null)}
           />
         )}
-        {!payment && step === 1 && (
+        {!restoringPayment && !restoreBlocked && !payment && step === 1 && (
           <ServiceStep
             booking={booking}
             updateBooking={updateBooking}
             onNext={nextStep}
           />
         )}
-        {!payment && step === 2 && (
+        {!restoringPayment && !restoreBlocked && !payment && step === 2 && (
           <DateStep
             booking={booking}
             updateBooking={updateBooking}
@@ -398,7 +528,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {!payment && step === 3 && (
+        {!restoringPayment && !restoreBlocked && !payment && step === 3 && (
           <AddressStep
             booking={booking}
             updateBooking={updateBooking}
@@ -406,7 +536,7 @@ export default function BookingWizard() {
             onBack={prevStep}
           />
         )}
-        {!payment && step === 4 && (
+        {!restoringPayment && !restoreBlocked && !payment && step === 4 && (
           <SummaryStep
             booking={booking}
             updateBooking={updateBooking}

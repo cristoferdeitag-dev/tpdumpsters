@@ -14,7 +14,9 @@ import { readFileSync } from "fs";
 // secret configured, minting returns null and verification always fails —
 // the feature is OFF, not running on an ephemeral secret.
 const SECRET_PATH = "/home/u781187371/resume-secret.json";
-const TOKEN_TTL_SECONDS = 72 * 60 * 60;
+// 24h (Hermes round-2): the watcher emails 30min-20h after abandonment, so a
+// day covers every realistic click; later clicks get "link expired" + phone.
+const TOKEN_TTL_SECONDS = 24 * 60 * 60;
 let cachedSecret: string | null = null;
 
 function getSecret(): string {

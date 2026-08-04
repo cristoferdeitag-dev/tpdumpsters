@@ -6,7 +6,9 @@ import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { getStripe } from "@/lib/stripe";
 import type { RowDataPacket } from "mysql2";
 
-// GET /api/checkout/resume?bid=TP-XXX&e=<exp>&t=<hmac>
+// POST /api/checkout/resume   body: { bid: "TP-XXX", e: "<exp>", t: "<hmac>" }
+// (POST + body per Hermes round-2: the token must not ride a query string
+// into access logs.)
 //
 // Powers the "finish your booking" link in the abandoned-cart recovery email:
 // returns the saved booking (created before payment with status
@@ -58,15 +60,21 @@ interface BookingRow extends RowDataPacket {
   email: string | null;
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   // Token-guessing throttle: the HMAC is unguessable in practice, but no
   // reason to let anyone hammer the endpoint for free DB reads.
   const rl = checkRateLimit(`resume:${clientIp(request.headers)}`, 10, 10 * 60 * 1000);
   if (!rl.allowed) return NextResponse.json({ error: "Too many attempts" }, { status: 429 });
 
-  const bid = request.nextUrl.searchParams.get("bid") || "";
-  const token = request.nextUrl.searchParams.get("t") || "";
-  const exp = request.nextUrl.searchParams.get("e") || "";
+  let body: { bid?: string; t?: string; e?: string } = {};
+  try {
+    body = await request.json();
+  } catch {
+    /* handled below */
+  }
+  const bid = typeof body.bid === "string" ? body.bid : "";
+  const token = typeof body.t === "string" ? body.t : "";
+  const exp = typeof body.e === "string" ? body.e : "";
   if (!isValidBookingId(bid) || !verifyBookingToken(bid, token, exp)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -110,21 +118,40 @@ export async function GET(request: NextRequest) {
     let authorizedCharges = false;
     let billingAddress: { line1: string; city: string; state: string; zip: string } | null = null;
     try {
+      const stripe = getStripe();
       const createdSec = Math.floor(new Date(row.created_at as string | Date).getTime() / 1000) - 300;
-      const sessions = await getStripe().checkout.sessions.list({ created: { gte: createdSec }, limit: 100 });
+      const sessions = await stripe.checkout.sessions.list({ created: { gte: createdSec }, limit: 100 });
       const match = sessions.data.find((s) => s.metadata?.booking_id === bid);
-      const md = match?.metadata;
-      if (md) {
-        deliveryWindow = md.delivery_window || "";
-        gclid = md.gclid || "";
-        authorizedCharges = md.authorized_charges === "true";
-        if (md.billing_line1) {
-          billingAddress = {
-            line1: md.billing_line1,
-            city: md.billing_city || "",
-            state: md.billing_state || "",
-            zip: md.billing_zip || "",
-          };
+      if (match) {
+        // The original session's STATE decides what resuming even means
+        // (Hermes round-2 bloqueante): a completed session = the customer
+        // already paid and only the webhook's DB update is missing — never
+        // offer to pay again. An open one is expired here so exactly one
+        // payable session can exist once the customer hits Pay.
+        if (match.status === "complete") {
+          console.error(`🚨 Resume ${bid}: session ${match.id} is COMPLETE but booking is awaiting_payment in MySQL — webhook missed an update, check it`);
+          return NextResponse.json({ alreadyHandled: true });
+        }
+        if (match.status === "open") {
+          try {
+            await stripe.checkout.sessions.expire(match.id);
+          } catch (expireErr) {
+            console.warn(`Resume ${bid}: couldn't expire open session ${match.id}: ${String(expireErr).slice(0, 120)}`);
+          }
+        }
+        const md = match.metadata;
+        if (md) {
+          deliveryWindow = md.delivery_window || "";
+          gclid = md.gclid || "";
+          authorizedCharges = md.authorized_charges === "true";
+          if (md.billing_line1) {
+            billingAddress = {
+              line1: md.billing_line1,
+              city: md.billing_city || "",
+              state: md.billing_state || "",
+              zip: md.billing_zip || "",
+            };
+          }
         }
       }
     } catch (err) {
@@ -155,6 +182,10 @@ export async function GET(request: NextRequest) {
         extraDays: Number(row.extra_days) || 0,
         extraDayFee: Number(row.extra_day_fee) || 75,
         totalPrice: Number(row.total_price),
+        // Summary hides the discount row when these are 0 (Hermes B4
+        // residual) — reconstruct them the same way the wizard computes them.
+        subtotal: Number(row.base_price) + (Number(row.extra_days) || 0) * (Number(row.extra_day_fee) || 75),
+        onlineDiscount: 50,
         address: row.address,
         city: row.city,
         zipCode: row.zip_code,
