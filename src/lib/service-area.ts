@@ -6,6 +6,8 @@
 // 2026-07-14 (TP-MRKVLJ3P, Cris msg 2385), San Jose 2026-07-30 (TP-MS3QJP2U,
 // Cris msg 17440) — all Santa Clara County. On 2026-08-05 Cris ordered the
 // WHOLE county excluded (msg 18098), so every county locality is listed.
+// Sebastopol (Sonoma County) excluded 2026-08-06 per Asaí (Telegram msg
+// 2026-08-06T01:09Z) — not covered.
 // (The "Mountain View" NEIGHBORHOOD of Martinez is unaffected: its Places
 // locality is "Martinez". "San José" accented variant covers manual entry.)
 export const EXCLUDED_CITIES = [
@@ -14,6 +16,8 @@ export const EXCLUDED_CITIES = [
   "milpitas", "palo alto", "cupertino", "campbell", "los gatos", "saratoga",
   "los altos", "los altos hills", "morgan hill", "gilroy", "monte sereno",
   "san martin", "stanford", "alviso",
+  // Sonoma County
+  "sebastopol",
 ];
 export const EXCLUDED_ZIPS = [
   // ── Santa Clara County ──
@@ -37,6 +41,8 @@ export const EXCLUDED_ZIPS = [
   "95020", "95021", // Gilroy
   "95046", // San Martin
   "95013", "95042", "95044", "95140", // Coyote, New Almaden, Redwood Estates, Mt Hamilton
+  // ── Sonoma County ──
+  "95472", "95473", // Sebastopol
 ];
 
 export function isOutsideServiceArea(city?: string, zip?: string): boolean {
