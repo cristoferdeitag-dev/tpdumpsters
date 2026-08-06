@@ -1,3 +1,61 @@
+## 2026-08-06 (~01:20Z) — asai (Sonnet 5) — 🚫 Sebastopol fuera de zona de servicio + booking online CERRADO vie 8/7 y sáb 8/8
+
+- **Orden de Asaí (Telegram 2026-08-06T01:09Z):** "no cubrimos Sebastopol, no dejes que booken en esa zona... cierra el booking online servicios para este viernes, sábado. Solo lunes disponible".
+- **Zona de servicio (`src/lib/service-area.ts`):** Sebastopol (Sonoma County) agregado a EXCLUDED_CITIES + zips 95472/95473 a EXCLUDED_ZIPS. Verifiqué primero que Santa Clara YA estaba excluido desde ayer (commit `34f3eda` de `cris`) — nada que hacer ahí, solo se lo confirmé a Asaí.
+- **Calendario (`src/lib/availability.ts`):** agregadas `2026-08-07` (viernes) y `2026-08-08` (sábado) a BLOCKED_DATES. Domingo 8/9 ya bloqueado por regla estándar (no domingos) → próximo día disponible online = lunes 8/10, exactamente lo que pidió.
+- **Deploy:** commit `1b647d8` + push · build local limpio (env NEXT_PUBLIC_GOOGLE_MAPS_KEY confirmado) · rsync `.next` a Hostinger · kill next-server · BUILD_ID local=prod `-Dz5qrIJ8R7oneWVlvrDV` ✓ · `/` y `/booking` 200 ✓ · `sebastopol` y `2026-08-07` confirmados dentro de los bundles server+cliente servidos ✓.
+- Lock tomado y liberado sin conflicto (nadie más tenía el proyecto). Evento anunciado en GLOBAL_EVENTS.
+
+## 2026-08-05 (~18:35Z) — cris (Fable 5) — ⏸️ Google Ads TP: solo queda High Intent, a $99/día
+
+- **Orden de Cris (msg 18106):** apagar todas las campañas de TP menos High Intent y ponerle $99/día.
+- Ejecutado por API (validateOnly→apply, verificado): **TP Ciudades Top (24002461874) PAUSED · Marca TP — Search (24080847340) PAUSED · presupuesto High Intent 15426019603: $210→$99/día.** tCPA sigue en $38.
+- Implicaciones anotadas: el checkpoint del viernes 8-ago cambia — el gasto objetivo ya no es $210/d sino ~$99/d; con tCPA $38 eso da ~2-3 conversiones/día de techo. La decisión "San José/Ciudades Top del domingo" quedó superada: Ciudades Top está pausada por orden directa. Marca pausada = las búsquedas "tp dumpsters" ya no tienen anuncio propio (riesgo menor de que un rival puje la marca; era $20/d con IS 100%).
+
+## 2026-08-05 (~17:40Z) — cris (Fable 5) — 🚫 SANTA CLARA COUNTY COMPLETO fuera de reservas + Google Ads
+
+- **Orden de Cris (msg 18096, alcance condado confirmado msg 18098):** quitar Santa Clara del sistema de reservas y de Google Ads. Se optó por el CONDADO completo — Mountain View, Milpitas y San José (excluidas antes una por una) son todas de ese condado.
+- **Reservas (`src/lib/service-area.ts`, commit `34f3eda`):** EXCLUDED_CITIES ahora lista las ~19 localidades del condado (Santa Clara, Sunnyvale, Palo Alto, Cupertino, Campbell, Los Gatos, Saratoga, Los Altos, Morgan Hill, Gilroy, etc.) y EXCLUDED_ZIPS suma ~45 zips nuevos del condado. Aplica en wizard (AddressStep) y `/api/checkout` (línea 80).
+- **Deploy:** build local + rsync `.next` + kill next-server. BUILD_ID prod = local `TXJqkypwE4s5UXdNNE_pE` ✓ · /booking 200 ✓ · lista verificada dentro de los bundles cliente y server ✓.
+- **Google Ads (cuenta TP 6835960996, validateOnly→apply, verificado en vivo):**
+  - Santa Clara County (geo 9057160) agregado como exclusión NEGATIVA en las 3 campañas (High Intent, Ciudades Top, Marca) — ninguna lo segmentaba, pero así no entra tráfico por "presencia o interés".
+  - **Milpitas (geo 1014012) REMOVIDO de la segmentación positiva de High Intent y Marca** — seguía recibiendo anuncios pese a estar excluida de reservas desde el 14-jul.
+- **Páginas SEO del sitio (santa-clara, santa-clara-county, etc.) NO se tocaron** — decisión aparte pendiente de Cris (afecta SEO).
+- Archivos clave: `src/lib/service-area.ts` · script Ads en scratchpad `ads_santa_clara.py`.
+
+## 2026-08-04 (~23:35Z) — cris2 (Laso, Fable 5) — 🏁 VENTA REAL VERIFICÓ EL CICLO + último bug cazado EN EL ACTO (credenciales DB del webhook)
+
+- **Venta real 23:11Z: Micheel Flores, GD 20yd $699 (TP-MSF9VPN8, entrega 5-ago).** El webhook nuevo procesó EN VIVO: `✅ signature verified` (primera vez en 2 meses con evento real) → `💰 PAYMENT RECEIVED` → **2 eventos de calendario creados solos** (delivery 5-ago id 48kf6kdp…, pickup 10-ago id eikpait4…) → `📱 SMS skipped (disabled by Cris)`.
+- **PERO el UPDATE a confirmed falló** → el log lo delató: `Access denied ''@127.0.0.1` — el route del webhook tenía su PROPIO `getDbConfig()` leyendo solo `process.env` (que Hostinger no inyecta). El fix de `126a70d` del 10-jun arregló lib/db pero esta copia local se escapó — **el webhook llevaba roto de escritura a DB aun antes del problema del secreto**.
+- **Fix desplegado en el acto:** getDbConfig ahora lee `/home/u781187371/db-creds.json` (mismo patrón de lib/db, env como fallback dev). Commit + BUILD `_9dRuZ8FAVPa11q3ieSvU` en prod. **Prueba definitiva: ping firmado post-deploy → `evt_diag_dbcreds_20260804` INSERTADO en `stripe_webhook_events`** (la escritura a MySQL del webhook funciona; ya no aparece el Access denied). TP-MSF9VPN8 marcada confirmed a mano (su calendario ya estaba).
+- **Estado final del circuito:** firma ✓ · procesamiento ✓ · calendario ✓ · escritura DB ✓ (probada) · SMS off ✓ · conversión gclid pendiente de una venta CON gclid (la de Micheel no traía). La próxima venta debe ser 100% automática — primera en 2 meses.
+- Día de ventas online 4-ago: 4 ventas = $2,896 ($799 West Fifth + $799 Raymond + $599 TP-MSF7RVYO + $699 Micheel).
+
+## 2026-08-04 (~23:30Z) — cris2 (Laso, Fable 5) — ✅ WEBHOOK REPARADO (dale de Cris msg 4487) + BACKFILL de 84 reservas + SMS OFF
+
+- **Fix ejecutado:** endpoint nuevo `we_1U0r5UIRhgZxSFKHKBfusHqK` creado por API (misma URL/eventos, api_version basil, descripción con fecha/autor) → secreto escrito en stripe-keys.json (backup `stripe-keys.json.bak-2026-08-04-pre-webhook-fix`) → **firma validada en vivo con ping firmado: HTTP 200** → endpoint viejo `we_1TDU8L` (secreto equivocado desde 10-jun) **disabled**. Re-validada la firma tras el deploy del SMS-off: 200.
+- **SMS al cliente DESACTIVADO por orden de Cris (msg 4487** — "no tenemos sistema"): commit + deploy BUILD `eG6PfDip1s4ZdAjg5tuMM` (import removido, body conservado para reactivar en una línea; el aviso Telegram a admins sigue vivo).
+- **Backfill (solo UPDATE, cero side-effects):** 89 sesiones de checkout PAGADAS desde el 8-jun (paginación completa de Stripe) → **84 reservas awaiting_payment → confirmed** (106 confirmed totales). SQL ejecutado en el MySQL de Hostinger y borrado del server. NO se crearon eventos de calendario retroactivos (desviación deliberada de la sugerencia de Gemini: el equipo operó manual 2 meses, alta probabilidad de duplicados) — en su lugar, **lista de 5 entregas futuras pagadas pasada a Cris/Asaí para verificación manual**: 5-ago Nathan TP-MSDL3QN2 / West Fifth TP-MSF0MADG / TP-MSF7RVYO (3ª venta de hoy) · 6-ago Raymond TP-MSF3RTSP · **14-ago Luis TP-MSASPPUK (la más riesgosa)**.
+- **Conversiones históricas de Google: NO se re-subieron** (consenso con Gemini: doble conteo con el tag client-side + desestabiliza Smart Bidding).
+- **Monitoreo permanente:** `tp_abandoned_watch.sh` ahora grita en GLOBAL_EVENTS si detecta `paid_stripe_DB_STALE` — un webhook muerto se vuelve visible el mismo día.
+- **Pendiente de verificación final:** la PRÓXIMA venta real debe mostrar el ciclo completo (✅ signature verified → confirmed → calendario → conversión gclid). Voto de Sol del consejo aún en tránsito; se integrará a la síntesis.
+
+## 2026-08-04 (~23:10Z) — cris2 (Laso, Fable 5) — 🎯 WEBHOOK: CAUSA RAÍZ CONFIRMADA CON PRUEBA — el secreto guardado el 10-jun NO es el del endpoint real
+
+- **Orden de Cris (msg 4483): rebotar con Hermes y Gemini** → Consejo IA disparado (`/root/reports/consejo/2026-08-04-webhook-tp-muerto/`, brief sha256 1761861c…). Gemini ya votó; Sol (vía Hermes) pendiente.
+- **Evidencia clave del diagnóstico propio:** commit `020783a` del 10-jun pasó la verificación de firma de FAIL-OPEN ("no secret → skipping verification", procesaba) a FAIL-CLOSED — fecha exacta del corte (última confirmed 8-jun). El endpoint `we_1TDU8LIRhgZxSFKHBrzdjlYV` es del 21-mar; el secreto `whsec_` (38c) se escribió en stripe-keys.json el 10-jun.
+- **Aporte de Gemini (verificado contra docs de Stripe):** Stripe solo deshabilita endpoints por 5xx/timeout sostenido — los 400 de firma inválida cuentan como "entregado", por eso 8 semanas invisibles. + Propuso la prueba discriminante H1 vs H2.
+- **PRUEBA DISCRIMINANTE EJECUTADA (23:05Z): HTTP 200.** Evento inocuo `diagnostic.ping` firmado localmente con el secreto DE PROD → `{"received":true,"ignored":true}` → código de verificación y transporte (LiteSpeed/req.text) PERFECTOS. **H1 confirmada: Stripe firma con otro secreto; el del archivo nunca correspondió al endpoint.** H2/H4 descartadas con evidencia.
+- **Plan de fix acordado con Gemini (espera dale de Cris + voto de Sol):** (1) endpoint nuevo por API (la creación devuelve el secreto) → backup de stripe-keys.json → escribir secreto → validar con siguiente evento real → deshabilitar `we_1TDU8L` DE INMEDIATO (evitar dobles entregas); (2) backfill de 83 reservas pagadas → confirmed SIN side-effects retroactivos, EXCEPTO calendario para entregas futuras; (3) NO re-subir conversiones históricas a Google (doble conteo con el tag client-side + desestabiliza Smart Bidding); (4) monitoreo: alerta DB-stale + logs persistentes (el vigía de hoy ya es el monitor indirecto).
+
+## 2026-08-04 (~22:55Z) — cris2 (Laso, Fable 5) — 🚀 **DESPLEGADO A PROD** (OK Cris msg 4481) + 🚨 HALLAZGO: el webhook NO actualiza la BD desde el 8-JUN
+
+- **Deploy ejecutado con la checklist de Hermes:** `resume-secret.json` creado en Hostinger (64 hex, 600) · `dashboard-auth.json` confirmado y copiado a `/root/.env.tpdashboard` (600, para el cron del VPS) · push `14c5774` + rsync `.next` + kill next-server · **BUILD_ID prod = local `4yuvBRWRovfukBSiZflQy`** ✓ · `/` y `/booking` 200 ✓ · SSR de /booking muestra el loader (no Step 1) ✓ · resume con token falso → 404 `{"error":"Not found"}` ✓ · GET → 405 ✓ · watcher sin auth → 401 ✓ · nodemailer verificado DENTRO del bundle (Hostinger no corre npm install) ✓. `mail-creds.json` PENDIENTE (espera buzón bookings@ de Cris; vigía en modo solo-WhatsApp).
+- **Cron instalado:** `*/20 * * * * /root/scripts/tp_abandoned_watch.sh` (POST Bearer desde `/root/.env.tpdashboard`, log sin PII en `/var/log/tp-abandoned-watch.log` 600).
+- **Primera corrida real = la protección B2 de Hermes pagó todo el ciclo:** dry-run mostró 2 "abandonados" de hoy; la corrida real los verificó contra Stripe y AMBOS estaban PAGADOS (Raymond Smurthwaite `in_1U0orMIRhgZxSFKHhgYopAhs` $799 20:22Z · West Fifth Holdings `in_1U0nSLIRhgZxSFKHsd3k2Tle` $799 18:52Z) → `skip:paid_stripe_DB_STALE`, cero mensajes indebidos.
+- **🚨 HALLAZGO MAYOR DERIVADO: el webhook lleva ~2 MESES sin actualizar MySQL.** Última reserva `confirmed` = TP-MQ5MS7Y0 del **2026-06-08**; las 83 reservas de los últimos 30 días están `awaiting_payment` (incl. Nathan 3-ago y Luis 1-ago, ambos pagados). El endpoint SÍ responde (POST sin firma → 400 Invalid signature; registrado en Stripe como `we_1TDU8L`, enabled, checkout.session.completed+invoice.payment_succeeded). Sospecha: firma/secreto o bug introducido en deploy de ~jun; el log de Hostinger se recicla en cada restart así que no hay rastro histórico. **Riesgo colateral a verificar: eventos de calendario, SMS y upload de conversiones con VALOR a Google (Smart Bidding).** Ofrecido a Cris diagnosticarlo de inmediato (msg 4482) — esperando su dale.
+- Nota operativa: el vigía va a re-checar contra Stripe a cada pagado-no-actualizado dentro de su ventana de 20h (2 búsquedas por corrida); las marcas en recovery_notices son permanentes, sin riesgo de aviso falso.
+
 ## 2026-08-04 (~22:40Z) — cris2 (Laso, Fable 5) — 🎉 ROUND 6: **GO DE HERMES** — paquete de recuperación de carrito APROBADO, esperando OK final de Cris para deploy
 
 - **Veredicto GO (22:06Z) tras 6 rondas de auditoría adversarial.** Cierre con pruebas integradas de navegador EN AMBOS SENTIDOS: proxy 404 text/html → panel bloqueado (no Step 1) ✓ · 404 semántico JSON `Not found` → wizard nuevo con nota de expiración ✓ (control positivo: no sobre-bloqueé) · respaldo tp_resume consumido (marcador TP_RESUME_STORAGE_CLEARED) ✓. Cero defectos nuevos. Cadena final de commits: `2afed0c` → `94f4abe` → `dd42a8f` → `e736313` → `9ddc5d7` (HEAD local, SIN push).
