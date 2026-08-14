@@ -17,27 +17,27 @@ function getDims(size: string): string {
 /* ───────── Service pricing ───────── */
 const SERVICES: Record<string, Record<string, { price: number; dims: string; weight: string; days: number }>> = {
   "General Debris": {
-    "10 Yard": { price: 649, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "10 Yard": { price: 649, dims: getDims("10"), weight: "1 ton", days: 3 },
     "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Household Clean Out": {
-    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
     "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Construction Debris": {
-    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
     "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Roofing": {
-    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
     "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Green Waste": {
-    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 7 },
+    "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
     "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },

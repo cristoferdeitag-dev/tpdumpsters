@@ -31,10 +31,10 @@ const leftFaqs: FaqItem[] = [
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">Standard rental includes:</p>
         <ul className="list-disc pl-5 mb-2.5">
           <li className="text-sm text-[#666] leading-[1.7] mb-1">
-            <strong>3 days</strong> for 10-yard dumpsters used for clean soil, concrete, bricks, or mixed materials.
+            <strong>3 days</strong> for every 10-yard dumpster — debris, clean soil, concrete, bricks, asphalt, or mixed materials.
           </li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1">
-            <strong>7 days</strong> for all dumpsters used for debris (10, 20, and 30-yard).
+            <strong>7 days</strong> for 20 and 30-yard debris dumpsters.
           </li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1">
             Need more time? Additional days are available at <strong>$75/day</strong> (24-hour notice required).

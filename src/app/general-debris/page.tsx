@@ -88,7 +88,7 @@ const jsonLd = {
       name: "10 Yard General Debris Dumpster",
       price: "599",
       priceCurrency: "USD",
-      description: "10 yard dumpster — 1 ton included, 7-day rental, 12ft L × 8ft W × 2.5ft H",
+      description: "10 yard dumpster — 1 ton included, 3-day rental, 12ft L × 8ft W × 2.5ft H",
     },
     {
       "@type": "Offer",
@@ -149,7 +149,7 @@ const faqSchema = {
       name: "How long can I keep the dumpster?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "All general debris dumpster rentals include a 7-day rental period. Additional days are available at $75/day with 24-hour notice.",
+        text: "General debris rentals include 3 days on the 10-yard and 7 days on the 20 and 30-yard. Additional days are available at $75/day with 24-hour notice.",
       },
     },
     {
@@ -202,7 +202,7 @@ const dumpsterSizes = [
     price: "$599",
     dimensionsClean: "12'L × 8'W × 2.5'H",
     weight: "1 ton included",
-    rental: "7-day rental",
+    rental: "3-day rental",
     image: "/images/sizes/10-yard.png",
     bestFor: "Small cleanouts, single-room projects, garage cleanups",
     popular: false,
@@ -296,7 +296,7 @@ const faqsLeft = [
       <>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">Our general debris dumpster pricing is straightforward:</p>
         <ul className="list-disc pl-5 mb-2.5">
-          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>10-yard:</strong> $599 — includes 1 ton and 7-day rental</li>
+          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>10-yard:</strong> $599 — includes 1 ton and 3-day rental</li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>20-yard:</strong> $699 — includes 2 tons and 7-day rental</li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
@@ -310,7 +310,7 @@ const faqsLeft = [
     question: "How long can I keep the dumpster?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        All general debris dumpster rentals include a <strong>7-day rental period</strong>. Need more time? No problem — additional days are available at $75/day with 24-hour notice. Whether you&apos;re tackling a weekend cleanout or a multi-week renovation, we&apos;ll work with your timeline.
+        General debris rentals include <strong>3 days</strong> on the 10-yard and <strong>7 days</strong> on the 20 and 30-yard. Need more time? No problem — additional days are available at $75/day with 24-hour notice. Whether you&apos;re tackling a weekend cleanout or a multi-week renovation, we&apos;ll work with your timeline.
       </p>
     ),
   },
@@ -435,7 +435,7 @@ export default function GeneralDebrisPage() {
             General Debris Dumpster Sizes
           </h2>
           <p className="text-[15px] text-[#666] leading-[1.7] mb-10 max-w-3xl">
-            Choose the right size for your project. All prices include delivery, pickup, disposal, and a 7-day rental period. No hidden fees.
+            Choose the right size for your project. All prices include delivery, pickup, disposal, and the rental period — 3 days on the 10-yard, 7 days on the 20 and 30-yard. No hidden fees.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-[30px]">
@@ -795,7 +795,7 @@ export default function GeneralDebrisPage() {
                 step: "3",
                 icon: <FaTrashCan />,
                 title: "Fill Your Dumpster",
-                desc: "Load it up at your own pace. You have 7 days included. Just don't fill above the marked line.",
+                desc: "Load it up at your own pace. You have 3 days included on the 10-yard, 7 on the 20 and 30-yard. Just don't fill above the marked line.",
               },
               {
                 step: "4",

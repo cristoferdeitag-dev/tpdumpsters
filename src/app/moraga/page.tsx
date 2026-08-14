@@ -182,7 +182,7 @@ const jsonLd = {
     itemListElement: [
       {
         "@type": "Offer",
-        itemOffered: { "@type": "Service", name: "10 Yard Dumpster Rental", description: "Compact dumpster for tight spaces, soil, concrete, and small cleanups. 7-day rental, 1 ton included." },
+        itemOffered: { "@type": "Service", name: "10 Yard Dumpster Rental", description: "Compact dumpster for tight spaces, soil, concrete, and small cleanups. 3-day rental, 1 ton included." },
         price: "599",
         priceCurrency: "USD",
       },

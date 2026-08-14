@@ -89,7 +89,7 @@ const jsonLd = {
       name: "10 Yard Construction Debris Dumpster",
       price: "599",
       priceCurrency: "USD",
-      description: "10 yard dumpster — 1 ton included, 7-day rental, 12ft L × 8ft W × 2.5ft H",
+      description: "10 yard dumpster — 1 ton included, 3-day rental, 12ft L × 8ft W × 2.5ft H",
     },
     {
       "@type": "Offer",
@@ -203,7 +203,7 @@ const dumpsterSizes = [
     price: "$599",
     dimensionsClean: "12&apos;L × 8&apos;W × 2.5&apos;H",
     weight: "1 ton included",
-    rental: "7-day rental",
+    rental: "3-day rental",
     image: "/images/sizes/10-yard.png",
     bestFor: "Small demos, single bathroom remodel, minor renovations",
     popular: false,
@@ -297,7 +297,7 @@ const faqsLeft = [
       <>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">Our construction debris dumpster pricing:</p>
         <ul className="list-disc pl-5 mb-2.5">
-          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>10-yard:</strong> $599 — includes 1 ton and 7-day rental</li>
+          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>10-yard:</strong> $599 — includes 1 ton and 3-day rental</li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>20-yard:</strong> $699 — includes 2 tons and 7-day rental</li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
@@ -433,7 +433,7 @@ export default function ConstructionDebrisPage() {
             Construction Debris Dumpster Sizes
           </h2>
           <p className="text-[15px] text-[#666] leading-[1.7] mb-10 max-w-3xl">
-            Choose the right construction dumpster for your project. All prices include delivery, pickup, disposal, and a 7-day rental period. No hidden fees.
+            Choose the right construction dumpster for your project. All prices include delivery, pickup, disposal, and the rental period — 3 days on the 10-yard, 7 days on the 20 and 30-yard. No hidden fees.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-[30px]">
@@ -843,7 +843,7 @@ export default function ConstructionDebrisPage() {
                 step: "3",
                 icon: <FaTrashCan />,
                 title: "Fill Your Dumpster",
-                desc: "Load it up at your own pace. You have 7 days included. Just don't fill above the marked line.",
+                desc: "Load it up at your own pace. You have 3 days included on the 10-yard, 7 on the 20 and 30-yard. Just don't fill above the marked line.",
               },
               {
                 step: "4",

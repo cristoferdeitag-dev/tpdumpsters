@@ -52,7 +52,7 @@ interface ServiceCategory {
 // basePrice = list price; price = online-booking price (basePrice - $50 discount).
 // The booking flow charges `price` and shows the base struck through.
 const GENERAL_SIZES: SizeOption[] = [
-  { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 7 },
+  { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 3 },
   { size: "20 Yard", basePrice: 749, price: 699, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
   { size: "30 Yard", basePrice: 849, price: 799, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
 ];

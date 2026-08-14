@@ -118,7 +118,7 @@ const countyFaqs = [
     question: "How long can I keep the dumpster?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Standard rental is <strong>7 days</strong> for general debris (or 3 days for heavy materials like soil/concrete), included in the base price. Need more time? Extensions are available at <strong>$75/day</strong>. Just let us know and we&apos;ll keep the dumpster as long as your project needs.
+        Standard rental is <strong>3 days</strong> on every 10-yard and <strong>7 days</strong> on 20 and 30-yard debris dumpsters, included in the base price. Need more time? Extensions are available at <strong>$75/day</strong>. Just let us know and we&apos;ll keep the dumpster as long as your project needs.
       </p>
     ),
   },

@@ -81,7 +81,7 @@ export default function BookingPage() {
           {/* Dos elementos separados a propósito: en una sola línea, "booking online"
               caía sola en el renglón siguiente (palabra viuda) en 390px. */}
           <p className="mt-5 font-[var(--font-poppins)] text-[13px] sm:text-[15px] text-white/75">
-            7-day rental · delivery &amp; pickup included
+            3–7 day rental · delivery &amp; pickup included
           </p>
           <p className="mt-2 font-[var(--font-poppins)] text-[13px] sm:text-[15px] font-semibold text-tp-gold">
             $50 off when you book online

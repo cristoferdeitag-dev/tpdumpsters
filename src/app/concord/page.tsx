@@ -20,7 +20,7 @@ const concordFaqs = [
     question: "How much does a dumpster rental cost in Concord?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Dumpster rental in Concord starts at <strong>$600 for a 10-yard</strong> (7-day rental, 1 ton
+        Dumpster rental in Concord starts at <strong>$600 for a 10-yard</strong> (3-day rental, 1 ton
         included), $650 for a 20-yard (2 tons), and $700 for a 30-yard (3 tons). We offer transparent
         pricing with no hidden fees. Call <strong>(510) 650-2083</strong> for an exact quote.
       </p>

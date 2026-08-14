@@ -260,7 +260,9 @@ export async function POST(request: Request) {
       "Clean Asphalt",
     ];
     const isLight = lightServices.includes(booking.service.serviceType);
-    const rentalDays = isLight ? 3 : 7;
+    // Asaí 2026-08-11: every 10-yard is a 3-day rental, whatever the service.
+    // 20/30-yard general debris keep the 7-day period.
+    const rentalDays = isLight || String(sizeNum) === "10" ? 3 : 7;
     const weightLimit = isLight
       ? "No weight limit"
       : ({ "10": "1 ton", "20": "2 tons", "30": "3 tons" } as Record<string, string>)[sizeNum] || "N/A";

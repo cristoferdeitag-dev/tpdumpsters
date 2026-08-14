@@ -81,7 +81,7 @@ const jsonLd = {
       name: "10 Yard Roofing Dumpster",
       price: "599",
       priceCurrency: "USD",
-      description: "10 yard roofing dumpster — 1 ton included, 7-day rental, 12ft L × 8ft W × 2.5ft H. ",
+      description: "10 yard roofing dumpster — 1 ton included, 3-day rental, 12ft L × 8ft W × 2.5ft H. ",
     },
     {
       "@type": "Offer",
@@ -174,7 +174,7 @@ const faqSchema = {
       name: "How long does a roofing project take?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Most residential roof replacements take 1-3 days. Our 7-day rental period gives roofing contractors plenty of time. If your project runs longer, additional days are available at $75/day.",
+        text: "Most residential roof replacements take 1-3 days. The 10-yard includes a 3-day rental; the 20 and 30-yard include 7 days. If your project runs longer, additional days are available at $75/day.",
       },
     },
     {
@@ -196,7 +196,7 @@ const dumpsterSizes = [
     roofingPrice: "$599",
     dimensionsClean: "12&apos;L × 8&apos;W × 2.5&apos;H",
     weight: "1 ton included",
-    rental: "7-day rental",
+    rental: "3-day rental",
     image: "/images/sizes/10-yard.png",
     bestFor: "Small roof repairs, single-slope tear-offs, shed roofing",
     popular: false,
@@ -263,7 +263,7 @@ const faqsLeft = [
     question: "Why do roofing dumpsters cost more?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Roofing dumpsters are priced the same as general debris dumpsters. Whether you&apos;re tearing off an old roof or replacing shingles, our straightforward pricing covers delivery, pickup, disposal, and a 7-day rental period — all included with no hidden fees.
+        Roofing dumpsters are priced the same as general debris dumpsters. Whether you&apos;re tearing off an old roof or replacing shingles, our straightforward pricing covers delivery, pickup, disposal, and the rental period — 3 days on the 10-yard, 7 days on the 20 and 30-yard — all included with no hidden fees.
       </p>
     ),
   },
@@ -332,7 +332,7 @@ const faqsRight = [
     question: "How long does a roofing project take?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Most residential roof replacements take <strong>1-3 days</strong>. Our 7-day rental period gives roofing contractors plenty of time to complete the job without rushing. If your project runs longer due to weather delays or complexity, additional days are available at $75/day with 24-hour notice.
+        Most residential roof replacements take <strong>1-3 days</strong>. The 10-yard includes a <strong>3-day</strong> rental and the 20 and 30-yard include <strong>7 days</strong> — plenty of time to complete the job without rushing. If your project runs longer due to weather delays or complexity, additional days are available at $75/day with 24-hour notice.
       </p>
     ),
   },
@@ -411,7 +411,7 @@ export default function RoofingPage() {
             Roofing Dumpster Sizes &amp; Prices
           </h2>
           <p className="text-[15px] text-[#666] leading-[1.7] mb-10 max-w-3xl">
-            All roofing dumpster prices include delivery, pickup, disposal, and a 7-day rental period. No hidden fees — what you see is what you pay.
+            All roofing dumpster prices include delivery, pickup, disposal, and the rental period (3 days on the 10-yard, 7 days on the 20 and 30-yard). No hidden fees — what you see is what you pay.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-[30px]">
@@ -722,7 +722,7 @@ export default function RoofingPage() {
                 step: "3",
                 icon: <FaTrashCan />,
                 title: "Load Roofing Debris",
-                desc: "Tear off and toss directly into the dumpster. You have 7 days included. Keep materials below the fill line.",
+                desc: "Tear off and toss directly into the dumpster. You have 3 days included on the 10-yard, 7 on the 20 and 30-yard. Keep materials below the fill line.",
               },
               {
                 step: "4",

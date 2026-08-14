@@ -117,7 +117,7 @@ const services = [
       "The most versatile dumpster for home cleanouts, renovations, junk removal, and mixed waste projects.",
     sizes: ["10 yd", "20 yd", "30 yd"],
     startPrice: "$599",
-    rental: "7 days",
+    rental: "3–7 days",
     featured: true,
     items: ["Furniture & appliances", "Renovation debris", "Yard waste & junk", "Mixed household items"],
   },
@@ -131,7 +131,7 @@ const services = [
       "Perfect for garage cleanouts, estate cleanups, moving projects, and decluttering your entire home.",
     sizes: ["10 yd", "20 yd", "30 yd"],
     startPrice: "$599",
-    rental: "7 days",
+    rental: "3–7 days",
     featured: false,
     items: ["Old furniture & mattresses", "Garage & attic junk", "Estate cleanout items", "Moving leftovers"],
   },
@@ -145,7 +145,7 @@ const services = [
       "Heavy-duty dumpsters for remodels, demolitions, and construction job sites across the Bay Area.",
     sizes: ["10 yd", "20 yd", "30 yd"],
     startPrice: "$599",
-    rental: "7 days",
+    rental: "3–7 days",
     featured: false,
     items: ["Drywall & lumber", "Flooring & tile", "Cabinets & fixtures", "Demo debris"],
   },
@@ -159,7 +159,7 @@ const services = [
       "Specialized dumpsters for roof tear-offs, shingle disposal, and heavy roofing materials.",
     sizes: ["10 yd", "20 yd", "30 yd"],
     startPrice: "$599",
-    rental: "7 days",
+    rental: "3–7 days",
     featured: false,
     items: ["Asphalt shingles", "Roofing felt & tar paper", "Metal flashing", "Tile & wood shakes"],
   },
@@ -173,7 +173,7 @@ const services = [
       "Eco-friendly disposal for landscaping projects, tree trimming, brush clearing, and yard cleanups.",
     sizes: ["10 yd", "20 yd", "30 yd"],
     startPrice: "$599",
-    rental: "7 days",
+    rental: "3–7 days",
     featured: false,
     items: ["Tree branches & limbs", "Grass & brush", "Leaves & shrubs", "Landscaping debris"],
   },
@@ -238,7 +238,7 @@ const whyUs = [
   {
     icon: FaClock,
     title: "Flexible Rentals",
-    desc: "7-day rentals for general waste, 3-day for heavy materials. Extensions available.",
+    desc: "3-day rentals on every 10-yard, 7-day on 20 and 30-yard. Extensions available.",
   },
   {
     icon: FaShieldHalved,
@@ -451,7 +451,7 @@ export default function ServicesPage() {
                   <span className="text-3xl font-black text-gray-900">$599</span>
                 </div>
                 <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>
-                <p className="text-sm text-gray-500 mb-6">1 ton included · 7 days</p>
+                <p className="text-sm text-gray-500 mb-6">1 ton included · 3 days</p>
                 <ul className="text-left space-y-2 text-sm text-gray-700">
                   <li className="flex items-center gap-2">
                     <FaCircleCheck className="text-green-500 flex-shrink-0" />
@@ -707,7 +707,7 @@ export default function ServicesPage() {
             <p>
               Every dumpster rental includes delivery, pickup, and disposal with
               no hidden fees. We offer same-day delivery when you call before
-              noon, flexible rental periods (7 days for general waste, 3 days
+              noon, flexible rental periods (3 days on every 10-yard, 7 days on 20 and 30-yard
               for heavy materials), and bilingual support in English and Spanish.
               Whether you&apos;re a homeowner tackling a weekend cleanout or a
               contractor managing multiple job sites, TP Dumpsters has the right

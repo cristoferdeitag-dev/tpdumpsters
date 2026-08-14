@@ -38,7 +38,7 @@ const services: ServiceCategory[] = [
         price: 599,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "1 ton",
-        rentalDays: "7 days",
+        rentalDays: "3 days",
       },
       {
         size: "20 Yard",
