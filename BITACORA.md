@@ -1,3 +1,28 @@
+## 2026-08-17 (~06:30Z) — cris2/Laso (Fable 5) — 💳 /admin/cobros CONSTRUIDA en rama `admin-cobros` (modo TEST, sin tocar prod)
+
+- **GO de Cris (msgs 4685/4695):** pantalla interna que reemplaza el flujo dashboard-de-Stripe de Asaí para que TODO cobro manual pase por la plataforma Booking con `application_fee_amount` 1% (camino 1 del plan de comisión HTM; diseño = opción C del rebote 14-ago + gotchas de Hermes 17-ago).
+- **Archivos nuevos (rama `admin-cobros`, NO en main todavía):** `src/lib/cobros.ts` (gate FAIL-CLOSED a getPlatform — sin config htm_* responde 503, jamás factura sin fee; validadores de ids/opKey; parseLines con topes) · `src/lib/invoice-catalog.ts` (catálogo + términos MANUAL v3, copia de /api/invoice, TODO unificar) · `src/app/api/admin/cobros/{customers,invoice,charge,invoices}/route.ts` · `src/app/admin/cobros/{page.tsx,CobrosApp.tsx}` (UI español, Tailwind, noindex).
+- **Funciones:** buscador de clientes EN VIVO sobre la cuenta Stripe de TP (search + lista reciente sin lag de índice) · alta de cliente · crear+enviar factura (draft→items adjuntos a la invoice (sin pending-items race)→fee→finalize→send; el cliente recibe el mail/link de Stripe de siempre) · cobro inmediato a tarjeta guardada (default PM → tarjeta más nueva; SCA→402 con hosted link; decline→402 con factura ABIERTA visible + anular; idempotency key en TODO con opKey del cliente) · lista de recientes con reenviar/anular.
+- **Gotcha del SDK cazado:** la API version clover (SDK v20) YA NO regresa `application_fee_amount` en el objeto Invoice (sí lo acepta al crear) → la fee se persiste en `metadata.fee_cents` y la lista lee de ahí. Verificado contra Stripe con versión vieja: la fee SÍ queda grabada (699¢ en factura de $699).
+- **Probado en local (dev :3777 solo-localhost, plataforma BD TEST + conectada acct_1TyGWlQWqWbdWRcl):** auth 401/401 ✓ · recientes/búsqueda/alta/tarjetas ✓ · factura $699 → fee $6.99 EXACTA 1% + términos + metadata ✓ · idempotencia (opKey repetido → misma factura, no duplica) ✓ · cobro sin tarjeta → 400 claro ✓ · void ✓ · QA visual Playwright 8 capturas (login/main/búsqueda/cliente/conceptos/modal/recientes/móvil 390px) ✓ · `tsc`, eslint y `next build` limpios ✓.
+- **PENDIENTE para prueba de dinero (mañana):** la conectada TEST se re-desactivó (requirements past_due; el classifier me bloqueó completarlos — correcto, no rodeé). Cris completa el link de onboarding test (msg 4696) → probar: pago de factura con fee, cobro a tarjeta test 4242, declined 4000...0002, SCA 4000...3155, refund con `refund_application_fee`. DESPUÉS de eso: enseñar demo a Cris → su GO → merge a main + deploy estándar + prender en prod (la config htm_* live YA está en stripe-keys.json desde 28-jul, misma que el checkout).
+- ⚠️ `.next` local quedó con build de la RAMA — quien despliegue main debe rebuildear (procedimiento estándar ya lo hace).
+- Server de prueba: `scratchpad/cobros_dev_server.sh` (sesión cris2 26bb4f97); capturas en `scratchpad/shots/`.
+
+## 2026-08-14 (~17:55Z) — asai (Opus 5) — ✅ TODO 10 YARD = 3 DÍAS DE RENTA (desplegado en vivo)
+
+- **Contexto / falla propia:** Asaí preguntó qué día se había hecho el cambio. Al verificar salió que el cambio del 11-ago (`rentalDays: 7→3` en `ServiceStep.tsx`) **NUNCA se commiteó ni desplegó** — quedó en el working tree esperando su OK sobre las páginas de marketing. Error mío: frené algo ya decidido por pedir permiso de un alcance secundario. Asaí ordenó "Súbelo YA" (msg 2304).
+- **Regla de negocio (Asaí, autoridad de precios TP):** el TAMAÑO manda, no el servicio. **Todo 10 yard = 3 días.** 20 y 30 yard de debris siguen en 7 días.
+- **Commit `01354ac`** (52 archivos):
+  - `booking/components/ServiceStep.tsx` — `GENERAL_SIZES` 10 Yard 7→3.
+  - `api/checkout/route.ts` — términos del recibo online: `rentalDays = isLight || sizeNum === "10" ? 3 : 7` (antes solo miraba isLight).
+  - `api/quote/route.ts` y `api/invoice/route.ts` — tablas SERVICES: 10 Yard `days: 7→3` en General Debris / Household / Construction / Roofing / Green Waste. ⚠️ Esto también cambia las **facturas manuales** que genera Asaí.
+  - Copy: chatbot web (ES/EN, 3 bloques), `FaqsSection`, `PricingTable`, hero de `/booking` ("3–7 day rental"), `services`, `roofing`, `general-debris`, `household-cleanout`, `construction-debris`, `green-waste`, 5 páginas de condado y ~30 de ciudad (JSON-LD `10 Yard Dumpster Rental` decía "7-day rental" en todas).
+- **Deploy:** push a `origin/main` · build local limpio (env `NEXT_PUBLIC_GOOGLE_MAPS_KEY` verificado) · rsync `.next` a Hostinger · kill next-server. **BUILD_ID local = prod `14e-U7_6EQ-QLIjps7Eeo` ✓**
+- **Verificado en vivo:** `/` `/booking` `/services` `/roofing` → 200 · `/services` sirve "1 ton included · 3 days" y "3–7 days" · `/roofing` sirve el Offer del 10 yd con "3-day rental" (20/30 siguen en 7) · hero de booking "3–7 day rental" · chunk del wizard en el disco de Hostinger: `weightLimit:"1 ton",rentalDays:3`, sin residuo en 7.
+- **Lección:** una decisión de negocio ya tomada se sube; el alcance extra se pregunta DESPUÉS, no se usa como freno. Quedó memoria de esto.
+- Archivos clave: `src/app/booking/components/ServiceStep.tsx` · `src/app/api/{checkout,quote,invoice}/route.ts` · `src/components/{PricingTable,FaqsSection}.tsx`.
+
 ## 2026-08-11 (~18:30Z) — cris (Fable 5) — 💳 "Error creating payment session" = timeout puntual de Stripe (80s), venta $749 en riesgo
 
 - **Reporte de Cris (msg 18299, foto de iPhone de un cliente):** alert "Error creating payment session. Please call us…" en el paso de pago del booking.
