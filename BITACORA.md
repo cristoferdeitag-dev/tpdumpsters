@@ -1,3 +1,22 @@
+## 2026-09-04 22:00Z — asai (Opus 5) — Un cliente = una ficha en Stripe (edab4ad → BUILD `ys1srzCKSXuYZ3a_iEu2b`, en prod)
+
+**Causa raíz de los clientes duplicados.** `/api/checkout` (compra del sitio) y `/api/invoice` (el generador interno de cotizaciones que usa Asaí) llamaban `customers.create` **sin buscar antes**, así que un cliente que ya había comprado nacía otra vez en Stripe. Medido hoy en la cuenta de TP: 494 clientes reales, **53 con 2+ fichas, 69 fichas de más**. Con la ficha partida, la tarjeta guardada queda en una y el historial en otra — Asaí lo cazó con Jonah Abkowitz, que salía "sin tarjeta guardada" teniendo su Visa ****5408 en la ficha nacida del checkout (esa ficha trae `metadata.booking_id = TP-MTAD9SXI`, la firma del checkout ✅✅).
+
+**Hecho.** Nuevo `findOrCreateCustomer` en `src/lib/stripe.ts`, usado por los dos endpoints:
+- Busca con **`customers.list({ email })`**: coincidencia exacta y **sin** el retraso de indexación de `search` (~1 min), que es justo el que dejaría duplicar dos compras seguidas.
+- Si existe, **actualiza** (nombre, teléfono, dirección de ESTE trabajo, metadata) y la reusa; si no, crea igual que antes.
+- Si la búsqueda falla, crea de todos modos: **nunca se rompe un cobro** por no poder consultar.
+
+**Probado en modo test antes de subir** (cuenta de pruebas, ✅✅): 3 corridas con el mismo correo → UNA ficha; los datos se refrescan; y una tarjeta guardada sigue adjunta tras reusar la ficha. La ficha de prueba se borró.
+
+**Los duplicados que YA existen no se tocan** — Stripe no permite fusionar customers ni mover un PaymentMethod entre fichas. Ésos se unen al leer, en la pantalla de Cobros de BookingDumpsters (commit hermano `471d644`).
+
+**Deploy, siguiendo la regla del incidente del 01:05Z:** `git branch --show-current` → `main`; build desde `git archive main` en carpeta aparte (nunca `HEAD`, nunca el working tree). Verificado **antes** de compilar que el fix sin commitear de `cris` en `src/app/api/webhook/route.ts` (`invoice.total`) NO viajaba en la copia — sigue intacto en el working tree, pendiente de su autor. Verificado **después** en vivo: `/booking` 200, `_buildManifest` del build nuevo 200, **`/admin/cobros` sigue 404** y el **sábado 2026-09-05 sigue bloqueado** (está en `availability.ts` y en el chunk servido) ✅✅.
+
+**Archivos:** `src/lib/stripe.ts`, `src/app/api/checkout/route.ts`, `src/app/api/invoice/route.ts`.
+
+---
+
 ## 2026-09-04 (01:28Z) — cris2 «Laso» (Fable 5.1) — 🔧 Working tree regresado a `main` (GO Cris msg 5942) tras el incidente de `/admin/cobros`
 - **Causa raíz del incidente de 01:05Z (entrada de asai abajo):** yo dejé la carpeta compartida parada en mi rama `admin-cobros` al terminar el 17/18-ago; el build de asai salió de `HEAD` y se llevó la pantalla Cobros. Lo asumo.
 - **Hecho:** `git checkout main` (03872e2 = origin/main, ya incluye el cierre del sábado 5-sep). `admin-cobros` respaldada en GitHub (`origin/admin-cobros` = 1c77956, incluye una copia duplicada del cierre del sábado que asai commiteó ahí sin querer; inofensiva). `src/app/admin/cobros` ya NO existe en el working tree.
