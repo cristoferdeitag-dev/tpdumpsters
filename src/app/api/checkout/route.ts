@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe, getPlatform, getPublishableKey } from "@/lib/stripe";
+import { getStripe, getPlatform, getPublishableKey, findOrCreateCustomer } from "@/lib/stripe";
 import { randomUUID } from "crypto";
 import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
@@ -197,7 +197,7 @@ export async function POST(request: Request) {
     // platform + Stripe-Account header); in legacy mode it's the site key's
     // account. In prod both paths land on TP's account either way.
     const platform = getPlatform();
-    const stripeCustomer = await (platform?.client ?? getStripe()).customers.create({
+    const stripeCustomer = await findOrCreateCustomer(platform?.client ?? getStripe(), {
       email: booking.customerEmail,
       name: booking.customerName,
       phone: booking.customerPhone,

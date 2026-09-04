@@ -45,6 +45,51 @@ export function getStripe(): Stripe {
   return _stripe;
 }
 
+// ── Un cliente = UNA ficha en Stripe ─────────────────────────────────
+// Hasta el 4-sep cada compra del sitio y cada factura del generador interno de
+// cotizaciones hacía `customers.create` a ciegas, así que un cliente que ya
+// había comprado nacía otra vez: 53 clientes reales quedaron con 2+ fichas (69
+// de más sobre 494). Con la ficha partida, la tarjeta guardada se queda en una
+// y el historial en otra, y la pantalla de Cobros ve sólo la mitad — Asaí lo
+// cazó con Jonah Abkowitz, que aparecía "sin tarjeta guardada" teniendo Visa.
+//
+// Se busca con `list({ email })`: coincidencia exacta y SIN el retraso de
+// indexación de `search` (~1 min), que es justo el que dejaría duplicar dos
+// compras seguidas. Si ya existe se actualiza (la dirección de ESTE trabajo
+// puede ser otra) y se reusa. Si la búsqueda falla, se crea igual que antes:
+// nunca se rompe un cobro por no poder consultar.
+export async function findOrCreateCustomer(
+  client: Stripe,
+  params: Stripe.CustomerCreateParams,
+  opts?: Stripe.RequestOptions
+): Promise<Stripe.Customer> {
+  const email = (params.email || "").trim();
+  if (email) {
+    try {
+      const existing = await client.customers.list({ email, limit: 10 }, opts);
+      if (existing.data.length > 0) {
+        // La más reciente: trae los datos más frescos y, desde que el link de
+        // pago obliga a guardar tarjeta, suele ser la que tiene el método.
+        const target = [...existing.data].sort((a, b) => b.created - a.created)[0];
+        return await client.customers.update(
+          target.id,
+          {
+            ...(params.name ? { name: params.name } : {}),
+            ...(params.phone ? { phone: params.phone } : {}),
+            ...(params.address ? { address: params.address } : {}),
+            ...(params.shipping ? { shipping: params.shipping } : {}),
+            ...(params.metadata ? { metadata: params.metadata } : {}),
+          },
+          opts
+        );
+      }
+    } catch (err) {
+      console.warn("findOrCreateCustomer: no se pudo buscar por correo, se crea nueva ficha:", err);
+    }
+  }
+  return await client.customers.create(params, opts);
+}
+
 export function getPublishableKey(): string {
   return getKeys().publishable;
 }

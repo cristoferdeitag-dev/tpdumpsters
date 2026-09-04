@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, findOrCreateCustomer } from "@/lib/stripe";
 import { requireAuth } from "@/lib/auth";
 
 /* ───────── Dumpster dimensions helper (shared source of truth) ───────── */
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     const billZip = billStateZip.split(/\s+/).slice(1).join(" ") || "";
 
     // Create customer with full address details
-    const customer = await stripe.customers.create({
+    const customer = await findOrCreateCustomer(stripe, {
       name: customerName,
       email: customerEmail || "contact@tpdumpsters.com",
       phone: customerPhone || undefined,
