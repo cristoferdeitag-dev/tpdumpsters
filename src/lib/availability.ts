@@ -11,6 +11,7 @@ export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
   "2026-07-07", // Tuesday 7/7 — truck down, no deliveries today (Cris, 2026-07-07)
   "2026-08-07", // Friday 8/7 — closed for online booking (Asaí, 2026-08-06)
   "2026-08-08", // Saturday 8/8 — closed for online booking (Asaí, 2026-08-06)
+  "2026-09-05", // Saturday 9/5 — fully booked (Asaí, 2026-09-03)
 ]);
 
 // Standing rule: TP does not deliver on Sundays.
