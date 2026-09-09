@@ -15,7 +15,18 @@ Callejón sin salida. Reproducido ✅✅ (código + navegador iPhone contra prod
 
 ### Los otros dos, que nadie había reportado
 
-2. **El build en producción se había compilado SIN `NEXT_PUBLIC_GOOGLE_MAPS_KEY`.** El autocompletado de dirección llevaba tiempo muerto: cero peticiones a `maps.googleapis.com` y el placeholder era el de la rama sin llave (`"123 Main Street"` en vez de `"Start typing your address..."`) ✅✅. Es exactamente el paso 0 del procedimiento de despliegue (`ref_tpdumpsters_deploy`) — copiar `.env.local` al directorio de build. Al recompilar revivió: 5 sugerencias reales, `AutocompletionService.GetPredictions` 200.
+2. **El build en producción se había compilado SIN `NEXT_PUBLIC_GOOGLE_MAPS_KEY`.** El autocompletado de dirección estaba muerto: cero peticiones a `maps.googleapis.com` y el placeholder era el de la rama sin llave (`"123 Main Street"` en vez de `"Start typing your address..."`) ✅✅.
+
+   **Cuándo murió, medido en los directorios de build que quedaron en disco** ✅✅ (lo detonó el control "key de Maps inlineada en 11 chunks ✓" que esta misma bitácora registra en el build de las 19:30):
+
+   | build | hora | `.env.local` | chunks con la llave |
+   |---|---|---|---|
+   | `6ngtrdYAkZkJnx957RbW8` | 19:34 | sí | 11 |
+   | `kSdXSaESLGE-OSi-nVa95` | 20:00 | sí | 11 |
+   | `neDRFHFhf7UoQwTXFctTx` | 20:46 | **no** | **0** |
+   | `Abr3ZTCMlXxM6slUVLu9V` | 21:02 (vivo cuando falló el cliente) | **no** | **0** |
+
+   O sea: se perdió en el deploy de las **20:46**, ~1h25 antes de la queja, **en la misma ventana que el bug de la nota**. El cliente se topó con las dos cosas a la vez: sin sugerencias de dirección y con el botón mudo. Corrige lo que reporté primero ("llevaba tiempo muerto"): fueron ~85 minutos, no semanas. Es exactamente el paso 0 del procedimiento de despliegue (`ref_tpdumpsters_deploy`) — copiar `.env.local` al directorio de build. Al recompilar revivió: 5 sugerencias reales, `AutocompletionService.GetPredictions` 200.
 
 3. **Al revivirlo se destapó una trampa peor.** El campo `City` iba `readOnly={!!GOOGLE_MAPS_KEY && booking.city !== ""}` — se bloqueaba en cuanto tenía **UN carácter**. Quien escribía la dirección a mano (sin usar el desplegable) se quedaba con la ciudad en `"R"`, inválida y sin manera de corregirla. Salió en la verificación del arreglo anterior, no de una hipótesis. Se quitó el `readOnly`.
 
