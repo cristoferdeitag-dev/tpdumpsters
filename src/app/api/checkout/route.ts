@@ -27,7 +27,10 @@ const ONLINE_PRICES: Record<string, Record<string, number>> = {
   "Clean Soil":          { "10": 599 },
   "Clean Concrete":      { "10": 599 },
   "Mixed Materials":     { "10": 749 },
-  "Bricks":              { "10": 749 },
+  // Bricks subió a $949 lista / $899 online el 9-sep-2026 (cambio de Asaí en
+  // ServiceStep). Esta tabla es la que COBRA: si se queda atrás, la pantalla
+  // dice $899 y Stripe cobra $749 sin que nadie lo note.
+  "Bricks":              { "10": 899 },
   "Clean Asphalt":       { "10": 749 },
 };
 const EXTRA_DAY_FEE = 75;

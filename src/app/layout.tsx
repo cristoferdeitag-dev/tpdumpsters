@@ -53,7 +53,15 @@ export const metadata: Metadata = {
     "Pinole dumpster",
   ],
   icons: {
-    icon: "/images/logo/favicon-32x32.png",
+    // Google exige que el favicon sea un cuadrado múltiplo de 48px: con sólo el
+    // de 32x32 lo descartaba y mostraba el /favicon.ico de la plantilla (el
+    // triángulo negro) en los resultados de búsqueda. 9-sep-2026.
+    icon: [
+      { url: "/favicon.ico", sizes: "256x256", type: "image/x-icon" },
+      { url: "/images/logo/favicon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/images/logo/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/images/logo/favicon-192x192.png",
   },
   openGraph: {
     title: "Dumpster Rental Bay Area | Same-Day Roll-Off Delivery - TP Dumpsters",
