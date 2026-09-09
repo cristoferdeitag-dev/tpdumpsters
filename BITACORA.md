@@ -1,3 +1,329 @@
+## 2026-09-09 19:30Z — cris (Opus 5) — 🍎 Apple Pay / Google Pay encendidos en el booking (GO Cris msg 6172/6174 + dictamen Prisma GO-CON-CAMBIOS)
+
+**Encargo de Cris (msg 6170):** *"Queremos aumentar el cierre... ¿Podemos poner cobrar con Google y Apple?"*. Se midió antes de tocar nada.
+
+### La medición que lo justificó (✅✅ Stripe, 90 días, 141 pagos del booking partidos por `ui_mode`)
+| modo | pagos | link | card | apple_pay |
+|---|---|---|---|---|
+| `custom` (embebido, el que corre hoy) | 73 | 39 (53%) | 34 (47%) | **0** |
+| `hosted` (el viejo, redirigía a Stripe) | 68 | 38 (56%) | 20 (29%) | **10 (15%)** |
+
+**El wallet no estaba "roto": nunca se ofrecía.** Al mover el pago a nuestro dominio (PaymentElement embebido), Apple/Google Pay exigen que el dominio esté registrado — y no lo estaba.
+
+⚠️ **Trampa de medición que casi me hace reportar un cero falso:** filtré los cargos por `metadata.booking_id` y salió "0 pagos del booking". El cargo **NO hereda el metadata de la Checkout Session** (el código pone `metadata` a nivel sesión y `payment_intent_data` no lleva ninguno). Hay que enumerar las sesiones y cruzar cada `payment_intent` con su cargo. Regla del cero.
+
+### Las 3 causas encontradas
+1. `tpdumpsters.com` **no estaba** en `/v1/payment_method_domains` (solo `checkout.stripe.com` y `buy.stripe.com`).
+2. **Google Pay en `preference: off`** en los 3 `payment_method_configuration` de la cuenta (Apple Pay ya estaba `on`).
+3. `/.well-known/apple-developer-merchantid-domain-association` → **HTTP 404** en prod; no existía `public/.well-known/`.
+
+`payment_method_types: ["card"]` **NO** era la causa: Apple/Google Pay son tarjetas tokenizadas y viajan bajo `card` (confirmado por Prisma y por los 10 Apple Pay reales del checkout hospedado, que usaba el mismo parámetro).
+
+### Lo aplicado ✅
+1. **Dominio registrado en la cuenta de TP**, no en la plataforma HTM — condición explícita de Prisma. Se verificó con `GET /v1/account` **antes** de escribir que la llave de `/root/.env.tpdumpsters` fuera `acct_1RW0CFIRhgZxSFKH`. Resultado: `pmd_1UDqqdIRhgZxSFKH5hE9zCkR`.
+2. **Google Pay `off` → `on`** en `pmc_1TwUgsIRhgZxSFKHPvDqZ7RB` (default), `pmc_1TYcrCIRhgZxSFKHU6kmvRZh` y `pmc_1RW0CpIRhgZxSFKH0r7MEbXM`.
+3. **`public/.well-known/apple-developer-merchantid-domain-association`** (commit `1ebe131`) — bajado de `stripe.com/files/apple-pay/...` y verificado por segunda descarga idéntica (9094 bytes, mismo md5). **Vivo en prod a los 90 segundos del push**, HTTP 200 y contenido byte a byte igual al de Stripe ✅✅.
+
+Respaldo del estado previo (por si hay que revertir): `/root/reports/consejo/2026-09-09-tp-wallets-apple-google-pay/RESPALDO-antes-2026-09-09.json`. Scripts `snapshot.py`, `act1_dominio.py`, `act2_verifica.py`, `act3_googlepay.py` en esa misma carpeta.
+
+### 🚩 Un detalle que hay que recordar
+Stripe devolvía `apple_pay: active` **cuando el `.well-known` todavía daba 404**. No es evidencia de nada: Stripe revalida periódicamente y lo habría volteado a `inactive`. Ahora el archivo sí está servido, así que el `active` está respaldado.
+
+### 🔀 Cómo se subió sin pisar a Asaí
+Asaí tenía el candado con las "8 mejoras + copy" del wizard **sin commitear** (`ServiceStep`, `AddressStep`, `DateStep`, `booking/page`). Se comprobó que el deploy de TP **solo hace rsync del código, NO recompila** y que `public/` se sirve en vivo (control: `google562f2deb42b843bc.html` → HTTP 200). Por eso se commiteó **únicamente el archivo nuevo** (`git add` de esa sola ruta): su trabajo a medias se quedó en el working tree del VPS y no se publicó. Candado tomado 2 minutos después de que expirara el suyo y liberado enseguida.
+
+### ⏳ PENDIENTE — no está terminado hasta que se pruebe en un teléfono
+Condición 3 de Prisma: **cargo real desde Safari en iPhone y Chrome en Android, con captura**. La respuesta de la API no basta. Cris tiene la pelota.
+
+### 🎯 Lo que esto NO arregla (coinciden Prisma y Hermes)
+Esto es el final del embudo. El hoyo está **antes de pagar**: 17 de 65 sesiones de 30 días expiran sin llegar al pago, y GA4 marca 287 `booking_started` contra 33 `booking_completed`. Falta instrumentar paso por paso del wizard para saber en cuál de los 3 se cae la gente.
+
+---
+
+## 2026-09-09 03:50Z — cris (Opus 5) — 🗺️ Mapa del área que quedó + Cris decide NO alinear el sitio por ahora
+
+**Cierre de la sesión de geografía.** Cris pidió el mapa (msg 21009) y luego *"vamos a dejarlo así por ahora, anota todo en la bitácora"* (msg 21016).
+
+**Mapa entregado** (`/root/reports/tp-area-servicio-2026-09-09/`): `tp_area_servicio.png` (2560×2000) + el `tp_mapa.html` que lo genera y los tres JSON de datos (`tp_mapa_datos.json` entregas por ciudad, `tp_coords.json` coordenadas, `tp_millas.json` minutos de manejo). Hecho con **Leaflet sobre teselas de OpenStreetMap capturado con Playwright + Chrome** — en el VPS no hay folium ni matplotlib. ⚠️ El primer intento salió con marca de agua **"API KEY REQUIRED"** por usar teselas de CARTO; **`tile.openstreetmap.org` funciona sin llave**. Los círculos verdes escalan con las entregas, los rojos son las 20 excluidas, y hay dos anillos punteados a 32 y 48 km (proxy visual de 35 y 50 min).
+
+**Lo que el mapa hizo evidente:** el negocio se aprieta alrededor del patio **y sobre el corredor de la I-80** — Vallejo 14 + Fairfield 12 + Vacaville 16 + American Canyon 4 = **46 entregas** en ese brazo noreste, más de lo que nadie suponía. Y que varias excluidas de la península se ven cerca en línea recta pero están lejos manejando (hay que rodear la bahía o cruzar puente): por eso el criterio correcto era tiempo de manejo y no distancia.
+
+**Confirmado a Cris (msg 21012/21013), leído de la cuenta y no del mapa:** **Vacaville quedó DENTRO** (49 min, se salvó por un minuto del corte). También dentro: Petaluma, Antioch, Hayward, San Ramon, Danville, Pittsburg, Alameda, American Canyon.
+
+**Las 20 excluidas, lista final:** Santa Rosa, Rohnert Park, Cotati, Sonoma, Windsor, Sebastopol, Portola Valley, Redwood City, San Mateo, Belmont, Burlingame, Hillsborough, Milpitas, Fremont, Newark, Union City, Pleasanton, Livermore, Brentwood, Oakley — más el condado de Santa Clara completo, en las 4 campañas.
+
+### 🔴 DECISIÓN DE CRIS: el sitio NO se alinea por ahora
+Se le propuso (msg 21015) alinear `src/lib/service-area.ts` con las 20 exclusiones, porque **hoy el booking sigue aceptando reservas de todas ellas** — apagamos la publicidad, no los viajes. Respondió *"vamos a dejarlo así por ahora"*.
+
+**El argumento que se le puso encima antes de que decidiera, y que sigue vivo:** **Sebastopol ya está bloqueada en el sitio desde el 6-ago (orden de Asaí) y aun así registró 9 entregas y $6,106 en 90 días.** Alguien toma esos trabajos por teléfono, al margen del sistema. Bloquear 20 ciudades más sin resolver eso multiplicaría la fuga por veinte en vez de cerrarla. **Es conversación con Asaí y con quien contesta el teléfono, no un cambio de código.**
+
+**Estado final de la cuenta:** Ads recortado y verificado · sitio **sin tocar** · nada más pendiente de mi lado en geografía.
+
+---
+
+## 2026-09-09 03:25Z — cris (Opus 5) — ✂️ PERIFERIA RECORTADA: 6 ciudades excluidas en las 4 campañas (GO Cris msg 21001)
+
+**Encargo (msgs 20997/20999):** *"necesito que reduzcamos el área… Milmitas y toda la periferia… estamos intentando centralizar más en el área de trabajo y evitar ir tan lejos"*.
+
+**Primero, un dato que corrige la premisa:** **Milpitas ya estaba fuera**. Las 4 campañas excluyen **Santa Clara County** completo desde el 5-ago, y las 4 apuntan por **PRESENCIA física** (`positive_geo_target_type=PRESENCE`), salvo Marca TP que va en `PRESENCE_OR_INTEREST`. El área era **7 condados**: Contra Costa, Alameda, San Francisco, San Mateo, Solano, Sonoma, Marin.
+
+### El método: anillos de tiempo de manejo desde el patio
+Centro = **150 Brookside Dr, Richmond 94801** (la dirección que declara el propio sitio en el schema de `src/app/page.tsx`). Distancias medidas **ruta por ruta con OSRM + Nominatim**, sin llave ([[ref_ruteo_geocoding_sin_llave]]), no estimadas. Ventana 90 días (11-jun→8-sep), Ads API v23 cruzado con Stripe TP.
+
+| anillo | gasto | ventas Ads | cargos Stripe |
+|---|---|---|---|
+| **Núcleo ≤35 min** | $4,920.75 | 15 | 46 · $34,051 |
+| **Borde 36-50 min** | $2,192.30 | 7 | 30 · $19,828 |
+| **Lejos >50 min** | **$1,594.95** | 7 | **8 · $4,715** |
+
+El anillo lejano = **14% del gasto y 8% de los cargos**. Ahí estaba la poda.
+
+### Lo aplicado ✅ (`/root/scripts/tp_excluir_periferia_2026-09-09.py`, validate→apply→readback)
+**24 criterios negativos** (6 ciudades × 4 campañas: High Intent `23638936955`, DSA `24190713728`, Marca TP `24080847340`, Retargeting `24184829166`). Leído de vuelta: las 4 campañas excluyen ahora Santa Rosa, Rohnert Park, Cotati, Brentwood, Redwood City y Livermore, además del Santa Clara County que ya tenían.
+
+| ciudad | min | gasto 90d | ventas Ads | cargos Stripe | geo id |
+|---|---|---|---|---|---|
+| Santa Rosa | 63 | $380.76 | 0 | 1 | 1014257 |
+| Rohnert Park | 56 | $6.51 | 0 | 0 | 1014201 |
+| Cotati | 53 | $217.85 | 1 ($799) | 0 | 9051775 |
+| Brentwood | 58 | $153.04 | 0 | 0 | 1013614 |
+| Redwood City | 61 | $160.52 | 0 | 0 | 1014178 |
+| Livermore | 60 | $74.17 | 0 | 1 | 1013950 |
+
+**$992.85 en 90 días** que dejan de irse al norte y al este profundo. Lo sacrificado: 1 venta en Cotati y 2 cargos chicos.
+
+**NO se tocaron** Fremont (56 min pero 3 ventas Ads y 4 cargos), San Mateo (2 y 2), Hayward (8 cargos) ni Fairfield (7 cargos) — el criterio fue distancia **Y** ausencia de señal por las dos vías, no distancia sola.
+
+### Trampas y hallazgos de esta sesión
+- **⚠️ La ciudad que trae Stripe es la de FACTURACIÓN, no la de entrega.** 76 de 313 cargos (24%) facturan desde fuera del Área de la Bahía (Saint Petersburg FL, Sacramento, Casper WY, Glendale, Folsom, Tracy). El mapa real de operación sale de las direcciones de ENTREGA, que viven en la **MySQL de Hostinger** (`u781187371_DumspterBookin`, tabla con `address`, credencial en `/home/u781187371/db-creds.json`) — **solo alcanzable por SSH a Hostinger**, no desde el VPS. Queda pendiente y se le ofreció a Cris.
+- **Fuga medida:** High Intent gastó **$150.66 en Santa Clara** (excluido) y **$36 en Napa** (nunca incluido) en 90 días. La exclusión de condado no sella al 100%. Napa sigue sin excluir — no entró en el GO.
+- **Gotcha v23:** `googleAds:search` **rechaza `pageSize`** (`PAGE_SIZE_NOT_SUPPORTED`, fijo en 10,000). Por eso el `readback` del script falló aunque el `apply` sí entró; se verificó con `radar_readonly`.
+- **Ojo al resolver geo constants:** hay DOS "Brentwood" en California — la ciudad de Contra Costa (`1013614`) y un barrio de Los Ángeles (`9061089`). Se filtró por `canonical_name`.
+
+**⚠️ Esto apaga los ANUNCIOS en esas ciudades, pero el sitio las sigue aceptando.** `src/lib/service-area.ts` es lista negra y sólo trae Santa Clara + Sebastopol. Alinear el sitio es un cambio de código aparte y **no se hizo**: se le ofreció a Cris.
+
+**➕ CORRECCIÓN A LOS 5 MINUTOS (Cris msg 21003): *"las direcciones de entrega están en Stripe"*. Tenía razón.**
+
+Yo había leído `charge.billing_details.address` y el `customer.address` — las dos son de **facturación**. La de **entrega** vive en **`customer.shipping.address`**. No es matiz: en **206 de 313 cargos (66%) la ciudad de entrega es DISTINTA de la de facturación**. Ejemplo real: Dongxing factura en Mountain View y la caja va a **Belmont**. Mi mapa geográfico estaba mal en dos de cada tres casos.
+
+**Cómo se saca:** `GET /v1/charges?expand[]=data.customer` → `customer.shipping.address.city`. Sólo **3 de 313** cargos no traen envío (ahí sí se cae a facturación). El `customer.metadata.booking_id` amarra con la reserva.
+
+**El recorte AGUANTA con el dato bueno** ✅✅ — las 6 excluidas suman **3 entregas en 90 días**: Santa Rosa 1, Brentwood 1, Livermore 1; Rohnert Park, Cotati y Redwood City en **cero**.
+
+**🔴 ME CORRIJO EN NAPA:** propuse sellarlo y estaba mal. **American Canyon (condado de Napa) tiene 4 entregas y $2,996** en 90 días, sin estar siquiera en la segmentación. No se sella.
+
+**Mapa real de entregas (90 días, top):** Richmond **37 · $24,385** · San Francisco 19 · San Rafael **17 · $14,005** · Vacaville **16 · $12,017** · Vallejo 14 · San Pablo 12 · Fairfield 12 · Oakland 10 · San Leandro 10 · Sebastopol 9 · Hayward 8 · Fremont 7 · San Mateo 7 · Orinda 7 · San Ramon 7 · Petaluma 7 · Hercules 6 · Pittsburg 6 · Belmont 5 · South San Francisco 5 · Berkeley 4 · Novato 4 · Antioch 4 · Portola Valley 4 · Danville 4 · American Canyon 4 · Martinez 4.
+
+**Dos cosas que salen del mapa y son de negocio, no técnicas** (avisadas a Cris, msg 21004):
+- **Sebastopol: 9 entregas y $6,106**, pero está en `EXCLUDED_CITIES` del sitio desde el 6-ago porque Asaí dijo que no la cubren. Alguien la atiende igual.
+- **South San Francisco: 5 entregas y $3,843** — la ciudad de la carta de Code Enforcement ([[project_tp_franquicias_san_mateo]]).
+
+**LECCIÓN:** en Stripe hay TRES direcciones y sólo una dice dónde cae la caja. `billing_details.address` y `customer.address` = quién paga; **`customer.shipping.address` = a dónde va**. Toda geografía de TP se hace con la tercera. (Mismo patrón que [[feedback_procedencia_de_cifras_y_regla_del_cero]]: el campo que existe y responde no es siempre el que mide lo que crees.)
+
+**➕ EL RECORTE FINO, REHECHO CON ENTREGAS REALES (GO Cris msg 21005) — y la conclusión se invierte.**
+
+Anillos de manejo desde el patio, ahora contando **entregas** (`customer.shipping`), 90 días:
+
+| anillo | entregas | ingreso | % ingreso |
+|---|---|---|---|
+| **≤35 min** | 177 | $128,731 | 58% |
+| **36-50 min** | 81 | $56,105 | 25% |
+| **>50 min** | **50** | **$37,923** | **17%** |
+| sin dato | 5 | $2,208 | — |
+
+**El anillo lejano NO es peso muerto**: 50 entregas y 17% del ingreso. Con la dirección de facturación parecía basura porque Ads casi no lo ve. **Fremont 7 · San Mateo 7 · Sebastopol 9 · San Ramon 7 · Belmont 5 · Portola Valley 4 · Pleasanton 3.** ⇒ **No hay más recorte geográfico que hacer sin quitar dinero.** Las 6 ya cortadas siguen bien cortadas (3 entregas entre todas).
+
+**El caso inverso** (pagamos anuncios y no cae caja): Concord $329, Bay Point $276, Walnut Creek $226, Pinole $159, Benicia $67 — **todas a menos de 36 min**, baratas de servir. Recomendado **dejarlas** y que decida la puja; no son el problema.
+
+**Conclusión que se le dio a Cris (msg 21006):** lo que queda no es un problema de mapa sino de medición — Google ve **17 ventas por trimestre** contra **313 entregas reales**. Cualquier poda adicional se haría con un quinto de la información. Si quiere centralizar la operación de verdad, la palanca ya no es la segmentación sino **precio o agenda para los trabajos lejanos**, que es decisión de negocio de Cris y Asaí.
+
+**⚠️ Datos sucios detectados y avisados (no se maquillaron):** el geocodificador dio **Alameda 65 min** (son ~25), **Portola Valley 78**, y hay **2 cargos con la ciudad capturada como "O"** ($966). Son fallas de geocodificación/captura, no del negocio, y no tocan a las 6 excluidas. Caché de tiempos en `/tmp/tp_millas.json`.
+
+**➕ 2ª TANDA — FUERA TODO EL ANILLO >50 MIN (GO Cris msg 21007: *"si dejamos fuera al anillo de mas de 50 por fa"*).**
+
+**+14 ciudades × 4 campañas = 56 criterios negativos nuevos.** Total ahora: **20 ciudades + Santa Clara County** en High Intent, DSA, Marca TP y Retargeting (verificado leyendo de vuelta: 21 criterios por campaña).
+
+Sonoma `1014288` · Portola Valley `1014161` · Windsor `1014408` · Sebastopol `1014265` · Milpitas `1014012` · Belmont `1013581` · San Mateo `1014237` · Hillsborough `9052136` · Pleasanton `1014149` · Fremont `1013802` · Oakley `1014081` · Newark `1014052` · Union City `1014357` · Burlingame `1013623`.
+
+**Milpitas entró aquí** — gastaba **$113.91 en 90d pese a estar Santa Clara County excluido**, o sea que la exclusión de condado no sella y la de ciudad sí hacía falta. Cierra el pedido original de Cris (msg 20997).
+
+**El número que se le puso a la vista antes de ejecutar (msg 21008), porque el trade no es obvio:** en ese anillo se deja de gastar **$1,326.96/90d**, pero de ahí salían **6 ventas visibles por $4,594** (Fremont 3, San Mateo 2, Pleasanton 1) ⇒ **3.5x, por encima del promedio de la cuenta**. Lo que **no** se apaga son las 41 entregas del anillo, que llegan casi todas por teléfono/orgánico. Se corta la publicidad, no el negocio. **Reversible en un minuto** si en dos semanas cae el volumen de esa zona.
+
+**⚠️ ALAMEDA SE SALVÓ DE UN RECORTE EQUIVOCADO.** El primer geocodificado la puso en **65 min**; re-medida con la consulta calificada por condado son **30 min**. Se quedó dentro. Lección: **antes de cortar por una distancia, re-medir toda ciudad que salga sospechosamente lejos** — Nominatim resuelve mal algunos nombres ambiguos (también dio "Portola Valley 78", que sí se confirmó, y hay 2 cargos con la ciudad capturada como `"O"`).
+
+Script: `/root/scripts/tp_excluir_periferia_2026-09-09.py` (documenta las 20; la 2ª tanda se aplicó con un mutate acotado a las 14 para no duplicar criterios).
+
+**Pendiente en cancha de Cris:** Sebastopol tenía **9 entregas y $6,106** y ahora queda sin anuncios — pero además está en `EXCLUDED_CITIES` del sitio desde el 6-ago; conviene decidir si se atiende o no, porque hoy se atiende sin publicidad y sin permiso formal. South San Francisco (5 entregas, carta de Code Enforcement) sigue **dentro** del anillo cercano (43 min) y no se tocó.
+
+---
+
+## 2026-09-08 06:10Z — cris (Opus 5) — 🛑 El recorte geográfico del plan del 6-sep se CAE: esas ciudades sí venden, por teléfono ($34,890 en 90d)
+
+**Petición de Cris (msg 20935):** *"en base a los datos de la campaña, ¿qué podemos mejorar?"*. Leída **toda** la bitácora esta vez (incluido el panorama del 6-sep y las entradas del 1-sep / 29-ago / 28-ago que la vez pasada quedaron fuera del corte). Ventanas: **30 días 8-ago→7-sep** y **90 días 10-jun→7-sep**, Ads API v23 + Stripe TP en lectura. **Sin mutaciones.**
+
+### 🛑 Lo que se cae al medirlo — NO ejecutar
+**1. El ajuste de puja negativo / exclusión en "ciudades sin retorno" (plank del plan del 6-sep).** Hay 12 ciudades con ≥$150 gastados y **cero** ventas online en 90 días ($2,979 = 26% del gasto): Santa Rosa, Fairfield, San Pablo, Concord, Antioch, Petaluma, Vacaville, San Rafael, Redwood City, Pinole, Brentwood, San Leandro. **Cruzadas contra Stripe (mismos 90 días): 55 cargos por $34,890** `✅✅`.
+
+| ciudad | Ads (90d) | Stripe (90d) |
+|---|---|---|
+| San Leandro | $152 · 0 ventas | **14 cargos · $8,936** |
+| Fairfield | $381 · 0 | **10 · $6,307** |
+| Petaluma | $238 · 0 | **8 · $5,754** |
+| San Rafael | $174 · 0 | **6 · $4,779** |
+| Concord | $329 · 0 | **7 · $3,423** |
+| Vacaville | $198 · 0 | 5 · $2,696 |
+| Santa Rosa / Antioch | $382 / $302 · 0 | 2 · $1,198 c/u |
+| San Pablo | $352 · 0 | 1 · $599 |
+| Redwood City · Pinole · Brentwood | $474 · 0 | **0 cargos** |
+
+Entran por **teléfono**, y Google no atribuye ni una llamada ([[ref_tp_conversiones_offline_medido]], 1-sep: 53 ventas telefónicas, cero matcheadas). *Caveat honesto: la ciudad de Stripe es la de facturación y no prueba que Ads las causara — pero sí basta para NO recortar ahí.* Las únicas 3 sin señal por ninguna vía son Redwood City, Pinole y Brentwood ($474 en 90d).
+
+**2. "San Francisco es el gasto #1 sin retorno"** (dicho el 6-sep y repetido por mí el 7-sep): a 30 días **1.12x**, a 90 días **3.15x con $4,394** `✅✅`. Artefacto de ventana.
+
+**3. Cortar el domingo.** A 30 días: $351, 82 clics, **0 ventas**. A 90 días: **2.31x**, por encima del miércoles (1.74x). La Regla del Cero lo cazó antes de reportarlo.
+
+### ✅ Lo que sí está medido y mueve dinero
+- **Franja 12:00–15:00** `✅✅` (90d): $3,782 a **1.87x**, casi el mismo gasto que 09–12 ($4,178 a 2.94x), mientras **06–09 rinde 3.78x con $2,060**. Es la peor eficiencia del reloj. ⚠️ Con Smart Bidding los ajustes de puja por horario los ignora Google: la vía real es estrechar horario o separar campaña, y cortar de tajo perdería las 10.3 ventas / $7,073 que ese bloque sí trae.
+- **DSA = la más rentable y la más ahogada** `✅ una vía, muestra chica (2 ventas)`: $462 → $1,398 = **3.03x** vs 2.19x de High Intent; pierde **63% de impresiones por presupuesto** y sólo 6% por subasta. Pero sigue **sin tope de tCPA** → tope primero, aire después (el 17-ago se repite solo si no).
+- **Marca propia dentro de High Intent** `✅✅`: `tp dumpsters` = **$471 en 90d a $12.99/clic**; Marca TP paga **$3.90**. Negativa exacta en HI. Matiz que no hay que perder: ese término trae 2 de las 5 ventas atribuidas a nivel término, así que la negativa es para **mover** la búsqueda a la campaña barata, no para matarla.
+- **Competidores $253 + "free/cheap" $107** en 90d, 61 clics, **cero ventas** (sólo llamadas de $1): pirate dumpsters, cobra roll off, aldana hauling, express dumpster rental, jd dumpster rental, *fairfield/fremont/oakland garbage company*, daly city scavenger, marin disposal, y **`wise dumpsters` — la otra marca de la casa**.
+- **Retargeting**: un mes encendido, **$0.00 y 0 impresiones** `✅✅`. La user list nunca llegó al mínimo para servir.
+- **High Intent**: IS 25.1%, **49.4% perdido por presupuesto** y 25.5% por rank, CPC $7.93.
+- **Horario**: High Intent tiene 6h–19h los 7 días; **DSA y Marca TP no tienen horario** y gastan de noche ($37 en 90d). Contradice [[project_tp_horario_ads_noches_booking]] pero es dinero menor.
+
+### Recomendación dada a Cris (msg 20937), UNA
+**La palanca #1 no está en la cuenta:** TP cobró **313 cargos en 90 días** y Google se atribuye 17 al mes. Con 2 de cada 3 dólares invisibles, cualquier ajuste se decide con un tercio de la información — y el plan del 6-sep habría recortado justo donde sí se vende. **Destrabar Twilio** (probado hoy: sigue **401**, consistente con la suspensión por Billing del 29-ago `✅ una vía`) para subir las ventas telefónicas como conversiones. Mientras tanto, lo único que tocaría en la cuenta son las **negativas** (marca propia, competidores, "free"): gratis, sin mover presupuesto ni pujas. Esperando su respuesta: negativas o detalle de la franja 12-15.
+
+**TP es cliente: nada se aplica sin GO.**
+
+---
+
+## 2026-09-08 05:55Z — cris (Opus 5) — 🔴 CORRECCIÓN al diagnóstico de Ads de anoche: medí `all_conversions`, no `conversions`
+
+**Cómo salió:** Cris preguntó *"¿leíste las bitácoras y diarios antes de diagnosticar?"* (msg 20929/20931). Fui a la transcripción: sí leí esta bitácora antes de medir, pero **sólo los primeros 120 renglones** (5 entradas, hasta el 4-sep). El archivo tiene **1,082 renglones y 110 entradas**, y la que hacía falta empieza en el **renglón 163** — la entrada del 1-sep titulada *"leí la bitácora TARDE"*, que ya había corregido este mismo diagnóstico. Me quedé 43 renglones antes. Tampoco leí GLOBAL_EVENTS ni las memorias de TP Ads.
+
+**EL ERROR.** Reporté *"324 conversiones, Google cree que paga $16, el 95% de lo que maximiza vale $1, hay que bajar CINCO conversiones primarias"*. Salió de **`metrics.all_conversions`**, que cuenta TODO — incluidas las *Local actions* del perfil de negocio (direcciones, visitas al sitio, otras interacciones) que ocurren en Maps y **no entran a la puja**. Smart Bidding optimiza **`metrics.conversions`**.
+
+**LO REAL ✅✅ (dos vías que cuadran: total a nivel campaña = suma del desglose por `segments.conversion_action_name`), últimos 30 días, campañas ENABLED:**
+
+| Campaña | Acción | conv | valor |
+|---|---|---|---|
+| High Intent | Paid Job - Online Booking (Server-Side) | 15 | $10,635 |
+| High Intent | Calls from ads ($1) | 29 | $29 |
+| DSA — Ciudades TP | Paid Job | 2 | $1,398 |
+| DSA — Ciudades TP | Calls from ads ($1) | 3 | $3 |
+| **TOTAL** | **sólo 2 acciones** | **49** | **$12,065** |
+
+Contraste de columnas: `conversions` 49 vs `all_conversions` 416 (High Intent 44/379, DSA 5/35, Marca TP 0/2). **CPA que Google ve: $5,345/49 = $109, no $16. Ruido de a dólar: 65%, no 95%.**
+
+**CONSECUENCIA PARA LA DECISIÓN.** Bajar las 4 *Local actions* a secundarias **no cambia nada hoy** — ninguna campaña activa las cuenta; es higiene para campañas futuras (la trampa que se comió a Pavers). Es exactamente lo que ya concluyó la entrada del 1-sep y lo que el consejo del 28-ago ya había resuelto. La única palanca con efecto real es **`Calls from ads`**, y ese mismo consejo decidió **a propósito** dejarla primaria por ahora: quitarla deja al tCPA con ~17 señales al mes. Se le dijo a Cris que **NO** vaya a la UI a bajar las cinco (msg 20933).
+
+**Lo que SÍ se sostiene del reporte de anoche:** `change_event` con un solo cambio desde el 1-sep (nada del plan aplicado); la curva semanal construida **sólo con `Paid Job`** ($5,345 · 17 ventas · $12,033 · 2.25x; última semana 3.81x y CPA $196); San Francisco $533 como gasto #1 de 92 ciudades; DSA sin tope de CPA y perdiendo 63% por presupuesto; Retargeting 7 días encendido en $0.00; y el contraste con Stripe (95 pagos / $70,759, 51 facturas a mano y 46 del checkout) ✅ una vía.
+
+**LECCIÓN (la misma del 1-sep, ahora en versión numérica):** leer la bitácora "antes de medir" no basta si se lee **cortada** — 120 de 1,082 renglones es un `head`, no una lectura. Y en Google Ads, `all_conversions` y `conversions` se leen igual en un reporte y significan cosas opuestas: una cuenta lo que pasó, la otra lo que la puja persigue. Ver [[feedback_leer_bitacora_antes_de_investigar]] y [[feedback_procedencia_de_cifras_y_regla_del_cero]].
+
+**Sin mutaciones. Cuenta de TP intacta (es cliente).**
+
+---
+
+## 2026-09-07 23:05Z — cris (Opus 5) — Revisión a fondo de Google Ads (SOLO LECTURA, cero mutaciones)
+
+**Petición de Cris (msg 20924):** *"revisemos ahora a fondo las campañas de TP dumpsters"*. Leída esta bitácora antes de medir. Ventana 8-ago → 7-sep, todo por `radar_readonly.py` (Ads API v23) y Stripe TP en lectura.
+
+### 🚨 Lo primero: NADA del plan de ayer se aplicó
+`change_event` del 1 al 8-sep devuelve **un solo cambio**: un `CAMPAIGN_BUDGET.amountMicros` el 1-sep 08:47Z desde `GOOGLE_ADS_MOBILE`. La resolución del panorama del 6-sep (negativas, puja negativa por ciudad, pausar Retargeting y los ad groups de $1) sigue **sin GO y sin ejecutar**.
+
+### 🔴 HALLAZGO NUEVO — son CINCO conversiones basura primarias, no una
+Ayer quedó anotado que *"Calls from ads SIGUE PRIMARIA"*. Consultando `conversion_action.primary_for_goal` de las 8 acciones ENABLED: **6 son primarias y 5 de ellas valen $1**.
+
+| acción | primaria | valor |
+|---|---|---|
+| Paid Job - Online Booking (Server-Side) | **sí** | $350 ✅ la venta real |
+| Calls from ads | **sí** | $1 |
+| Clicks to call | **sí** | $1 |
+| Local actions - Directions | **sí** | $1 |
+| Local actions - Other engagements | **sí** | $1 |
+| Local actions - Website visits | **sí** | $1 |
+| Website Call Click | no | $1 |
+| Online Booking (Purchase) | no | $350 |
+
+**La consecuencia, que es la que importa:** en 30 días el pool que Google intenta maximizar son **17 ventas contra 307 eventos de $1 → el 95% de la meta vale un dólar**. Y explica por qué el tCPA de $95 no muerde: con 324 "conversiones" y $5,345 de gasto, **el CPA que Google cree estar pagando es ~$16**. El algoritmo no está roto; está optimizando exactamente lo que se le pidió.
+
+### Ventas REALES por semana (filtrando `segments.conversion_action_name`)
+| semana | gasto | ventas | ingreso | ROAS | CPA |
+|---|---|---|---|---|---|
+| 20-jul | $1,082.39 | 7 | $5,293 | **4.89×** | $154.63 |
+| 27-jul | $1,228.07 | 8 | $5,592 | **4.55×** | $153.51 |
+| 03-ago | $924.91 | 3 | $1,997 | 2.16× | $308.30 |
+| 10-ago | $747.39 | 4 | $2,896 | 3.87× | $186.85 |
+| 17-ago | $1,809.02 | 3 | $1,897 | **1.05×** | $603.01 |
+| 24-ago | $1,506.80 | 3 | $2,147 | 1.42× | $502.27 |
+| 31-ago | $1,178.41 | 6 | $4,494 | **3.81×** | $196.40 |
+
+30 días: **$5,345.44 → 17 ventas / $12,033 ⇒ 2.25× y CPA $314**. ⚠️ **Ojo de método:** la columna `metrics.conversions` a nivel campaña mezcla las 6 primarias — la semana del 20-jul "tenía 34 conversiones" y eran **7 ventas**. Cualquier tabla semanal sin filtrar por acción está inflada ~5×.
+
+### Estado de las 4 campañas vivas (30d)
+High Intent `$4,863.98` · 613 clics · CPC $7.93 · IS 25.1% · **49.4% perdido por presupuesto** · DSA `$461.95` · 71 clics · **63.3% perdido por presupuesto, sigue sin tope de tCPA** · Marca TP `$19.51` · 5 clics · IS 100% · **Retargeting `$0.00`, 0 impresiones en los 7 días que lleva encendido** (se prendió el 1-sep; la audiencia no junta usuarios).
+
+### Geografía 30d (`geographic_view` + `LOCATION_OF_PRESENCE`, nombres resueltos por `geo_target_constant`)
+**San Francisco sigue siendo el gasto #1 de la cuenta: $533.16 / 88 clics**, y sus 3 "conversiones" son de las de $1. Oakland $292.20 · Vallejo $237.67 · Fremont $189.35 · San Mateo $185.21 · Antioch $179.67 (0 conversiones). **92 ciudades distintas con gasto.**
+
+### Contraste con Stripe (`✅ una vía`)
+30 días: **95 cobros pagados = $70,759.17** en TODO TP. 51 son `Payment for Invoice` (las que factura Asaí a mano) y 46 sin descripción (el checkout del sitio). Google se atribuye 17. **Stripe no puede decir cuáles de esos 46 vinieron de anuncio** — sigue vivo el hueco de [[project_tp_canal_online_contaminado]]. ⚠️ **Cero falso evitado:** buscar `metadata.booking_id` en los *charges* devuelve 0 en los 95; ese campo vive en la ficha del cliente, no en el cobro. Reportarlo como "0 ventas online" habría sido falso.
+
+### Recomendación a Cris (UNA sola, msg 20925, sin GO)
+**Quitar de primarias las 5 conversiones de $1.** Es gratis, no mueve presupuesto ni pujas, y es lo único que reorienta el algoritmo hacia rentas. **Sólo desde la UI** — por API da `MUTATE_NOT_ALLOWED` (ya intentado el 1-sep). Después, 2-3 semanas sin tocar nada más: mover todo junto es lo que causó el 17-ago.
+
+**Scripts (scratchpad, sólo lectura):** `tp_hoy.py`, `tp_hoy2.py`, `tp_hoy3.py`, `tp_hoy4.py`, `tp_geo_nom.py`.
+
+---
+
+## 2026-09-06 17:05Z — cris2 «Laso» (Opus 5) — Panorama completo de Google Ads + Consejo IA (SOLO LECTURA, nada aplicado)
+
+**Petición de Cris (msg 6050):** "revisa el panorama de toda la campaña de Google ads de Tp / Con las bitácoras y diarios a la mano. Y que hagan lo mismo tus hermanos Prisma y Hermes". Todo por `radar_readonly.py` (Ads API v23) y Stripe TP en lectura. **Ni una mutación en la cuenta.**
+
+**Antes de analizar** (esto es lo que faltó ayer y Cris lo cachó, msg 6046): leídas las 984 líneas de esta bitácora, `GLOBAL_EVENTS.md`, y los consejos `2026-08-29-tp-plan-ejecucion-350` y el del 1-sep. Todo reporte a Cris abre ahora con línea de procedencia.
+
+### El diagnóstico central: la semana del 17-ago
+Ese día se subieron **tCPA $38→$95 y presupuesto $99→$220 el mismo día**. El CPC se duplicó y no volvió (`✅✅`, semanas de la API):
+| semana | gasto | ventas reales | ROAS |
+|---|---|---|---|
+| 27-jul | $1,228 | 8 | **4.55×** |
+| 17-ago | $1,809 | 3 | 1.05× |
+| 24-ago | $1,507 | 3 | 1.42× |
+| 31-ago ($100/día) | $1,124 | 6 | **4.00×** |
+Las 2 semanas caras quemaron **$3,315.82 para traer $4,044 = 1.22×**. Bajar a $100/día devolvió el 4× gastando 38% menos.
+
+**30 días, 4 campañas, $5,398.83.** High Intent `23638936955` $100/día · $4,943.72 · 620 clics · IS 25% · **50% perdido por presupuesto**. DSA `24190713728` $45 · $435.61 · 71% perdido por presupuesto. Marca TP `24080847340` $20 · **$19.51 · 11 impresiones · IS 100%**. Retargeting `24184829166` $15 · **$0.00, 0 impresiones**.
+
+**La verdad del dinero:** `Paid Job - Online Booking (Server-Side)` = **17 ventas / $12,033 ⇒ CPA $317.58 · ROAS 2.23×** `✅✅`. Las otras **336 "conversiones" valen $1** (Local actions 262, Website Call Click 66, **Calls from ads 33 SIGUE PRIMARIA a $1**, Clicks to call 12).
+
+**Geografía** (`geographic_view` + `segments.geo_target_city` + `LOCATION_OF_PRESENCE`): Walnut Creek 18.35× · Orinda 16.35× · Crockett 14.39× · Fremont 8.57×. 🔴 **San Francisco es el gasto #1 de la cuenta ($524.46) → 1 venta $599 = 1.14×**. **$3,202.69 = 59% del gasto fue a ciudades con 0 ventas online** `✅✅`.
+
+**Canibalismo de marca:** el search term #1 de gasto de High Intent es **`tp dumpsters`, $194.86 a $12.99 el clic** — mientras la campaña de Marca tuvo 11 impresiones con IS 100%. **Matiz importante:** Marca no pierde la subasta, es que **casi nunca hay subasta** porque High Intent se come la búsqueda antes. La negativa exacta es la única palanca.
+
+### Estrategias de puja (dato nuevo, nadie lo tenía)
+High Intent `MAXIMIZE_CONVERSIONS` **con tCPA $95** · Marca TP `TARGET_SPEND` sin tope · Retargeting `MAXIMIZE_CONVERSIONS` sin tope · **DSA `MAXIMIZE_CONVERSIONS` SIN TOPE de tCPA**. Subirle presupuesto a la DSA sin tope y con 70% del gasto invisible es repetir el 17-ago.
+
+### 🚨 Cero falso cazado por la Regla del Cero (antes de reportarlo)
+`campaign.target_cpa.target_cpa_micros` devolvió **vacío** para las 4 campañas → parecía "High Intent no tiene tCPA", lo que habría refutado medio dictamen. **El tCPA de una campaña `MAXIMIZE_CONVERSIONS` vive en `campaign.maximize_conversions.target_cpa_micros`.** Confirmado: **$95.00**. Segunda cosa: `DURING LAST_90_DAYS` **no existe** en GAQL (`INVALID_VALUE_WITH_DURING_OPERATOR`) → la tabla de señal para tROAS salió vacía y se leía como "no hay datos"; con `BETWEEN` sí hay. Y `change_event` sólo acepta ventanas ≤30 días.
+
+### 💰 Hallazgo de negocio que reescribe la matemática (Stripe TP 90d, `✅✅`)
+338 facturas pagadas / 191 clientes. **76 clientes (40%) repiten**: 223 facturas (66%) y **$164,132.17 de $243,829.07 = 67% del ingreso**, 2.9 rentas c/u. Ticket repetidor **$736.02** vs único $693.02. ⇒ **el ingreso a 90 días de un cliente que repite es ≈$2,134, no el ticket de $681** sobre el que se juzga el CAC de $317.
+**Caveat honesto:** esos 90 días son TODO TP, no sólo lo que trajo Ads. **Falta medir qué fracción de los repetidores entró por Ads — vale más que cualquier ajuste de puja.**
+
+### Consejo IA — `/root/reports/consejo/2026-09-06-tp-panorama-ads/`
+Brief congelado (sha256 `f3424297f9e5…`). **Prisma/Gemini votó** (`gemini.md`, 8 puntos). **Hermes/Sol NO** — relay `pending` desde 16:52Z, sin sesión tmux `hermes`. **No se presentó como consenso.** `sintesis.md` verifica 6 afirmaciones de Gemini contra la API: tCPA $95 CONFIRMADO · marca CONFIRMADO+MATIZ · DSA competidores CONFIRMADO · no subir DSA CONFIRMADO+AGRAVANTE · **tROAS NO RECOMENDADO** (ago tuvo 15 conversiones con valor, justo el mínimo de Google; migrar reinicia el aprendizaje) · **LTV confirmado en lo grande, refutado en el detalle** (su tesis "contratistas" no está en los datos: sólo 20% de repetidores tiene nombre de empresa; los mayores son personas físicas).
+
+### Resolución del convocante (UNA sola, propuesta a Cris msg 6051, SIN GO todavía)
+**Limpiar sin mover presupuesto ni estrategia de puja:** negativas (marca propia + "gratis" + competidores), ajuste de puja **negativo** en ciudades sin retorno (no exclusión de tajo), pausar Retargeting, pausar los 2 ad groups que sólo producen conversiones de $1. **Presupuesto se queda en $100/día y el tCPA en $95. Nada de tROAS, nada de subir la DSA.**
+
+**Pendientes que siguen en cancha de Cris:** demote de las 4 conversiones `Local actions` desde la UI (`MUTATE_NOT_ALLOWED` por API) · el **margen bruto real de una renta de $681** (sin eso no se puede decidir si $317 de CAC es negocio) · los 3 ad groups Tamaños 10/20/30 yd siguen en pausa.
+
+**Scripts de la sesión** (scratchpad, solo lectura): `tp_pano.py`, `tp_pano2.py`, `tp_pano3.py`, `tp_geo*.py`, `tp_sem.py`, `tp_troas.py`, `tp_marca.py`, `tp_tcpa.py`, `tp_ltv.py`, `tp_recur.py`.
+
+---
+
 ## 2026-09-04 22:00Z — asai (Opus 5) — Un cliente = una ficha en Stripe (edab4ad → BUILD `ys1srzCKSXuYZ3a_iEu2b`, en prod)
 
 **Causa raíz de los clientes duplicados.** `/api/checkout` (compra del sitio) y `/api/invoice` (el generador interno de cotizaciones que usa Asaí) llamaban `customers.create` **sin buscar antes**, así que un cliente que ya había comprado nacía otra vez en Stripe. Medido hoy en la cuenta de TP: 494 clientes reales, **53 con 2+ fichas, 69 fichas de más**. Con la ficha partida, la tarjeta guardada queda en una y el historial en otra — Asaí lo cazó con Jonah Abkowitz, que salía "sin tarjeta guardada" teniendo su Visa ****5408 en la ficha nacida del checkout (esa ficha trae `metadata.booking_id = TP-MTAD9SXI`, la firma del checkout ✅✅).
