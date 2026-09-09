@@ -485,13 +485,18 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
                 City *
               </label>
+              {/* Sin readOnly (9-sep-2026). Estaba como
+                  `!!GOOGLE_MAPS_KEY && booking.city !== ""`, o sea: se bloqueaba
+                  en cuanto el campo tenía UN carácter. Quien escribía la ciudad
+                  a mano — porque no usó el desplegable de Google — se quedaba
+                  atorado en la primera letra y ya no podía continuar. Que
+                  Google la autocomplete está bien; impedir corregirla, no. */}
               <input
                 type="text"
                 placeholder="Oakland"
                 value={booking.city}
                 onChange={(e) => updateBooking({ city: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors bg-gray-50"
-                readOnly={!!GOOGLE_MAPS_KEY && booking.city !== ""}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors bg-white"
               />
             </div>
             <div>
