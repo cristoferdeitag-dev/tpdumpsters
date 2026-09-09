@@ -1,3 +1,34 @@
+## 2026-09-09 (14:00-19:40Z) — asai (Opus 5) — 🛒 Booking online: 8 mejoras de Asaí + copy, EN PRODUCCIÓN (3b56d5b, BUILD `6ngtrdYAkZkJnx957RbW8`)
+
+**Encargo de Asaí (msgs 3041-3048, 3069-3090):** ocho cambios al wizard de reserva, más una tanda de ajustes de copy sobre la marcha. Todo se le enseñó en capturas a 390px **antes** de subir; el GO fue *"Dale / Ya súbelos"* (msgs 3090/3091).
+
+**Lo que se cambió**
+- **Notas OBLIGATORIAS** (`AddressStep.tsx`). "Additional comments (optional)" → **"📍 Where exactly should we place the dumpster? *"**, con explicación y ejemplo. Entra a `allValid` con mínimo 5 caracteres: sin eso, *Next: Review & confirm* queda gris. Motivo de Asaí: *"no son comentarios random, tiene que responder dónde vamos a estacionar el dumpster"*.
+- **Tres avisos nuevos en `DateStep.tsx`** (versiones CORTAS, las eligió ella en el msg 3086): entrega a cualquier hora + espacio libre + **$149** si está obstruido · pickup a cualquier hora + área libre + **$149** + días extra con **24 h** de aviso · la ventana horaria se declara **guía**, no promesa ("can shift with routing, logistics and traffic").
+- **Overload, para todos los tamaños**: *"Nothing above the top edge… $149 fee, charged at pickup"*.
+- **Materiales** (`ServiceStep.tsx`): orden nuevo (Clean Soil y Clean Concrete **antes** de Green Waste), sin `truncate` (salían "Constructi…", "Clean Conc…"), y al cambiar de material la vista **baja sola** a su detalle.
+- **Clean Soil: 🌱 → 🟫.** Pedido textual de Asaí: la plantita hacía creer que se aceptaba pasto y raíces.
+- **Bricks Only $799/$749 → $949/$899** (lista/en línea; el descuento online de $50 se conserva).
+- **Un solo botón por pantalla**: la tarjeta elegida ya no pinta su CTA; quedan la banda "✓ Selected" y el botón de continuar. Era su queja *"aquí dos botones confunden"*.
+- **Hero**: las tres placas de precio **dejan de parecer botones** y se agrega guía + flecha al paso 1. Se agregó `disposal` a lo incluido, en hero y tarjetas (el resumen final ya lo decía).
+
+**🔎 EL HALLAZGO QUE VALIÓ LA SESIÓN — "si escogía una opción de más arriba, no lo veía".** Asaí lo reportó dos veces y las dos tenía razón. El aviso de fees del material vivía **en gris tenue** dentro del banner y **repetido en ámbar DEBAJO de las tarjetas**; el de overload, más abajo todavía. Quien elegía un material de los primeros chips **nunca** llegaba a verlos. Ahora los dos viven en **un solo recuadro ámbar entre la descripción y los precios**. Lección general: *un aviso que sólo existe al final del scroll no existe* — y el reporte "no se ve" apuntaba a la posición, no al texto.
+
+**⚠️ El hero NO se hizo clicable, a propósito.** La primera propuesta fue convertir las placas en botones que preseleccionaran tamaño; **Asaí cazó el hoyo**: tierra, concreto y mixed **sólo existen en 10 yd**, así que un clic en "20 YD" dejaría al cliente con una combinación imposible. Se descartó y quedaron como información.
+
+**Deploy (proceso estándar, con los cuidados del incidente del 8-sep 01:05Z)**
+1. `git branch --show-current` → **main**. Commit **3b56d5b** con **sólo los 4 archivos del booking** (`git add` explícito).
+2. Push a `origin/main` → GH Action rsync del source. Verificado en el servidor que mis archivos llegaron.
+3. Build **desde `git archive main`** en carpeta aparte (`/root/tp-deploy-193438`), nunca del working tree, con `.env.local` para la key de Maps (11 chunks con la key inlineada ✓).
+4. Controles previos: **el fix sin commitear de `cris`** en `src/app/api/webhook/route.ts` (`invoice.total`) **NO viajó** (0 en el source extraído; el único hit era esta misma bitácora copiada al standalone) · `admin/cobros` = 0 archivos · `2026-09-05` presente (sábado bloqueado, sin regresión).
+5. `rsync .next` a Hostinger + `pkill next-server` + `restart.txt`.
+
+**Verificado EN PRODUCCIÓN VIVA con navegador a 390px** (no en local): chips completos ✓ · Bricks $899 ✓ · overload y fee arriba ✓ · avisos de entrega y pickup ✓ · paso 3 con notas vacías → **botón bloqueado** ✓ · `/` y `/booking` 200 · `/admin/cobros` **404** ✓ · `.well-known/apple-developer-merchantid-domain-association` **200** (lo de la instancia `cris` sigue sano) ✓.
+
+**Recado atendido:** llegó por buzón la consulta de `cris` sobre prender Apple Pay / Google Pay (necesitaba este mismo repo). Se le pasó a Asaí con la advertencia del choque de candado; para cuando contestó, `cris` ya lo había desplegado (`1ebe131`, `90984f0`) — mi commit va **encima** del suyo y su archivo quedó verificado en vivo.
+
+**Pendiente de otro:** el fix de `cris` en `webhook/route.ts` sigue **sin commitear** en el working tree, esperando a su autor.
+
 ## 2026-09-09 19:30Z — cris (Opus 5) — 🍎 Apple Pay / Google Pay encendidos en el booking (GO Cris msg 6172/6174 + dictamen Prisma GO-CON-CAMBIOS)
 
 **Encargo de Cris (msg 6170):** *"Queremos aumentar el cierre... ¿Podemos poner cobrar con Google y Apple?"*. Se midió antes de tocar nada.
