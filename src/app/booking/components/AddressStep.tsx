@@ -306,8 +306,13 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
 
   const outsideArea = isOutsideServiceArea(booking.city, booking.zipCode);
 
+  // Dónde colocar el dumpster: obligatorio (Asaí, 9-sep-2026). Se pide algo
+  // escrito de verdad, no un punto ni una letra suelta.
+  const notesValid = (booking.notes ?? "").trim().length >= 5;
+
   const allValid =
     !outsideArea &&
+    notesValid &&
     booking.address.trim() !== "" &&
     booking.city.trim() !== "" &&
     booking.zipCode.trim() !== "" &&
@@ -535,18 +540,34 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         )}
       </div>
 
-      {/* Additional comments */}
+      {/* Dónde se coloca el dumpster — OBLIGATORIO (Asaí, 9-sep-2026).
+          Antes era "Additional comments (optional)" y la gente escribía
+          cualquier cosa o nada; el driver llegaba sin saber dónde dejarlo. */}
       <div className="mb-6">
         <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-          Additional comments (optional)
+          📍 Where exactly should we place the dumpster? *
         </label>
+        <p className="text-xs text-[#999] mb-2 font-[var(--font-poppins)]">
+          Tell us the exact spot — driveway, street in front of the house, side
+          of the garage — and add a gate code or access note if we need one.
+        </p>
         <textarea
-          placeholder="Gate code, placement instructions, special access notes..."
+          placeholder="Example: in the driveway, right side, in front of the garage door. Gate code 1234."
           value={booking.notes}
           onChange={(e) => updateBooking({ notes: e.target.value })}
-          rows={2}
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors resize-none"
+          onBlur={() => setTouched((prev) => ({ ...prev, notes: true }))}
+          rows={3}
+          className={`w-full px-4 py-3 border-2 rounded-xl text-sm font-[var(--font-poppins)] focus:outline-none transition-colors resize-none ${
+            touched.notes && !notesValid
+              ? "border-red-400 bg-red-50 focus:border-red-500"
+              : "border-gray-200 focus:border-tp-red"
+          }`}
         />
+        {touched.notes && !notesValid && (
+          <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
+            ⚠️ Please tell us where to place the dumpster
+          </p>
+        )}
       </div>
 
       <div className="flex justify-between mt-6">

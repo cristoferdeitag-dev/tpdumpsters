@@ -146,6 +146,15 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
               {deliveryError}
             </p>
           )}
+          {/* Asaí, 9-sep-2026: el dumpster llega a cualquier hora del día y el
+              driver no puede esperar; si el lugar está obstruido, $149. */}
+          <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <p className="text-xs text-amber-800 leading-relaxed font-[var(--font-poppins)]">
+              ⚠️ We deliver <strong>any time during the day</strong>. Have the spot
+              clear and accessible — our driver can&apos;t wait. Blocked spot:
+              <strong> $149 fee</strong>.
+            </p>
+          </div>
         </div>
 
         {/* Pickup date */}
@@ -176,15 +185,28 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
               )}
             </p>
           )}
+          {/* Asaí, 9-sep-2026: se recoge a cualquier hora de ese día, el área
+              debe estar libre ($149 si no), y los días extra se avisan 24h antes. */}
+          <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <p className="text-xs text-amber-800 leading-relaxed font-[var(--font-poppins)]">
+              ⚠️ We pick up <strong>any time during the day</strong>. Keep the area
+              clear or a <strong>$149 fee</strong> applies. Need more days? Tell us
+              <strong> 24 hours ahead</strong>.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Delivery window selector */}
       {booking.deliveryDate && (
         <div className="mb-8">
-          <label className="block text-sm font-semibold text-[#333] mb-3 font-[var(--font-poppins)]">
+          <label className="block text-sm font-semibold text-[#333] mb-1 font-[var(--font-poppins)]">
             🕐 Choose a delivery time window
           </label>
+          <p className="text-xs text-[#888] mb-3 font-[var(--font-poppins)]">
+            Time windows are a guide, not a guaranteed hour — the exact time can
+            shift with routing, logistics and traffic.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {DELIVERY_WINDOWS.map((w) => {
               const isSelected = booking.deliveryWindow === w.id;

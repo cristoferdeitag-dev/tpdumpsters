@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FaCalendarDays } from "react-icons/fa6";
 import type { BookingData, ServiceSelection } from "./BookingWizard";
 import { trackDumpsterSelected } from "@/lib/tracking";
@@ -85,14 +85,8 @@ const services: ServiceCategory[] = [
     sizes: GENERAL_SIZES,
   },
   {
-    service: "Green Waste",
-    icon: "♻️",
-    description: "Landscaping, branches, leaves, yard cleanup, organic debris",
-    sizes: GENERAL_SIZES,
-  },
-  {
     service: "Clean Soil",
-    icon: "🌱",
+    icon: "🟫",
     description: "Must be 95% pure. No rocks, grass, gravel, mesh, wood, or garbage.",
     note: "⚠️ Extra fee: $150 if prohibited items are added",
     sizes: [
@@ -107,6 +101,12 @@ const services: ServiceCategory[] = [
     sizes: [
       { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
+  },
+  {
+    service: "Green Waste",
+    icon: "♻️",
+    description: "Landscaping, branches, leaves, yard cleanup, organic debris",
+    sizes: GENERAL_SIZES,
   },
   {
     // Mixed Materials expands into 3 sub-types in the size picker. Each
@@ -133,8 +133,8 @@ const services: ServiceCategory[] = [
         label: "Bricks Only",
         sublabel: "Clean bricks only — no mixed materials",
         size: "10 Yard",
-        basePrice: 799,
-        price: 749,
+        basePrice: 949,
+        price: 899,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: 3,
@@ -182,6 +182,12 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
   });
 
   const activeService = services[activeServiceIdx];
+
+  // Asaí, 9-sep-2026: al elegir un tipo de material que está arriba en la
+  // lista, la vista se quedaba donde estaba y el cliente no veía ni las
+  // tarjetas nuevas ni el aviso de fees ("elegí una opción que estaba arriba
+  // de todo y no lo vi"). Al cambiar de material bajamos a su detalle.
+  const detalleRef = useRef<HTMLDivElement>(null);
 
   // Normalize sizes + variants into a single render list. Variants override
   // the parent service's serviceType so the booking carries (e.g.) "Bricks"
@@ -233,7 +239,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         Choose your dumpster
       </h2>
       <p className="font-[var(--font-poppins)] text-[15px] text-[#999] mb-10">
-        Select the type of waste and dumpster size you need.
+        Select what you&apos;re disposing of, then choose the size you need.
       </p>
 
       {/* ── Service type pills ── */}
@@ -241,30 +247,44 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         {services.map((svc, idx) => (
           <button
             key={svc.service}
-            onClick={() => setActiveServiceIdx(idx)}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold font-[var(--font-poppins)] transition-all duration-200 ${
+            onClick={() => {
+              setActiveServiceIdx(idx);
+              requestAnimationFrame(() =>
+                detalleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+              );
+            }}
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl md:rounded-full text-sm font-semibold font-[var(--font-poppins)] transition-all duration-200 ${
               activeServiceIdx === idx
                 ? "bg-tp-red text-white shadow-md"
                 : "bg-[#f5f5f5] text-[#555] border border-[#e5e5e5] hover:border-tp-red hover:text-tp-red"
             }`}
           >
             <span className="text-base">{svc.icon}</span>
-            <span className="truncate">{svc.service}</span>
+            <span className="whitespace-normal leading-tight text-center">{svc.service}</span>
           </button>
         ))}
       </div>
 
       {/* ── Service description banner ── */}
-      <div className="bg-[#fafafa] rounded-2xl px-6 py-4 mb-10 border border-[#eee]">
+      <div ref={detalleRef} className="scroll-mt-28 bg-[#fafafa] rounded-2xl px-6 py-4 mb-10 border border-[#eee]">
         <p className="font-[var(--font-poppins)] text-[14px] text-[#555] leading-relaxed">
           <span className="font-semibold text-[#333]">{activeService.icon} {activeService.service}:</span>{" "}
           {activeService.description}
         </p>
+      </div>
+
+      {/* Reglas del dumpster elegido, a la vista y ANTES de los precios: la del
+          material (si tiene) y la del overload, que aplica siempre. */}
+      <div className="-mt-6 mb-10 bg-amber-50 border border-amber-300 rounded-2xl px-6 py-4 space-y-2">
         {activeService.note && (
-          <p className="font-[var(--font-poppins)] text-xs text-[#aaa] mt-2 leading-relaxed">
+          <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
             {activeService.note}
           </p>
         )}
+        <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
+          ⚠️ Nothing above the top edge of the dumpster. Overloaded loads add a
+          <strong> $149 fee, charged at pickup</strong>.
+        </p>
       </div>
 
       {/* ── Price cards ── */}
@@ -405,7 +425,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                         isDark ? "text-white/80" : "text-[#555]"
                       }`}
                     >
-                      Delivery &amp; pickup included
+                      Delivery, pickup &amp; disposal included
                     </span>
                   </li>
                   <li className="flex items-center gap-3">
@@ -421,31 +441,26 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                 </ul>
 
                 {/* ── CTA button ── */}
-                <div
-                  className={`flex items-center justify-center w-full py-4 rounded-xl text-sm font-semibold transition-all duration-300 font-[var(--font-poppins)] ${
-                    isSelected
-                      ? "bg-green-500 text-white"
-                      : isFeatured
-                      ? "bg-tp-red text-white hover:brightness-110"
-                      : "bg-transparent text-[#333] border-2 border-[#222] hover:bg-[#222] hover:text-white"
-                  }`}
-                >
-                  {isSelected ? "✓ Selected" : "Select this dumpster"}
-                </div>
+                {/* Asaí, 9-sep-2026: "aquí dos botones confunden". Ya elegido
+                    el dumpster, la tarjeta dejaba un botón verde "Selected"
+                    compitiendo con el de continuar. Ahora sólo se ve mientras
+                    la tarjeta NO está elegida. */}
+                {!isSelected && (
+                  <div
+                    className={`flex items-center justify-center w-full py-4 rounded-xl text-sm font-semibold transition-all duration-300 font-[var(--font-poppins)] ${
+                      isFeatured
+                        ? "bg-tp-red text-white hover:brightness-110"
+                        : "bg-transparent text-[#333] border-2 border-[#222] hover:bg-[#222] hover:text-white"
+                    }`}
+                  >
+                    Select this dumpster
+                  </div>
+                )}
               </div>
             </button>
           );
         })}
       </div>
-
-      {/* ── Extra fees note ── */}
-      {activeService.note && (
-        <div className="mt-8 bg-amber-50/80 border border-amber-200/60 rounded-2xl px-6 py-4 text-center">
-          <p className="font-[var(--font-poppins)] text-sm text-amber-700">
-            {activeService.note}
-          </p>
-        </div>
-      )}
 
       <p className="text-center text-xs text-[#bbb] mt-8 mb-10 font-[var(--font-poppins)]">
         Extra weight charged at $199/ton (prorated) · Extra days: $75/day

@@ -58,7 +58,7 @@ export default function BookingPage() {
             ].map(({ yd, list, online }) => (
               <li
                 key={yd}
-                className="rounded-lg border border-tp-gold/35 bg-white/[0.07] backdrop-blur-sm px-2 py-3 sm:px-4 sm:py-4"
+                className="px-2 py-1 sm:px-4 border-l border-tp-gold/20 first:border-l-0"
               >
                 <div className="font-[var(--font-oswald)] text-white leading-none">
                   <span className="text-[26px] sm:text-4xl font-bold">{yd}</span>
@@ -78,10 +78,22 @@ export default function BookingPage() {
             ))}
           </ul>
 
+          {/* Guía al paso 1 con flecha (Asaí, 9-sep-2026): sustituye al clic que
+              la gente intentaba hacer sobre las placas de precio. */}
+          <p className="mt-4 font-[var(--font-poppins)] text-[12px] sm:text-sm text-white/55">
+            Start below: what are you getting rid of?
+          </p>
+          <span
+            aria-hidden="true"
+            className="mt-1 inline-block animate-bounce font-[var(--font-oswald)] text-xl text-tp-gold/70 leading-none"
+          >
+            ↓
+          </span>
+
           {/* Dos elementos separados a propósito: en una sola línea, "booking online"
               caía sola en el renglón siguiente (palabra viuda) en 390px. */}
           <p className="mt-5 font-[var(--font-poppins)] text-[13px] sm:text-[15px] text-white/75">
-            3–7 day rental · delivery &amp; pickup included
+            3–7 day rental · delivery, pickup &amp; disposal included
           </p>
           <p className="mt-2 font-[var(--font-poppins)] text-[13px] sm:text-[15px] font-semibold text-tp-gold">
             $50 off when you book online
@@ -97,7 +109,7 @@ export default function BookingPage() {
       </section>
 
       {/* Booking wizard — client-only render (no SSR = no hydration issues) */}
-      <section className="bg-[#f5f5f5] min-h-screen pb-20">
+      <section id="booking" className="scroll-mt-20 bg-[#f5f5f5] min-h-screen pb-20">
         <DynamicBookingWizard />
       </section>
 
