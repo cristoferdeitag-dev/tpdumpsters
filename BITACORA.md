@@ -1,3 +1,21 @@
+## 2026-09-09 20:45–21:00Z — cris (Opus 5) — 💸 Bricks cobraba $150 de menos + el favicon de Google era el triángulo de la plantilla
+
+**Lo pidió Cris** tras ver el sitio en su teléfono (msgs 6191/6194): "no se ve el logo en la búsqueda" y "revisa que los precios que dio Asaí se vean reflejados bien en todo el Booking".
+
+**1) El hueco de $150 (lo caro).** Asaí subió Bricks Only a `basePrice 949 / price 899` en `ServiceStep.tsx` (3b56d5b, 19:33Z). Pero **hay DOS tablas de precio** y sólo movió una:
+- `ServiceStep.tsx` = lo que VE el cliente.
+- `src/app/api/checkout/route.ts` → `ONLINE_PRICES` = lo que **COBRA**. Es autoritativa a propósito (recalcula y nunca confía en `booking.totalPrice`, raíz del cobro chueco de Louann en junio y de la auditoría de Sol del 23-jul).
+Resultado: pantalla $899, cargo $749. Verificado ✅✅ **en el servidor de Hostinger**: el `route.ts` desplegado con `"Bricks": { "10": 749 }` y el bundle compilado corriendo con la misma tabla. Exposición real medida en Stripe (60 días): **2 sesiones de Bricks, ambas del 26-ago a $749** — nadie compró entre el cambio de precio y el arreglo. **Arreglado en `d51c6db`**: `"Bricks": { "10": 899 }`.
+→ **Regla para el futuro: tocar un precio en `ServiceStep.tsx` OBLIGA a tocar `ONLINE_PRICES` en `/api/checkout`.** Y existen dos tablas más que viven aparte (`/api/invoice` y `/api/quote`, para cotizaciones/facturas manuales), hoy con Bricks en 749 y 30 Yard en 749 — no se tocaron porque son otra superficie; quedan como pendiente a decidir con Cris.
+
+**2) El favicon.** Google mostraba un **triángulo negro** en resultados: `src/app/favicon.ico` seguía siendo el icono por defecto de la plantilla de Next (256×256) y el logo real sólo existía como `favicon-32x32.png`. **Google exige que el favicon sea un cuadrado múltiplo de 48px**, así que descartaba el 32 y caía al `.ico` de la plantilla. Ahora `favicon.ico` es el logo de TP y `layout.tsx` declara 256/192/32 + apple-touch 192 (`public/images/logo/favicon-{48,192,512}x*.png` generados desde `TP.png` 550×550).
+⚠️ **Gotcha que rompió el build:** un `.ico` generado con Pillow desde una imagen **RGB** revienta Turbopack — `Processing image failed / The PNG is not in RGBA format`. Hay que guardarlo en **modo RGBA** (`Image.convert("RGBA").save(..., format="ICO", sizes=[...])`). Corregido en `2075874`.
+⚠️ Google recachea el favicon por su cuenta: de días a semanas para verlo en resultados. En navegador es inmediato.
+
+**Deploy.** `git archive main` a `/root/tp-deploy-204617` + `cp -al node_modules` + `npm run build` + rsync de `.next` + kill de `next-server`. **BUILD `neDRFHFhf7UoQwTXFctTx`**. Verificado en vivo por dos vías: el chunk del wizard sirve `basePrice:949,price:899` y el server bundle `Bricks:{10:899}`; `/favicon.ico` responde 200 con el ICO RGBA de 57,736 bytes y el HTML trae los tres `<link rel=icon>`. **No se hizo una reserva real de prueba** — la verificación es de código en vivo, no de un cargo ejecutado.
+
+**Pendientes.** (a) `/roofing` publica 20 yd $649 y 30 yd $749 mientras el booking cobra $699/$799 — pregunta abierta a Cris: ¿sube la página o baja el booking? (b) A/B del booking + rediseño de la pantalla 1 con el orden que pidió Cris (datos de contacto + "describe qué vas a tirar"), diseño desde Stitch. (c) GA4 de TP ya tiene registradas las dimensiones `step_number` y `step_name` (Admin API, 20:18Z) — cuentan desde hoy, sin relleno hacia atrás.
+
 ## 2026-09-09 20:05Z — cris (Opus 5) — ✅ WALLETS CONFIRMADOS EN TELÉFONO REAL + fix del "20 Yard yd" (BUILD `kSdXSaESLGE-OSi-nVa95`)
 
 **Cierra la sesión de wallets.** La condición 3 de Prisma era prueba en dispositivo real, no la respuesta de la API. Cris la hizo y quedó por las dos vías ✅✅:
