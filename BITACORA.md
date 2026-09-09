@@ -1,3 +1,30 @@
+## 2026-09-09 20:05Z — cris (Opus 5) — ✅ WALLETS CONFIRMADOS EN TELÉFONO REAL + fix del "20 Yard yd" (BUILD `kSdXSaESLGE-OSi-nVa95`)
+
+**Cierra la sesión de wallets.** La condición 3 de Prisma era prueba en dispositivo real, no la respuesta de la API. Cris la hizo y quedó por las dos vías ✅✅:
+- **Google Pay** visible en el PaymentElement embebido — Windows/Chrome (captura de Cris, msg 6182).
+- **Apple Pay** visible — **Safari en iPhone** (captura de Cris, msg 6184), sobre `tpdumpsters.com`, sin salir del dominio.
+
+Antes de esto el embebido llevaba **0 de 73 pagos con wallet**. Ya se ofrece.
+
+**Cruce de las dos reservas de prueba contra Stripe (todo coincide ✅✅):**
+
+| reserva | pantalla | Stripe |
+|---|---|---|
+| `TP-MTUIAPCG` | Household Clean Out 20 Yard, $749→**$699**, SF 94104 | `amount_total` 69900, entrega 11→18-sep (7 días = `rentalDays` del 20yd), notas "Donde caiga" |
+| `TP-MTUILJXM` | Clean Concrete 10 Yard, **$599**, Richmond 94806 | `amount_total` 59900, entrega 15→18-sep (3 días = `rentalDays` del 10yd), notas "Fotito" |
+
+Las dos con la dirección en `customer.shipping` (entrega, no facturación) y las dos quedaron `open`/`unpaid` porque no se completó el cobro. El campo de notas obligatorio de Asaí venía lleno en ambas.
+
+### 🐛 Fix desplegado (`dd9d6ff`)
+`EmbeddedPayment.tsx:207` imprimía `{size} yd` y `size` ya vale `"20 Yard"` → la pantalla de pago decía **"20 Yard yd"** / **"10 Yard yd"**. Lo cachó Cris en la captura del iPhone. Una línea.
+
+**Deploy** (procedimiento estándar de [[ref_tpdumpsters_deploy]], build **desde `git archive main`** en carpeta aparte, nunca del working tree — quedaba sucio `webhook/route.ts`):
+- ⚠️ **Trampa nueva:** enlazar `node_modules` con un **symlink** al repo rompe el build con `Symlink node_modules is invalid, it points out of the filesystem root` (Turbopack). Se resuelve con **`cp -al`** (copia por enlaces duros, instantánea y sin gastar disco).
+- Controles antes de subir: la key de Maps inlineada en **11 chunks** ✓ (el gotcha del 2-may) y **0 ocurrencias** del `yd` duplicado en el bundle ✓.
+- Verificado en prod: `/` y `/booking` 200 · el HTML sirve el BUILD `kSdXSaESLGE-OSi-nVa95` y **ya no** el anterior · los chunks del pago sin el `yd` ✓ · `.well-known/apple-developer-merchantid-domain-association` **sigue en 200** tras la recompilación ✓.
+
+---
+
 ## 2026-09-09 (14:00-19:40Z) — asai (Opus 5) — 🛒 Booking online: 8 mejoras de Asaí + copy, EN PRODUCCIÓN (3b56d5b, BUILD `6ngtrdYAkZkJnx957RbW8`)
 
 **Encargo de Asaí (msgs 3041-3048, 3069-3090):** ocho cambios al wizard de reserva, más una tanda de ajustes de copy sobre la marcha. Todo se le enseñó en capturas a 390px **antes** de subir; el GO fue *"Dale / Ya súbelos"* (msgs 3090/3091).
