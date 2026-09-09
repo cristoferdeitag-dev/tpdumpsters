@@ -192,7 +192,7 @@ const faqSchema = {
 const dumpsterSizes = [
   {
     name: "10 Yard",
-    basePrice: "$599",
+    basePrice: "$649",
     roofingPrice: "$599",
     dimensionsClean: "12&apos;L × 8&apos;W × 2.5&apos;H",
     weight: "1 ton included",
@@ -203,8 +203,8 @@ const dumpsterSizes = [
   },
   {
     name: "20 Yard",
-    basePrice: "$649",
-    roofingPrice: "$649",
+    basePrice: "$749",
+    roofingPrice: "$699",
     dimensionsClean: "16&apos;L × 8&apos;W × 4&apos;H",
     weight: "2 tons included",
     rental: "7-day rental",
@@ -214,8 +214,8 @@ const dumpsterSizes = [
   },
   {
     name: "30 Yard",
-    basePrice: "$749",
-    roofingPrice: "$749",
+    basePrice: "$849",
+    roofingPrice: "$799",
     dimensionsClean: "16&apos;L × 8&apos;W × 6&apos;H",
     weight: "3 tons included",
     rental: "7-day rental",
@@ -250,6 +250,7 @@ const extraFees = [
   
   { item: "Extra rental days", fee: "$75/day" },
   { item: "Overweight charges", fee: "$199/ton (prorated)" },
+  { item: "Overloaded load (above the top edge)", fee: "$149, charged at pickup" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
   { item: "Tires", fee: "$20 each" },
@@ -429,8 +430,16 @@ export default function RoofingPage() {
                   <h3 className="font-[var(--font-poppins)] text-[28px] font-bold text-[#333]">
                     {size.name}
                   </h3>
-                  <p className="font-[var(--font-oswald)] text-[42px] font-bold text-tp-red mt-4">
-                    {size.roofingPrice}
+                  <div className="mt-4 flex items-baseline justify-center gap-3">
+                    <span className="font-[var(--font-oswald)] text-lg line-through text-[#aaa]">
+                      {size.basePrice}
+                    </span>
+                    <span className="font-[var(--font-oswald)] text-[42px] font-bold text-tp-red leading-none">
+                      {size.roofingPrice}
+                    </span>
+                  </div>
+                  <p className="font-[var(--font-poppins)] text-xs font-semibold text-green-700 mt-2 uppercase tracking-wider">
+                    Save $50 online
                   </p>
                 </div>
                 <div className="px-6 py-4 flex items-center justify-center min-h-[160px]">
