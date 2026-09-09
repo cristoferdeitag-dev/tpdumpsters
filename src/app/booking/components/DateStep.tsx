@@ -99,6 +99,24 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
 
   const canProceed = booking.deliveryDate && booking.deliveryWindow && booking.pickupDate && totalDays >= 1;
 
+  // Mismo criterio que en el paso de dirección (9-sep-2026): el botón nunca se
+  // queda mudo. Faltaba sobre todo la ventana horaria — se elige la fecha, se
+  // sigue de largo y el botón quedaba gris sin decir por qué.
+  const [attempted, setAttempted] = useState(false);
+  const missing: string[] = [];
+  if (!booking.deliveryDate) missing.push("a delivery date");
+  else if (!booking.deliveryWindow) missing.push("a delivery time window");
+  if (booking.deliveryDate && (!booking.pickupDate || totalDays < 1))
+    missing.push("a valid pickup date");
+
+  const handleNext = () => {
+    if (canProceed) {
+      onNext();
+      return;
+    }
+    setAttempted(true);
+  };
+
   return (
     <div>
       <h2 className="font-[var(--font-poppins)] text-2xl font-bold text-[#333] mb-2">
@@ -286,6 +304,14 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         </div>
       )}
 
+      {!canProceed && attempted && (
+        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
+          <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
+            ⚠️ Before you continue, please choose: {missing.join(" and ")}.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-between mt-6">
         <button
           onClick={onBack}
@@ -293,13 +319,14 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         >
           ← Back
         </button>
+        {/* Sin `disabled`: si falta algo, el clic lo dice (ver AddressStep). */}
         <button
-          onClick={onNext}
-          disabled={!canProceed}
+          onClick={handleNext}
+          aria-disabled={!canProceed}
           className={`px-8 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-base transition-all duration-200 ${
             canProceed
               ? "bg-tp-red text-white hover:bg-tp-red-dark shadow-md"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-gray-200 text-gray-500 hover:bg-gray-300"
           }`}
         >
           Next: Delivery address →

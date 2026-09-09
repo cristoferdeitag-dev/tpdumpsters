@@ -149,6 +149,9 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showBilling, setShowBilling] = useState(booking.billingAddress !== null);
+  // El cliente ya intentó continuar: a partir de aquí se le dice qué falta.
+  const [attempted, setAttempted] = useState(false);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const billingInputRef = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -324,6 +327,50 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
     !validateEmail(booking.customerEmail) &&
     !validateZip(booking.zipCode) &&
     billingComplete;
+
+  // Qué falta, en el orden en que aparece en pantalla. Un cliente se atoró el
+  // 9-sep-2026: llenó todo menos la nota (que se volvió obligatoria ese mismo
+  // día), el botón se quedó gris SIN decir por qué y el aviso del textarea sólo
+  // salía si lo habías enfocado y salido. Ahora el paso nunca falla en silencio.
+  const missing: string[] = [];
+  if (booking.customerName.trim().length < 2 || validateName(booking.customerName))
+    missing.push("your name");
+  if (booking.customerPhone.replace(/\D/g, "").length < 10 || validatePhone(booking.customerPhone))
+    missing.push("phone number");
+  if (booking.customerEmail.trim() === "" || validateEmail(booking.customerEmail))
+    missing.push("email");
+  if (booking.address.trim() === "") missing.push("street address");
+  if (booking.city.trim() === "") missing.push("city");
+  if (booking.zipCode.trim() === "" || validateZip(booking.zipCode))
+    missing.push("ZIP code");
+  if (!billingComplete) missing.push("billing address");
+  if (!notesValid) missing.push("where to place the dumpster");
+
+  // El botón ya NO va disabled: si algo falta, marca todos los campos como
+  // tocados (para que sus avisos aparezcan) y sube al primero que falta.
+  const handleNext = () => {
+    if (allValid) {
+      onNext();
+      return;
+    }
+    setAttempted(true);
+    setTouched({
+      customerName: true,
+      customerPhone: true,
+      customerEmail: true,
+      zipCode: true,
+      notes: true,
+    });
+    setErrors({
+      customerName: validateName(booking.customerName),
+      customerPhone: validatePhone(booking.customerPhone),
+      customerEmail: validateEmail(booking.customerEmail),
+      zipCode: validateZip(booking.zipCode),
+    });
+    if (!notesValid) {
+      notesRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
 
   const inputClass = (field: string, hasError: boolean) =>
     `w-full px-4 py-3 border-2 rounded-xl text-sm font-[var(--font-poppins)] focus:outline-none transition-colors ${
@@ -552,23 +599,50 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           of the garage — and add a gate code or access note if we need one.
         </p>
         <textarea
+          ref={notesRef}
           placeholder="Example: in the driveway, right side, in front of the garage door. Gate code 1234."
           value={booking.notes}
           onChange={(e) => updateBooking({ notes: e.target.value })}
           onBlur={() => setTouched((prev) => ({ ...prev, notes: true }))}
           rows={3}
           className={`w-full px-4 py-3 border-2 rounded-xl text-sm font-[var(--font-poppins)] focus:outline-none transition-colors resize-none ${
-            touched.notes && !notesValid
+            (touched.notes || attempted) && !notesValid
               ? "border-red-400 bg-red-50 focus:border-red-500"
               : "border-gray-200 focus:border-tp-red"
           }`}
         />
-        {touched.notes && !notesValid && (
+        {(touched.notes || attempted) && !notesValid && (
           <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
             ⚠️ Please tell us where to place the dumpster
           </p>
         )}
       </div>
+
+      {/* Por qué no puedes seguir. Se muestra en cuanto el cliente intenta
+          continuar (o ya empezó a llenar): antes el botón gris era la única
+          señal y no decía nada. */}
+      {!allValid && (attempted || Object.keys(touched).length > 0) && (
+        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
+          {outsideArea ? (
+            <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
+              ⚠️ We don&apos;t currently service {booking.city.trim() || "that area"} —
+              call us at (510) 650-2083 and we&apos;ll see what we can do.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
+                ⚠️ Before you continue, we still need: {missing.join(", ")}.
+              </p>
+              {!notesValid && (
+                <p className="text-xs text-amber-700 mt-1 font-[var(--font-poppins)]">
+                  The spot for the dumpster is required — our driver needs to know
+                  exactly where to leave it.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <div className="flex justify-between mt-6">
         <button
@@ -577,13 +651,15 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         >
           ← Back
         </button>
+        {/* Sin `disabled`: un botón muerto no explica nada. Si falta algo, el
+            clic destapa los avisos y sube al campo que falta. */}
         <button
-          onClick={onNext}
-          disabled={!allValid}
+          onClick={handleNext}
+          aria-disabled={!allValid}
           className={`px-8 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-base transition-all duration-200 ${
             allValid
               ? "bg-tp-red text-white hover:bg-tp-red-dark shadow-md"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-gray-200 text-gray-500 hover:bg-gray-300"
           }`}
         >
           Next: Review & confirm →
