@@ -622,7 +622,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           continuar (o ya empezó a llenar): antes el botón gris era la única
           señal y no decía nada. */}
       {!allValid && (attempted || Object.keys(touched).length > 0) && (
-        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
+        <div role="alert" aria-live="polite" className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
           {outsideArea ? (
             <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
               ⚠️ We don&apos;t currently service {booking.city.trim() || "that area"} —

@@ -305,7 +305,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       )}
 
       {!canProceed && attempted && (
-        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
+        <div role="alert" aria-live="polite" className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
           <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
             ⚠️ Before you continue, please choose: {missing.join(" and ")}.
           </p>
