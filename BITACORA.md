@@ -1,3 +1,123 @@
+## 2026-09-09 · 23:00 UTC · instancia `cris` · URGENTE: "un cliente intentó reservar y dice que no sirve" — 3 bugs, arreglados y verificados en producción
+
+**Disparador.** Cris, msg 6216 (22:12Z): *"hubo un cliente que intento reservar y dice que no sirve, puedes revisarlo urgente"*. Parkeó el rediseño del paso 1 para esto.
+
+### El bug reportado
+
+En el paso 3 (dirección), el campo **"Where exactly should we place the dumpster?"** se volvió obligatorio esa misma tarde en `3b56d5b` (19:33Z, las 8 mejoras que pidió Asaí) y quedó vivo con el reinicio de las 21:20. La regla está bien; **el aviso de error estaba condicionado a `touched.notes`**, o sea que sólo aparecía si el cliente enfocaba y salía del textarea.
+
+Quien llenaba nombre, teléfono, correo, calle, ciudad y ZIP y **nunca tocaba el recuadro** veía:
+- botón `Next: Review & confirm` gris,
+- **ni un mensaje en toda la página**,
+- clics que no hacían nada (un botón `disabled` ni siquiera recibe el evento).
+
+Callejón sin salida. Reproducido ✅✅ (código + navegador iPhone contra producción) y **grabado**: `/root/scratch-tp/bug-booking-nota-obligatoria.mp4` (40 s). Enviado a Cris (msgs 6221-6222) y a Asaí por el buzón de relevo (su instancia lo entregó, msgs 3103/3104).
+
+### Los otros dos, que nadie había reportado
+
+2. **El build en producción se había compilado SIN `NEXT_PUBLIC_GOOGLE_MAPS_KEY`.** El autocompletado de dirección llevaba tiempo muerto: cero peticiones a `maps.googleapis.com` y el placeholder era el de la rama sin llave (`"123 Main Street"` en vez de `"Start typing your address..."`) ✅✅. Es exactamente el paso 0 del procedimiento de despliegue (`ref_tpdumpsters_deploy`) — copiar `.env.local` al directorio de build. Al recompilar revivió: 5 sugerencias reales, `AutocompletionService.GetPredictions` 200.
+
+3. **Al revivirlo se destapó una trampa peor.** El campo `City` iba `readOnly={!!GOOGLE_MAPS_KEY && booking.city !== ""}` — se bloqueaba en cuanto tenía **UN carácter**. Quien escribía la dirección a mano (sin usar el desplegable) se quedaba con la ciudad en `"R"`, inválida y sin manera de corregirla. Salió en la verificación del arreglo anterior, no de una hipótesis. Se quitó el `readOnly`.
+
+### Lo que cambió (3 commits)
+
+| commit | qué |
+|---|---|
+| `9856145` | Botones de continuar de los pasos 2 y 3 dejan de ir `disabled` (llevan `aria-disabled`, siguen grises). El clic valida, destapa los avisos de todos los campos y sube al que falta. Franja ámbar con la lista concreta de lo que falta. El textarea se marca en rojo también tras el primer intento. |
+| `de826d8` | `role="alert"` + `aria-live` en la franja, para lectores de pantalla. |
+| `451823f` | Fuera el `readOnly` de `City`. |
+
+**Decisión de diseño:** un botón `disabled` es incapaz de explicarse — el navegador no le entrega el clic. Por eso el botón queda clicable y sólo *parece* inactivo. Es el patrón accesible estándar (`aria-disabled` + región viva con el motivo), no un descuido.
+
+### Verificación en producción ✅✅
+
+`BUILD_ID D0c7R2epTq6c3dd1FDe3A` vivo. Recorrido completo grabado en `/root/scratch-tp/fix-booking-verificado.mp4` (48 s):
+- paso 2 sin ventana horaria → *"Before you continue, please choose: a delivery time window."*, se queda en el paso; se elige y pasa;
+- paso 3 sin nota → *"we still need: where to place the dumpster"* + el aviso del textarea;
+- con la nota → resumen con `$749 → $699` correcto;
+- `City` acepta "Richmond" completo.
+
+De paso: los **4 procesos `next-server`** que estaban vivos a la vez quedaron en **uno solo**.
+
+### Dos falsos positivos que NO se reportaron (regla 14)
+
+- **"El botón del paso 2 está muerto en las 11 fechas"** — artefacto de mi prueba: `canProceed` también exige `deliveryWindow` (`DateStep.tsx:100`). Al elegir la ventana, habilitado.
+- **`403` de `hcdn` en el navegador headless** — `curl` desde la misma IP da `200` de forma consistente y el 403 sólo aparece tras muchas navegaciones automatizadas seguidas. Casi seguro el CDN de Hostinger reaccionando a mi propio tráfico de prueba. Queda como **no concluyente**, no como bug.
+- **Playwright decía "element is not enabled"** al verificar: es su chequeo de *actionability*, que trata `aria-disabled` como deshabilitado. El clic real del cliente sí llega (comprobado con `force=True` y el aviso apareciendo). Artefacto de la herramienta, no del sitio.
+
+### Datos de la investigación
+
+- `/` y `/booking` 200 (12/12), los 11 chunks 200×8, `stderr.log` vacío desde el reinicio de las 21:20:50.
+- Stripe: última sesión **19:52Z**, nada después ✅ una vía. El sitio hace ≈1 venta/día (29 compras en 30 d, GA4), así que es **consistente** con la ventana del bug pero **no es prueba**.
+
+### Pendientes que deja
+
+- **Confirmar que la llave de Maps esté restringida a `tpdumpsters.com`** — viaja en el bundle del navegador (inherente a esa API) y la memoria registra 2 llaves de TP comprometidas. Preguntado a Cris, sin respuesta aún.
+- Sigue en pie todo lo de la entrada de las 21:45 (barrido de precios en 31 ciudades, columna derecha del rediseño, reseñas reales, plomería del A/B).
+- `src/app/api/webhook/route.ts` **sigue modificado sin commitear** por Cris. No se tocó; los tres builds salieron de `git archive main`, nunca del working tree.
+
+---
+
+## 2026-09-09 · 21:45 UTC · instancia `cris` · Rediseño paso 1 del Booking: 3 rechazos de Cris, 3 mediciones, maqueta v4 en blanco + bloque de IA
+
+**Qué se hizo** (todo en `/root/scratch-tp/`, **cero líneas tocadas del sitio**)
+
+Tres iteraciones, cada una disparada por un rechazo concreto de Cris por Telegram:
+
+1. **msg 6200** — *"No me gustó, además se parece muchísimo a Wise Dumpsters"*. Se midieron los tokens de los dos repos: la maqueta de Stitch usaba rojo + display condensada sobre blanco = la misma fórmula de Wise. Se reconstruyó sobre base oscura + dorado.
+2. **msg 6207** — *"la base me gustó, pero es mucho cambio de la página a este; hay que customizar que aparezca TP"*. Se injertó el header REAL de TP (negro, `TP.png` a 70px, nav Poppins mayúsculas).
+3. **msg 6211** — *"¿puedes hacer el fondo blanco? sigue súper diferente a nuestra página y aún se parece a Wise. ¿Estás usando la letra de nuestra página?"* → **v4**, la que quedó.
+4. **msg 6212** — *"que describan exactamente lo que quieren y que se le conteste la opción exacta que necesitan, obvio con IA"* → bloque de recomendación con IA dentro del paso 1.
+
+**La medición que resolvió lo de Wise** (`/root/wisedumpster/src/app/globals.css`, rama `feat/bold-redesign`)
+- **Wise:** Anton (display) + Work Sans (body); negro `#111111`, amarillo `#ffc107`, verde `#2e7d32`, rojo `#e53935`; fondo `#f4f4f4`.
+- **TP:** Oswald (títulos) + Poppins (nav/etiquetas/botones) + Open Sans (body `#666`); rojo `#E02B20`, dorado `#e7ac3c`/`#d4a017`; fondo `bg-white`.
+- **Diagnóstico:** el choque no era el rojo solo, era *negro + rojo + display condensada*. La versión oscura compartía los tres. La v4 no comparte ninguno: sin Anton, sin amarillo, sin verde.
+
+**🔤 Corrección propia: la tipografía del body NO es Poppins.** `src/app/layout.tsx:113` pone `font-[var(--font-open-sans)]` en el `<body>`. El sitio carga CUATRO: Poppins, Oswald, Red Hat Display y Open Sans. Las maquetas v1–v3 usaban Poppins de body. La v4 usa Open Sans. ✅✅ (layout.tsx + globals.css)
+
+**v4 = calco del `/booking` real.** Se fotografió la página viva (`https://tpdumpsters.com/booking`) y se copió su estructura: header negro → banda oscura con eyebrow dorado "BAY AREA · SAME-DAY DELIVERY", h1 Oswald, los 3 precios en dorado con el de lista tachado → sección `bg-[#f5f5f5]` (el token real, `src/app/booking/page.tsx:113`) con tarjeta blanca. Orden de campos que pidió Cris: nombre, teléfono, correo, dirección + textarea de descripción.
+
+**🤖 Bloque de IA (nuevo, respuesta al msg 6212).** El cliente describe su trabajo y debajo aparece la caja "Our recommendation" con el tamaño exacto y el precio en línea. La gracia: **cada afirmación sale del propio repo**, no del modelo —
+- "remodelación de cocina = 20 Yard" ← `src/app/blog/_articles/what-size-dumpster-do-i-need.tsx:129`
+- "2 tons incluidos, 7 días" ← `ServiceStep.tsx:56`
+- "$199/ton prorrateado" ← `ServiceStep.tsx:466` + `SummaryStep.tsx:155` ✅✅
+- ⚠️ "el refri sólo entra con el Freon extraído; electrodomésticos con Freon $40–$80" ← `what-can-go-in-a-dumpster.tsx:127` + `FaqsSection.tsx:120`
+
+**Regla 14 aplicada a mi propio output — tres datos inventados cachados antes de mandarlos:**
+1. "Next-day delivery" → el sitio dice **Same-day** 497 veces contra 30 de next-day. Corregido.
+2. "7 días a la semana" → `grep` en cero; segunda vía (`openingHoursSpecification` en `src/app/page.tsx:66-82`, y lo mismo en martinez y danville) da **Mon–Sat 07:00–18:00**. Corregido.
+3. "incluye 4 tons" en la tarjeta de IA → son **2 tons** (`ServiceStep.tsx:56` + `PricingTable.tsx:48`). Corregido.
+
+**Decisiones**
+- **Stitch queda fuera de este flujo.** No por el diseño, por tubería (ver gotcha). La maqueta se escribió a mano como HTML responsivo real, que además permite incrustar el logo verdadero — cosa que Stitch nunca iba a hacer.
+- El rojo `#E02B20` queda reservado al botón primario y al teléfono; el dorado es el color de personalidad. Igual que el sitio.
+
+**Gotchas nuevos**
+- 🚨 **Stitch: la salida ya no se puede bajar.** `htmlCode.downloadUrl`, `screenshot.downloadUrl` y `thumbnailScreenshot.downloadUrl` regresan como referencias elididas (`<<ccr:...,base64,262B>>`), inservibles para `curl`. Y `mcp__stitch__download_assets` responde "Assets downloaded to ..." pero escribe **en el filesystem del servidor MCP**, no en el nuestro: la carpeta no existe localmente. Probado dos veces, dos destinos distintos.
+- **Stitch ignora `deviceType: MOBILE`**: se pidió móvil y devolvió DESKTOP 2560×2200.
+- 🚨 **El MCP de Playwright no arranca como root** ("Chromium sandboxing failed! ... Running as root without --no-sandbox is not supported", crbug.com/638180). La vía que SÍ funciona es un script Python: `p.chromium.launch(executable_path="/opt/google/chrome/chrome", chromium_sandbox=False, args=["--no-sandbox"])`. Quedó guardado en `/root/scratch-tp/shot.py` (uso: `python3 shot.py <url|ruta> <ancho> <dsr> <salida.png> [full]`). Google Fonts sí resuelve, las webfonts renderizan.
+- La foto del hero y el logo NO cargan al fotografiar el home con `networkidle`; en `/booking` sí. No es bug del sitio.
+- Especificidad CSS: `.links a` (0,1,1) le gana a `.bookbtn` (0,1,0) — el botón rojo del header salía a toda la altura. Se resolvió con `.links a.bookbtn`.
+
+**Archivos clave**
+- `/root/scratch-tp/step1-v4.html` — la maqueta buena (responsiva real, logo TP en base64, breakpoint 1000px)
+- `/root/scratch-tp/tp-v4-mobile.png` (390 · dsr 3) y `tp-v4-desktop.png` (1440 · dsr 2) — enviadas a Cris, msgs 6213-6215
+- `/root/scratch-tp/shot.py` — el renderizador headless
+- `/root/scratch-tp/live-booking-mobile.png`, `live-home-desktop.png` — el sitio vivo, referencia de fidelidad
+- Stitch (histórico, ya no se usa): proyecto `6987213179356964908`, design systems `assets/8940039552307994502` y `assets/10566497864195821979`
+
+**Pendientes**
+1. **Respuesta de Cris:** ¿la IA lee el catálogo completo (tamaños, pesos, fees, prohibidos, área) o primero aprueba la lista de reglas que puede citar?
+2. Sigue sin GO el barrido de precios: 31 páginas de ciudad + 4 de servicio (del bloque anterior).
+3. Falta llenar la columna derecha del desktop debajo del sidebar — se propuso los 3 tamaños con precio o el mapa de área; Cris no ha elegido.
+4. Plomería del A/B (`middleware.ts` + cookie `tp_ab`), sin empezar.
+5. Falta el número real de reseñas de Google: en el repo sólo hay `ratingValue "5.0"` / `reviewCount "10"` (`contractors/page.tsx:179-183`) ✅ una vía — no publicar tarjeta de reseñas hasta tener segunda vía.
+6. `src/app/api/webhook/route.ts` sigue MODIFICADO sin commitear por Cris. **No commitearlo. No buildear del working tree.**
+7. Siguen en disco `/root/tp-deploy-193438`, `-200022`, `-204617`, `-210257` (~176M c/u): `rm -rf` denegado por permisos.
+
+---
+
 ## 2026-09-09 · 21:10 UTC · instancia `cris` · /roofing cuadrado con el booking + arranca el diseño del paso 1
 
 **Qué se hizo**
