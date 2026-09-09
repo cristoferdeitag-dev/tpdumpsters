@@ -204,7 +204,9 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
         </button>
       </div>
       <p className="text-sm text-[#888] mb-5 font-[var(--font-poppins)]">
-        {booking.customerName} · {booking.service?.serviceType} {booking.service?.size} yd
+        {/* `size` ya viene como "20 Yard" — el " yd" de antes lo dejaba en
+            "20 Yard yd" (Cris lo vio en su iPhone, 9-sep-2026). */}
+        {booking.customerName} · {booking.service?.serviceType} {booking.service?.size}
       </p>
 
       {!mounted && (
