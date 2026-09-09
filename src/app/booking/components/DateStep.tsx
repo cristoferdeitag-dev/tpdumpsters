@@ -21,6 +21,16 @@ interface Props {
   onBack: () => void;
 }
 
+/* Marca de campo obligatorio (mismo criterio que AddressStep). */
+function Req() {
+  return (
+    <>
+      <span className="text-tp-red font-bold" aria-hidden="true"> *</span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
+
 function addDays(dateStr: string, days: number): string {
   const date = new Date(dateStr + "T12:00:00");
   date.setDate(date.getDate() + days);
@@ -126,6 +136,9 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         {booking.service?.serviceType} — {booking.service?.size} includes{" "}
         <strong>{baseDays} days</strong> of rental.
       </p>
+      <p className="text-xs text-[#888] mb-4 font-[var(--font-poppins)]">
+        Fields marked <span className="text-tp-red font-bold">*</span> are required.
+      </p>
 
       {/* Info banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
@@ -140,15 +153,25 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         {/* Delivery date */}
         <div>
           <label className="block text-sm font-semibold text-[#333] mb-2 font-[var(--font-poppins)]">
-            📅 Delivery date
+            📅 Delivery date<Req />
           </label>
           <input
             type="date"
             min={tomorrow}
             value={booking.deliveryDate}
             onChange={(e) => handleDeliveryChange(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-base font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors"
+            aria-required="true"
+            className={`w-full px-4 py-3 border-2 rounded-xl text-base font-[var(--font-poppins)] focus:outline-none transition-colors ${
+              attempted && !booking.deliveryDate
+                ? "border-red-400 bg-red-50 focus:border-red-500"
+                : "border-gray-200 focus:border-tp-red"
+            }`}
           />
+          {attempted && !booking.deliveryDate && (
+            <p className="text-xs text-red-500 mt-1.5 font-[var(--font-poppins)]">
+              ⚠️ Pick the day you want the dumpster delivered
+            </p>
+          )}
           {booking.deliveryDate && (
             <p className="text-xs text-[#888] mt-1.5">
               {formatDate(booking.deliveryDate)}
@@ -219,13 +242,19 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {booking.deliveryDate && (
         <div className="mb-8">
           <label className="block text-sm font-semibold text-[#333] mb-1 font-[var(--font-poppins)]">
-            🕐 Choose a delivery time window
+            🕐 Choose a delivery time window<Req />
           </label>
           <p className="text-xs text-[#888] mb-3 font-[var(--font-poppins)]">
             Time windows are a guide, not a guaranteed hour — the exact time can
             shift with routing, logistics and traffic.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-3 gap-3 ${
+              attempted && !booking.deliveryWindow
+                ? "rounded-xl border-2 border-red-400 bg-red-50 p-3"
+                : ""
+            }`}
+          >
             {DELIVERY_WINDOWS.map((w) => {
               const isSelected = booking.deliveryWindow === w.id;
               return (
@@ -250,6 +279,11 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
               );
             })}
           </div>
+          {attempted && !booking.deliveryWindow && (
+            <p className="text-xs text-red-500 mt-1.5 font-[var(--font-poppins)]">
+              ⚠️ Pick a time window — morning or afternoon
+            </p>
+          )}
         </div>
       )}
 

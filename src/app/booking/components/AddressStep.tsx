@@ -11,6 +11,17 @@ interface Props {
   onBack: () => void;
 }
 
+/* Marca de campo obligatorio. El asterisco gris del label pasaba
+   desapercibido — va en rojo y anunciado a lectores de pantalla. */
+function Req() {
+  return (
+    <>
+      <span className="text-tp-red font-bold" aria-hidden="true"> *</span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
+
 /* ───────── Validation helpers ───────── */
 function validateName(name: string): string | null {
   if (name.trim().length < 2) return "Name must be at least 2 characters";
@@ -372,9 +383,9 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
     }
   };
 
-  const inputClass = (field: string, hasError: boolean) =>
+  const inputClass = (field: string, hasError: boolean, isEmpty = false) =>
     `w-full px-4 py-3 border-2 rounded-xl text-sm font-[var(--font-poppins)] focus:outline-none transition-colors ${
-      hasError && touched[field]
+      (hasError && touched[field]) || (attempted && isEmpty)
         ? "border-red-400 bg-red-50 focus:border-red-500"
         : "border-gray-200 focus:border-tp-red"
     }`;
@@ -384,8 +395,12 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
       <h2 className="font-[var(--font-poppins)] text-2xl font-bold text-[#333] mb-2">
         Delivery address & contact
       </h2>
-      <p className="text-sm text-[#888] mb-8 font-[var(--font-poppins)]">
+      <p className="text-sm text-[#888] mb-2 font-[var(--font-poppins)]">
         Where should we deliver the dumpster?
+      </p>
+      <p className="text-xs text-[#888] mb-8 font-[var(--font-poppins)]">
+        Fields marked <span className="text-tp-red font-bold">*</span> are required —
+        everything else is optional.
       </p>
 
       {/* Contact info */}
@@ -396,7 +411,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Name or company *
+              Name or company<Req />
             </label>
             <input
               type="text"
@@ -404,6 +419,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               value={booking.customerName}
               onChange={(e) => updateBooking({ customerName: e.target.value })}
               onBlur={() => handleBlur("customerName")}
+              aria-required="true"
               className={inputClass("customerName", !!errors.customerName)}
             />
             {touched.customerName && errors.customerName && (
@@ -414,7 +430,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Phone number *
+              Phone number<Req />
             </label>
             <input
               type="tel"
@@ -422,6 +438,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               value={booking.customerPhone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               onBlur={() => handleBlur("customerPhone")}
+              aria-required="true"
               className={inputClass("customerPhone", !!errors.customerPhone)}
               maxLength={14}
             />
@@ -433,7 +450,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Email *
+              Email<Req />
             </label>
             <input
               type="email"
@@ -441,6 +458,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               value={booking.customerEmail}
               onChange={(e) => updateBooking({ customerEmail: e.target.value })}
               onBlur={() => handleBlur("customerEmail")}
+              aria-required="true"
               className={inputClass("customerEmail", !!errors.customerEmail)}
             />
             {touched.customerEmail && errors.customerEmail && (
@@ -468,7 +486,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Street address *
+              Street address<Req />
             </label>
             <input
               ref={addressInputRef}
@@ -476,14 +494,20 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               placeholder={GOOGLE_MAPS_KEY ? "Start typing your address..." : "123 Main Street"}
               value={booking.address}
               onChange={(e) => updateBooking({ address: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors"
+              aria-required="true"
+              className={inputClass("address", false, booking.address.trim() === "")}
               autoComplete="off"
             />
+            {attempted && booking.address.trim() === "" && (
+              <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
+                ⚠️ Street address is required
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-                City *
+                City<Req />
               </label>
               {/* Sin readOnly (9-sep-2026). Estaba como
                   `!!GOOGLE_MAPS_KEY && booking.city !== ""`, o sea: se bloqueaba
@@ -496,12 +520,18 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
                 placeholder="Oakland"
                 value={booking.city}
                 onChange={(e) => updateBooking({ city: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors bg-white"
+                aria-required="true"
+                className={`${inputClass("city", false, booking.city.trim() === "")} bg-white`}
               />
+              {attempted && booking.city.trim() === "" && (
+                <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
+                  ⚠️ City is required
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-                ZIP code *
+                ZIP code<Req />
               </label>
               <input
                 type="text"
@@ -509,7 +539,8 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
                 value={booking.zipCode}
                 onChange={(e) => updateBooking({ zipCode: e.target.value })}
                 onBlur={() => handleBlur("zipCode")}
-                className={inputClass("zipCode", !!errors.zipCode)}
+                aria-required="true"
+              className={inputClass("zipCode", !!errors.zipCode)}
                 maxLength={10}
               />
               {touched.zipCode && errors.zipCode && (
@@ -597,7 +628,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           cualquier cosa o nada; el driver llegaba sin saber dónde dejarlo. */}
       <div className="mb-6">
         <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-          📍 Where exactly should we place the dumpster? *
+          📍 Where exactly should we place the dumpster?<Req />
         </label>
         <p className="text-xs text-[#999] mb-2 font-[var(--font-poppins)]">
           Tell us the exact spot — driveway, street in front of the house, side
@@ -608,6 +639,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           placeholder="Example: in the driveway, right side, in front of the garage door. Gate code 1234."
           value={booking.notes}
           onChange={(e) => updateBooking({ notes: e.target.value })}
+          aria-required="true"
           onBlur={() => setTouched((prev) => ({ ...prev, notes: true }))}
           rows={3}
           className={`w-full px-4 py-3 border-2 rounded-xl text-sm font-[var(--font-poppins)] focus:outline-none transition-colors resize-none ${

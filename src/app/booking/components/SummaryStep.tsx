@@ -38,6 +38,16 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
   // booking shipped authorized_charges:"false" no matter what the customer
   // checked. Initialized from the booking so a restored session keeps it.
   const [authorizedCharges, setAuthorizedCharges] = useState(booking.authorizedCharges || false);
+  // El cliente ya intentó pagar: a partir de aquí se le señala la casilla.
+  const [attempted, setAttempted] = useState(false);
+
+  const handleSubmit = () => {
+    if (!authorizedCharges) {
+      setAttempted(true);
+      return;
+    }
+    onSubmit();
+  };
   const baseDays = booking.service?.baseDays || 7;
 
   return (
@@ -172,7 +182,16 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       </div>
 
       {/* Authorization checkbox */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
+      <div
+        className={`rounded-xl p-4 mb-6 border-2 transition-colors ${
+          attempted && !authorizedCharges
+            ? "border-red-400 bg-red-50"
+            : "border-gray-200 bg-gray-50"
+        }`}
+      >
+        <p className="text-xs font-semibold text-[#333] mb-2 font-[var(--font-poppins)]">
+          Required<span className="text-tp-red font-bold"> *</span> — check the box to continue
+        </p>
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -181,12 +200,19 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
               setAuthorizedCharges(e.target.checked);
               updateBooking({ authorizedCharges: e.target.checked });
             }}
+            aria-required="true"
             className="mt-1 w-4 h-4 accent-tp-red flex-shrink-0"
           />
           <span className="text-xs text-[#555] font-[var(--font-poppins)] leading-relaxed">
             I authorize TP Dumpsters to charge my card for any additional fees incurred during the rental period, including but not limited to: extra weight ($199/ton prorated), additional rental days ($75/day), and prohibited/hazardous items found in the dumpster ($20–$60 per item). I understand these charges may be processed after the dumpster is picked up.
           </span>
         </label>
+        {attempted && !authorizedCharges && (
+          <p role="alert" aria-live="polite" className="text-xs text-red-600 font-semibold mt-2 font-[var(--font-poppins)]">
+            ⚠️ Please check this box to authorize the charges — we can&apos;t take
+            the payment without it.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
@@ -197,9 +223,14 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
           ← Back
         </button>
         <button
-          onClick={onSubmit}
-          disabled={isSubmitting || !authorizedCharges}
-          className="flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-base bg-tp-red text-white hover:bg-tp-red-dark shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          aria-disabled={!authorizedCharges}
+          className={`flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-base shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+            authorizedCharges
+              ? "bg-tp-red text-white hover:bg-tp-red-dark"
+              : "bg-gray-200 text-gray-500 hover:bg-gray-300"
+          }`}
         >
           <FaCreditCard />
           {isSubmitting ? "Preparing secure payment..." : "💳 Pay & confirm booking"}
