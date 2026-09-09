@@ -1,3 +1,30 @@
+## 2026-09-09 · 23:40 UTC · instancia `cris` · "Hagamos que sea muy obvio los datos que se tengan que llenar" — obligatorios marcados en los 3 pasos
+
+**Disparador.** Cris, msg 6226 (23:22Z), justo después del arreglo del cliente atorado. No pidió más lógica: pidió que **se vea**.
+
+**Qué había.** Los obligatorios ya traían asterisco, pero **gris `#555`, del mismo color y tamaño que el resto del label** — invisible en la práctica. Un campo obligatorio vacío se veía idéntico a uno opcional vacío. Y en el paso 4 la casilla de autorización de cargos seguía con `disabled={!authorizedCharges}`: el mismo callejón sin salida que reportó el cliente esta noche, en el último paso y con la tarjeta ya en la mano.
+
+**Qué se hizo** (commit `2466b8b`, BUILD `OX_WyTwOebPQ-2YK_XlcJ`):
+
+| Dónde | Cambio |
+|---|---|
+| Pasos 2 y 3 | Componente `<Req />`: asterisco **rojo en negritas** + `<span class="sr-only">(required)</span>` para lectores de pantalla. Reemplaza el ` *` de texto plano. |
+| Pasos 2 y 3 | Leyenda arriba: *"Fields marked * are required — everything else is optional"*. |
+| Paso 2 | `attempted && !deliveryDate` → el input de fecha se pinta de rojo + *"Pick the day you want the dumpster delivered"*. Sin ventana horaria, el grupo de 3 tarjetas queda **enmarcado en rojo** + *"Pick a time window"*. |
+| Paso 3 | `inputClass` toma un tercer parámetro `isEmpty`: al intentar continuar, **todo obligatorio vacío se pinta de rojo**, no sólo los que tenían validador. Calle y ciudad, que se dibujaban con className a mano y no reaccionaban a nada, ahora entran por el mismo helper y traen su propio aviso. |
+| Paso 3 | `aria-required="true"` en los 7 obligatorios. |
+| Paso 4 | La casilla de autorización: encabezado **"Required * — check the box to continue"**, recuadro que se pone rojo al intentar pagar, aviso `role="alert"` con el motivo, y el botón **ya no muere** — `disabled` sólo por `isSubmitting`, `aria-disabled` por la casilla, y el clic destapa el aviso en vez de no hacer nada. |
+
+**Decisión de criterio.** El rojo **no** aparece al entrar: un formulario que te grita antes de que escribas nada es hostil. En reposo la señal es el asterisco rojo + la leyenda; el rojo entra sólo cuando el cliente **ya intentó** continuar. Es el mismo estado `attempted` que nació con el arreglo de las 23:00.
+
+**Verificación en dos vías ✅✅.** Primero contra un `next start` local del **mismo build** que después se subió (11/11 controles: leyenda, aviso de fecha, aviso de ventana, calle, ciudad, 6 inputs en rojo, casilla del paso 4 y que **no** se envió el pago). Después contra **producción viva** a 390 px: leyenda ✓, aviso de fecha ✓, aviso de ventana ✓, calle ✓, ciudad ✓, 6 inputs en rojo ✓. Capturas en `/root/scratch-tp/prod-paso2.png`, `prod-paso3.png`, `prod-paso3b.png`.
+
+**Deploy.** `git archive main` → `/root/tp-deploy-232532` + `.env.local` (**11 chunks con la llave de Maps ✓**, el control que falló en el deploy de las 20:46) + `cp -al node_modules` + build + rsync `.next` + kill `next-server`. BUILD_ID servidor = local ✓. `/` y `/booking` 200 ✓. El cambio sin commitear de `webhook/route.ts` **no viajó** (0 hits en el source extraído) ✓.
+
+**Pendiente que sigue abierto:** confirmar con Cris si la llave de Maps está restringida por referrer a tpdumpsters.com (preguntado en msgs 6223-6225, sin respuesta todavía).
+
+---
+
 ## 2026-09-09 · 23:00 UTC · instancia `cris` · URGENTE: "un cliente intentó reservar y dice que no sirve" — 3 bugs, arreglados y verificados en producción
 
 **Disparador.** Cris, msg 6216 (22:12Z): *"hubo un cliente que intento reservar y dice que no sirve, puedes revisarlo urgente"*. Parkeó el rediseño del paso 1 para esto.
