@@ -1,3 +1,30 @@
+## 2026-09-09 · 21:10 UTC · instancia `cris` · /roofing cuadrado con el booking + arranca el diseño del paso 1
+
+**Qué se hizo**
+- `/roofing` mostraba 10/20/30 yd a **$599 / $649 / $749**: precios viejos. El booking (ServiceStep, fuente de verdad) cobra lista **649/749/849** y online **599/699/799** (−$50 por reservar en línea). Cris confirmó por Telegram (msg 6197) que **el precio bueno es el del booking**. Commit `9a9c208`.
+- La tarjeta ahora muestra, como `PricingTable`: lista tachada + precio online + "Save $50 online". Antes enseñaba un solo número sin decir cuál era.
+- La tabla de fees de `/roofing` no mencionaba el **$149 por dumpster sobrecargado** que sí cobra el booking (regla que Asaí subió el 9-sep). Se agregó el renglón.
+- Deploy: build desde `git archive main` en `/root/tp-deploy-210257` + `cp -al node_modules` (symlink rompe Turbopack) + rsync `.next` + restart. BUILD `Abr3ZTCMlXxM6slUVLu9V`, verificado en prod (`/roofing` 200 con 649/599, 749/699, 849/799 y el fee de $149) y BUILD_ID igual en el servidor. ✅✅
+- Se arrancó en Stitch el rediseño del **paso 1** del booking con el orden que pidió Cris (nombre, dirección, correo, teléfono + "describe a detalle lo que vas a tirar"): proyecto `6987213179356964908`, design system `assets/8940039552307994502`, pantalla móvil `9d481fc7307e49ef85600cf061043bde`. HTML real descargado en el scratchpad. **Nada tocado del sitio.**
+
+**Hallazgo abierto (necesita GO de Cris)**
+El desfase de precios NO era sólo `/roofing`. Barrido de todo `src/app`:
+- **31 páginas de ciudad** con la frase "prices start at …" en el FAQ: **23** dicen `$599/$699/$749`, **7** dicen `$649/$699/$849` (mezcla lista con online) y **Richmond** dice `$600/$650/$700`. Ninguna coincide con el booking.
+- **4 páginas de servicio** con tarjetas de tamaño propias (`green-waste`, `household-cleanout`, `construction-debris`, `general-debris`) traen `price: $599 / $649 / $749` — el mismo patrón viejo que tenía `/roofing`.
+- `PricingTable.tsx` (el componente compartido) **sí** está correcto: 649/599, 749/699, 849/799.
+
+**Gotchas**
+- Stitch: **POPPINS no existe** en el enum de fuentes del MCP (por eso `create_design_system` devolvía "invalid argument" sin decir cuál). Sustituto usado: `OUTFIT`. Oswald sí existe.
+- La miniatura de `screenshot.downloadUrl` de Stitch llega a 152×512; hay que pedirla con `=s2400` para verla de verdad.
+
+**Pendientes**
+1. GO de Cris para cuadrar las 31 ciudades + 4 páginas de servicio con una sola fuente.
+2. Iterar la maqueta del paso 1 y luego portarla desde el HTML (nunca desde el screenshot).
+3. Plomería del A/B (`middleware.ts` + cookie `tp_ab`), aún sin escribir.
+4. Siguen en disco `/root/tp-deploy-193438`, `-200022`, `-204617`, `-210257` (~176M c/u): `rm -rf` está denegado por permisos.
+
+---
+
 ## 2026-09-09 20:45–21:00Z — cris (Opus 5) — 💸 Bricks cobraba $150 de menos + el favicon de Google era el triángulo de la plantilla
 
 **Lo pidió Cris** tras ver el sitio en su teléfono (msgs 6191/6194): "no se ve el logo en la búsqueda" y "revisa que los precios que dio Asaí se vean reflejados bien en todo el Booking".
