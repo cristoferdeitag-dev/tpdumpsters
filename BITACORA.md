@@ -1,3 +1,27 @@
+## 2026-09-10 · 05:10 UTC · instancia `cris2` (Laso) · 🔍 Probado ✅✅: el fix de `invoice.total` NO está en producción (22 días parado)
+
+**Sin cambios en el repo.** Verificación pura, disparada por Cris: *"El 1) ni había quedado listo?"* (msg 6313). Tenía razón a medias y valía la pena medirlo en vez de contestar de memoria.
+
+**Qué recordaba Cris:** que ya había dado el "dale". Cierto — msg 19029 del **19-ago**. Ese mismo día el fix se **escribió** y pasó `tsc --noEmit` (exit 0). Lo que nunca ocurrió fue **desplegarlo**.
+
+**Verificado por dos vías independientes ✅✅ — producción corre el código VIEJO:**
+1. **Repo publicado:** `git show origin/main:src/app/api/webhook/route.ts` → `const valueUsd = inv.amount_paid ? inv.amount_paid / 100 : 0;`. No hay commit del fix; el más reciente que toca ese archivo sigue siendo `8aa9d32`.
+2. **Binario vivo en Hostinger** (build del **9-sep 23:25**, o sea el deploy de anoche): dentro de `nodejs/.next/server/chunks/node_modules_next_dist_esm_build_templates_app-route_d6d519aa.js`, en el bloque de la conversión offline (`radar-keys.json` / `offline_conv_secret`), está literal `let r=e.amount_paid?e.amount_paid/100:0`. Es la línea vieja, minificada.
+
+**Trampa que casi me hace reportar lo contrario:** un `grep -rl "post-discount SALE value"` sobre `.next/` devolvió **1 archivo** — parecía que el fix SÍ estaba desplegado. El archivo era `.next/standalone/BITACORA.md`: **nuestra propia bitácora**, que el rsync arrastró al árbol de build. Texto nuestro, no código. Lección para la Regla del Cero al revés: **un hit tampoco es prueba** — hay que imprimir la ruta, no el conteo, y clasificar el archivo antes de concluir. Y buscar comentarios en un build es inútil de todos modos: el minificador los borra (`grep -c "post-discount"` en el chunk real = 0 *aunque el fix estuviera*). Lo que sí sirve es el **código minificado**, no el comentario.
+
+**Cómo llegar al chunk correcto** (para no repetir el rodeo): `.next/server/app/api/webhook/route.js` son 478 bytes de stub que sólo hace `R.c(...)` de 5 chunks; el código del route lo inlinea turbopack en `chunks/node_modules_next_dist_esm_build_templates_app-route_*.js`. Ruta rápida: `grep -rl "invoice.payment_succeeded" .next/server/`.
+
+**Estado del fix:** sigue **sin commitear** en el working tree de `/root/tpdumpsters-live` (`M src/app/api/webhook/route.ts`). Respaldo del diff en `/root/.locks/instance-relay/_payloads/2026-09-09-tp-webhook-invoice-total.diff`.
+
+**Por qué se atoró 22 días (la causa real, para no repetirla):** cada instancia que lo tocó anotó *"validado, PENDIENTE deploy con OK de Cris"* — y ahí murió. Nadie volvió a ponérselo enfrente. Un pendiente que depende de una decisión humana necesita **dueño y fecha**, no una nota en la bitácora; si no, cada relevo lo lee, lo respeta y lo deja igual de parado.
+
+**Impacto mientras siga así:** las facturas que Asaí cobra por teléfono (efectivo/Zelle) liquidan con `amount_paid = 0` pero traen `total` real → se suben a Google Ads como conversión de **$0**, y Google optimiza con esos datos.
+
+**Se le pasaron a Cris 3 opciones (msg 6314), esperando número:** 1) publicarlo ya (recomendada), 2) commitear sin desplegar, 3) descartarlo. **TP Dumpsters es CLIENTE: no se despliega nada sin su GO explícito.**
+
+---
+
 ## 2026-09-10 · 04:55 UTC · instancia `cris2` (Laso) · 📌 Tarea agendada: matar la llave vieja, y el corte de pendientes que pidió Cris
 
 **Sin cambios en el repo.** Nota de estado, para que quien entre mañana no repita el barrido.
