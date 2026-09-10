@@ -1,3 +1,58 @@
+## 2026-09-10 · 04:55 UTC · instancia `cris2` (Laso) · 📌 Tarea agendada: matar la llave vieja, y el corte de pendientes que pidió Cris
+
+**Sin cambios en el repo.** Nota de estado, para que quien entre mañana no repita el barrido.
+
+**Cierre verificado por segunda vía.** `.builds/last-source` ya no existe en Hostinger — lo borró la instancia `cris` con el GO de Cris (msg 21244, *"2, dale"*) y **lo comprobé yo con `ls` sobre el servidor**, no por lo que dijo el relay. `.builds` queda con `config/` (sólo `preload-timestamp.js` + los `package*.json`), `logs/` y `source/` vacía. Sitio en 200.
+
+**⚠️ Lo que sigue SIN verificar, y hay que decirlo:** que la app **arranque** sin el `.env` borrado. Los workers vivos siguen siendo los de las **03:56:28Z**, anteriores al borrado de las 04:09Z — o sea que el `200` de ahora **no prueba nada sobre el arranque**. El primer respawn real es el momento de verdad. Si el sitio truena de madrugada, la causa está aquí y **revertir es copiar 99 bytes** desde `/root/backups/tpdumpsters-builds-2026-09-10.tar.gz`.
+
+**Tarea agendada (Cris la pidió por escrito, msg 6311, 9-sep 22:48 hora de México):** recordatorio para el **jueves 10-sep 10:00 am MX** (`0 16 10 9 *`, marker `RECORDATORIO_LLAVE_MAPS_10SEP`) → `/root/scripts/recordatorio_llave_maps_10sep.sh`. Le manda los pasos para **borrar la llave vieja en la consola de Google**, incluido provocar a propósito el diálogo *"Potential breakage due to active usage"* y mandar la captura **antes** de borrar — es la única fuente que revela quién consume `solar` y `speech`. Ojo con el bloqueo conocido: la cuenta de siempre de Cris **no tiene acceso** al proyecto *Maps Form* (704841372561); la apuesta es `tppaver@gmail.com`. **Borrar la línea del crontab una vez que se dispare.**
+
+**Por qué la tarea es "borrar la llave" y no "borrar copias":** la llave vive también en el **historial de un repo público**. Perseguir copias nunca la iba a salvar; matarla en la consola convierte todas las copias en basura inofensiva de un golpe. La propuso la instancia `cris` y es mejor que el plan original.
+
+**Corte de pendientes que se le entregó a Cris (medido, no de memoria):** (1) el fix de `invoice.total` del webhook **sigue sin commitear** en el working tree — las facturas de efectivo/Zelle se suben a Google Ads como **$0**; (2) Wise debe abrir su cuenta de Stripe; (3) Cris no ha probado el drag&drop del calendario ni *"Begin service"* en BookingDumpsters; (4) falta su luz verde para escribirle a los 4 ponentes del Congreso; (5) **dos preguntas de Bazán sin contestar en `cris-pings`**, una de hace **3 semanas** (OXXO bloqueado en el Stripe del Congreso, 18-ago) y otra del 30-ago. Ese buzón nadie lo estaba revisando.
+
+**Sin tocar y sin GO:** los dos espejos de Vercel (`tpdumpsters`, `bd-test-deploy`), topes de cuota diaria, `public_html/public_html/server.js`, y los **7.5 GB** de `/root/tp-deploy-*` con el disco al 85 % (espacio, no seguridad).
+
+---
+
+## 2026-09-10 · 04:38 UTC · instancia `cris` · ✅ Cerrada la limpieza de `.builds` — y por qué el borrado NO era la solución
+
+**Sin cambios en el repo.** Trabajo de servidor. Cierra el pendiente que dejó la entrada de las 04:35Z de Laso.
+
+**GO de Cris, msg 21244 («2, dale»)** tras plantearle dos caminos: revocar la llave en la consola de Google, o autorizar el borrado remoto. Eligió el segundo.
+
+### Qué se borró y qué se conservó a propósito
+
+| Ruta | Acción | Por qué |
+|---|---|---|
+| `.builds/last-source/` (40 M, 11 archivos) | **BORRADA** | las 11 copias de la llave vieja **sin candado** (`sha256 ed719b305f0d`) hardcodeadas |
+| `.builds/config/.env` | borrada 04:09Z por Laso | misma llave como `GOOGLE_PLACES_API_KEY` |
+| `.builds/config/preload-timestamp.js` | **CONSERVADO** 🔴 | el `.htaccess` línea 8 lo carga con `NODE_OPTIONS --require` en **cada arranque de Node**. Borrar `.builds` entera tumbaba el sitio |
+| `.builds/source/`, `.builds/logs/` | conservadas | sin llaves; `source/` está vacía desde el 2-jun |
+
+**Verificado después:** `0` archivos con `AIza` en `.builds` · home, `/booking` y `/api/reviews` en **200** · `.builds` sigue dando **403** por web.
+
+**Respaldo reversible:** `/root/backups/tpdumpsters-builds-2026-09-10.tar.gz` (35 M, 816 entradas, chmod 600). No se dio por bueno de palabra: se extrajo `ServiceAreaMap.tsx` del propio tar y se comprobó que la llave que trae es exactamente `ed719b305f0d`.
+
+### Cómo se evitó tumbar el sitio
+
+El plan original decía «nada vivo depende de `.builds`». Al verificarlo aparecieron dos referencias: el `NODE_OPTIONS` del `.htaccess` (**viva**) y `outputFileTracingRoot` / `turbopack.root` en el `server.js` de producción. Las segundas resultaron inertes, y el argumento que lo prueba es de Laso y es bueno: **`.builds/source/` está vacía (0 archivos) desde el 2-jun y producción lleva tres meses corriendo así** — un runtime que la necesitara ya habría fallado. Probado por comportamiento, no por suposición.
+
+La lección operativa: *«no encontré dependencias»* no es *«no hay dependencias»* — [[feedback_procedencia_de_cifras_y_regla_del_cero]]. Aquí el coste de confundirlas era el sitio de un cliente.
+
+### ⚠️ Pendiente honesto: el arranque limpio NO está probado
+
+El sitio responde 200 **con workers que arrancaron ANTES del borrado del `.env`** (pid 3846194, 03:56:28Z). **El primer respawn real es la prueba de fuego.** `touch tmp/restart.txt` no basta (ya documentado): hace falta `pkill -f next-server` + `curl`, y confirmar con `ps -eo pid,lstart` que el worker nuevo nació después de las 04:09Z. El classifier bloqueó el `pkill` a las dos instancias.
+
+Riesgo bajo — nada lee ese `.env`: Node no carga `.env` solo, y Next standalone toma la llave del `SetEnv` del `.htaccess` (que es la que Cris cambió a las 02:05Z y **sí** surtió efecto, prueba de que la fuente viva es el `.htaccess`). Pero **no está verificado**, y si el sitio aparece caído de madrugada, ésta es la primera causa a mirar: revertir = copiar un archivo de 99 bytes del tar.gz.
+
+### 🔑 Lo que de verdad falta, y es más importante que todo lo anterior
+
+**La llave vieja sigue VIVA.** Borrar sus copias es perseguir el síntoma: Laso confirmó que además **vive en el historial de un repo público**, así que el borrado de estos 11 archivos nunca la iba a salvar. Mientras no se **elimine la llave en la consola de Google Cloud**, sigue siendo utilizable por quien ya la tenga. Planteado a Cris; eligió primero el borrado. **Queda abierto.**
+
+---
+
 ## 2026-09-10 · 04:35 UTC · instancia `cris2` (Laso) · 🧹 Desarmada la mina de `.builds` — y la carpeta resultó tener una pieza VIVA
 
 **Sin cambios en el repo.** Trabajo de servidor. Cierra el pendiente (1) que dejó la entrada de las 03:45Z.
