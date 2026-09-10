@@ -1,3 +1,50 @@
+## 2026-09-10 · 05:45 UTC · instancia `cris2` (Laso) · 🧨 El bug que el fix `invoice.total` iba a arreglar NO EXISTE (medido ✅✅✅) — fix ESTACIONADO sin commitear
+
+**Sin cambios en el código.** Cris pidió (msg 6315) *"antes de hacerlo rebótalo con Prisma y con Web HTM"*. Se rebotó — y el rebote tumbó la premisa.
+
+### Lo que se creía desde el 19-ago
+Que las facturas de efectivo/Zelle de Asaí liquidan con `amount_paid = 0` pero con `total` real, y por eso los trabajos telefónicos se subían a Google Ads como **$0**. Estaba escrito en el comentario del código, en la bitácora y en dos handoffs. **Nadie lo midió nunca.**
+
+### Lo que dicen los datos reales de Stripe — ✅✅✅ tres vías, todas CERO
+
+| Vía | Qué se midió | Resultado |
+|---|---|---|
+| 1 | 619 facturas `status=paid` de 180 días (desde ~14-mar), API por defecto | **0** con `total ≠ amount_paid` |
+| 2 | Últimos 99 eventos **reales** `invoice.payment_succeeded` del log de Stripe (hasta 11-ago) | **0** con `amount_paid=0 && total>0` |
+| 3 | Las **43** facturas de pago registrado (efectivo/Zelle) releídas con `Stripe-Version: 2025-05-28.basil` | **0**. Las 43 con `amount_paid == total` |
+
+Volumen del periodo: **$446,779.62** ✅ una vía. Reparto por tipo de pago: `payment_intent` 611 · `payment_record` 43 · sin objeto `payments` 8.
+
+**La vía 3 es la que cierra el caso.** Las vías 1 y 2 leen la API con la versión **por defecto de la cuenta** (nueva), y el webhook vivo **no recibe esa versión**: `GET /v1/webhook_endpoints` muestra que `https://tpdumpsters.com/api/webhook` (enabled, eventos `checkout.session.completed` + `invoice.payment_succeeded`) está clavado en **`api_version: 2025-05-28.basil`**. Medir con la versión nueva no prueba nada sobre lo que el webhook recibe. Se releyeron las 43 pasando el header `Stripe-Version: 2025-05-28.basil` — mismo resultado.
+
+**⚠️ Trampa de la Regla del Cero, atrapada a tiempo:** el primer conteo fue por `paid_out_of_band = true` → dio **0**, y ese cero era **basura**. Ese campo **no existe** en la respuesta de esta cuenta (`"paid_out_of_band" in inv` → `False`; los campos con "paid" son `amount_overpaid` y `amount_paid`). Campo inexistente → `None` → se lee idéntico a un cero real. Es el caso 2 de la regla 14, literal. El conteo válido salió clasificando por `payments.data[].payment.type`.
+
+**La señal que llevaba 22 días a la vista:** entre las 43 hay dos facturas de **$1.00 del 18 y 19-ago** — las fechas exactas en que se escribió el fix. Eran pruebas para reproducir el bug y **salieron con `amount_paid = $1.00`**. La reproducción falló, o sea que la evidencia de que el bug no existía estaba desde el día uno. Nadie la leyó.
+
+### Rebote con Prisma y Web HTM
+Brief congelado en `/root/reports/consejo/2026-09-10-tp-webhook-invoice-total/BRIEF.md` (sha256 `487bdc44…b44e6`), disparado idéntico a los dos y **sin que se vieran entre ellos**. Adenda con la medición: `ADENDA-medicion.md`.
+
+- **Instancia `cris` (Web HTM) — VOTO 2**, dictamen en `webhtm.md`. Midió por su lado (0 de 741 desde el 12-jul) y **convergió sin verme**. Aportó la respuesta a `total` vs `subtotal`: **0 facturas con impuesto**, y `subtotal ≠ total` en sólo **8 de 741** (descuentos), donde `subtotal` es precio de lista y `total` lo cobrado (ej. subtotal $799 / total $150) → usar `subtotal` **le mentiría a Google por $649 en una sola factura**. **`total` es el campo correcto.** Su hueco declarado (no cubría antes del 12-jul) queda **cerrado** por la vía 1, que arranca ~14-mar.
+- **Prisma — SIGUE PENDIENTE.** Relays `hermes/2026-09-10T0520Z-…` y la adenda `hermes/2026-09-10T0538Z-…`, ambos `pending`. Hermes tiene gateway vivo; el buzón se atiende cuando despierta.
+- **Instancia `cris2` (Laso) — VOTO 2.**
+
+### Decisión y estado
+**El fix NO está mal** — `total` es el campo correcto y el fallback es equivalente cuando `total == amount_paid`. Pero **su beneficio medido hoy es $0**: es un seguro contra *mark as paid out of band*, función de Stripe que en esta cuenta **nadie usa**.
+
+**Se retira la recomendación de "publicar ya"** que se le había dado a Cris (msg 6314). Publicar obliga a respawnear, y el respawn es el riesgo real y **no verificado** (que la app arranque sin el `.env` borrado a las 04:09Z) — pagarlo a cambio de cero no se justifica.
+
+**🅿️ ESTACIONADO, sin commitear.** Cris dijo *"terminamos mañana"* (msg 6319, 9-sep 23:14 MX) **antes de dar el número**, así que **no se commiteó nada**: `M src/app/api/webhook/route.ts` sigue en el working tree. Diff respaldado en `/root/.locks/instance-relay/_payloads/2026-09-09-tp-webhook-invoice-total.diff`. **No tocar sin su GO.**
+
+### Lo que espera a Cris mañana
+1. **Su número** para el fix: 2 (commitear sin desplegar, recomendado por las dos instancias) o 3 (descartar). La opción 1 ya no la recomienda nadie.
+2. **El dictamen de Prisma**, si llegó de madrugada.
+3. **Recordatorio automático 10-sep 10:00 am MX** (`RECORDATORIO_LLAVE_MAPS_10SEP`): borrar la llave vieja de Maps en la consola de Google. **Borrar la línea del crontab cuando dispare.**
+4. **Sigue sin verificar**: que tpdumpsters **arranque** sin el `.env`. Los workers vivos son anteriores al borrado, así que el 200 actual no prueba nada. Cuando haya GO: `pkill -f next-server` + `curl` + `ps -eo pid,lstart` confirmando que el worker nació después de las 04:09Z. Revertir = copiar 99 bytes desde `/root/backups/tpdumpsters-builds-2026-09-10.tar.gz`.
+
+**Memoria nueva:** `feedback_comprobar_que_el_bug_existe_antes_de_arreglarlo` (indexada en `MEMORY.md`). La lección de fondo: un pendiente que depende de una decisión humana necesita **dueño y fecha**, no una nota en la bitácora — *"espera OK de Cris"* sin fecha es exactamente como se pierden 22 días.
+
+---
+
 ## 2026-09-10 · 05:10 UTC · instancia `cris2` (Laso) · 🔍 Probado ✅✅: el fix de `invoice.total` NO está en producción (22 días parado)
 
 **Sin cambios en el repo.** Verificación pura, disparada por Cris: *"El 1) ni había quedado listo?"* (msg 6313). Tenía razón a medias y valía la pena medirlo en vez de contestar de memoria.
