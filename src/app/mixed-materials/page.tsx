@@ -84,7 +84,7 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "10 Yard Mixed Materials Dumpster",
-      price: "750",
+      price: "899",
       priceCurrency: "USD",
       description: "10 yard dumpster — no weight limit, 3-day rental, 12ft L × 8ft W × 2.5ft H",
     },
@@ -109,7 +109,7 @@ const faqSchema = {
       name: "Why is the mixed materials dumpster more expensive than clean soil or concrete?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Mixed materials require processing at facilities that handle multiple material types. These facilities charge higher disposal rates because the materials must be sorted and processed separately. The $750 price reflects this higher disposal cost while still offering no weight limit.",
+        text: "Mixed materials require processing at facilities that handle multiple material types. These facilities charge higher disposal rates because the materials must be sorted and processed separately. The $899 price reflects this higher disposal cost while still offering no weight limit.",
       },
     },
     {
@@ -157,7 +157,7 @@ const faqSchema = {
       name: "How do I know if I need clean soil, clean concrete, or mixed materials?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "If your load is 95% pure dirt, use Clean Soil ($599). If it's 95% pure concrete with no rebar, use Clean Concrete ($599). If your load has any mix of materials — dirt with rocks, concrete with rebar, brick, asphalt, etc. — use Mixed Materials ($750).",
+        text: "If your load is 95% pure dirt, use Clean Soil ($599). If it's 95% pure concrete with no rebar, use Clean Concrete ($599). If your load has any mix of materials — dirt with rocks, concrete with rebar, brick, asphalt, etc. — use Mixed Materials ($899).",
       },
     },
     {
@@ -222,7 +222,7 @@ const faqsLeft = [
     question: "Why is the mixed materials dumpster more expensive?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Mixed materials require processing at facilities that handle multiple material types. These facilities charge higher disposal rates because the materials must be sorted and processed separately. The <strong>$750 price</strong> reflects this higher disposal cost while still offering <strong>no weight limit</strong>.
+        Mixed materials require processing at facilities that handle multiple material types. These facilities charge higher disposal rates because the materials must be sorted and processed separately. The <strong>$899 price</strong> reflects this higher disposal cost while still offering <strong>no weight limit</strong>.
       </p>
     ),
   },
@@ -273,7 +273,7 @@ const faqsRight = [
     question: "How do I know if I need clean soil, clean concrete, or mixed materials?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        If your load is 95% pure dirt → <Link href="/clean-soil" className="text-tp-red font-semibold hover:underline">Clean Soil</Link> ($599). If it&apos;s 95% pure concrete with no rebar → <Link href="/clean-concrete" className="text-tp-red font-semibold hover:underline">Clean Concrete</Link> ($599). If your load has <strong>any mix of materials</strong> — dirt with rocks, concrete with rebar, brick, asphalt, etc. — use <strong>Mixed Materials ($750)</strong>.
+        If your load is 95% pure dirt → <Link href="/clean-soil" className="text-tp-red font-semibold hover:underline">Clean Soil</Link> ($599). If it&apos;s 95% pure concrete with no rebar → <Link href="/clean-concrete" className="text-tp-red font-semibold hover:underline">Clean Concrete</Link> ($599). If your load has <strong>any mix of materials</strong> — dirt with rocks, concrete with rebar, brick, asphalt, etc. — use <strong>Mixed Materials ($899)</strong>.
       </p>
     ),
   },
@@ -335,7 +335,7 @@ export default function MixedMaterialsPage() {
               href="/booking"
               className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-8 py-4 rounded-lg text-lg font-semibold bg-tp-red text-white hover:bg-tp-red-dark transition-all duration-300 font-[var(--font-poppins)]"
             >
-              <FaCalendarDays /> Book Now — $750
+              <FaCalendarDays /> Book Now — $899
             </Link>
             <a
               href="tel:+15106502083"
@@ -370,7 +370,7 @@ export default function MixedMaterialsPage() {
                   10 Yard
                 </h3>
                 <p className="font-[var(--font-oswald)] text-[42px] font-bold text-tp-red mt-4">
-                  $750
+                  $899
                 </p>
               </div>
               <div className="px-6 py-4 flex items-center justify-center min-h-[160px]">
@@ -448,7 +448,7 @@ export default function MixedMaterialsPage() {
             </div>
             <div>
               <p className="text-[15px] text-[#555] leading-[1.8] mb-4">
-                The mixed materials dumpster is priced at <strong>$750</strong> — higher than clean soil or clean concrete ($599 each) — because mixed loads require processing at facilities that handle multiple material types. These facilities charge more for sorting and processing, but you still get <strong>no weight limit</strong>.
+                The mixed materials dumpster is priced at <strong>$899</strong> — higher than clean soil or clean concrete ($599 each) — because mixed loads require processing at facilities that handle multiple material types. These facilities charge more for sorting and processing, but you still get <strong>no weight limit</strong>.
               </p>
               <p className="text-[15px] text-[#555] leading-[1.8] mb-4">
                 Like all our heavy material dumpsters, the mixed materials dumpster comes with a <strong>3-day rental period</strong> and includes delivery, pickup, and disposal. Need more time? Additional days are available at $75/day.
@@ -647,7 +647,7 @@ export default function MixedMaterialsPage() {
                 step: "1",
                 icon: <FaClipboardList />,
                 title: "Book Your Dumpster",
-                desc: "Reserve your 10-yard mixed materials dumpster online or call (510) 650-2083. Just $750 — no weight limit.",
+                desc: "Reserve your 10-yard mixed materials dumpster online or call (510) 650-2083. Just $899 — no weight limit.",
               },
               {
                 step: "2",
@@ -775,14 +775,14 @@ export default function MixedMaterialsPage() {
             Ready to Haul Away Your Mixed Materials?
           </h2>
           <p className="font-[var(--font-poppins)] text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-            Book your mixed materials dumpster today — just $750 for a 10-yard dumpster with no weight limit and a 3-day rental. Same-day delivery available across the Bay Area.
+            Book your mixed materials dumpster today — just $899 for a 10-yard dumpster with no weight limit and a 3-day rental. Same-day delivery available across the Bay Area.
           </p>
           <div className="flex flex-col items-center sm:flex-row sm:justify-center gap-4 flex-wrap">
             <Link
               href="/booking"
               className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-8 py-4 rounded-lg text-lg font-semibold bg-white text-tp-red hover:bg-gray-100 transition-all duration-300 font-[var(--font-poppins)]"
             >
-              <FaCalendarDays /> Book Online — $750
+              <FaCalendarDays /> Book Online — $899
             </Link>
             <a
               href="tel:+15106502083"

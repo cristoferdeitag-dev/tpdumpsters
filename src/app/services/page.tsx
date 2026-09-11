@@ -216,7 +216,7 @@ const services = [
     description:
       "For projects with a mix of soil and concrete. Must be 95% pure — no wood, garbage, or other debris.",
     sizes: ["10 yd only"],
-    startPrice: "$750",
+    startPrice: "$899",
     rental: "3 days",
     featured: false,
     items: ["Soil & concrete mix", "Demo + excavation combos", "Mixed heavy materials", "No weight limit"],

@@ -117,7 +117,7 @@ const faqSchema = {
       name: "What happens if my soil isn't 95% pure?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "If your load contains contaminants (rocks, grass, gravel, debris), a contamination fee of $125-$150 will be applied because the load must be diverted to a mixed materials facility. To avoid this fee, make sure your soil is clean before loading. If you know your dirt has mixed materials, consider our Mixed Materials dumpster at $750 instead.",
+        text: "If your load contains contaminants (rocks, grass, gravel, debris), a contamination fee of $125-$150 will be applied because the load must be diverted to a mixed materials facility. To avoid this fee, make sure your soil is clean before loading. If you know your dirt has mixed materials, consider our Mixed Materials dumpster at $899 instead.",
       },
     },
     {
@@ -141,7 +141,7 @@ const faqSchema = {
       name: "Can I mix soil with concrete?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "No. Soil mixed with concrete does not qualify as clean soil and will incur a contamination fee of $125-$150. If you have both soil and concrete to dispose of, you'll need separate dumpsters or use our Mixed Materials dumpster at $750.",
+        text: "No. Soil mixed with concrete does not qualify as clean soil and will incur a contamination fee of $125-$150. If you have both soil and concrete to dispose of, you'll need separate dumpsters or use our Mixed Materials dumpster at $899.",
       },
     },
     {
@@ -230,7 +230,7 @@ const faqsLeft = [
     question: "What happens if my soil isn't 95% pure?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        If your load contains contaminants (rocks, grass, gravel, debris), a <strong>contamination fee of $125–$150</strong> will be applied because the load must be diverted to a mixed materials facility. To avoid this fee, make sure your soil is clean before loading. If you know your dirt has mixed materials, consider our <strong>Mixed Materials dumpster at $750</strong> instead.
+        If your load contains contaminants (rocks, grass, gravel, debris), a <strong>contamination fee of $125–$150</strong> will be applied because the load must be diverted to a mixed materials facility. To avoid this fee, make sure your soil is clean before loading. If you know your dirt has mixed materials, consider our <strong>Mixed Materials dumpster at $899</strong> instead.
       </p>
     ),
   },
@@ -257,7 +257,7 @@ const faqsRight = [
     question: "Can I mix soil with concrete?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        No. Soil mixed with concrete does not qualify as clean soil and will incur a <strong>contamination fee of $125–$150</strong>. If you have both soil and concrete to dispose of, you&apos;ll need separate dumpsters or use our Mixed Materials dumpster at $750.
+        No. Soil mixed with concrete does not qualify as clean soil and will incur a <strong>contamination fee of $125–$150</strong>. If you have both soil and concrete to dispose of, you&apos;ll need separate dumpsters or use our Mixed Materials dumpster at $899.
       </p>
     ),
   },
@@ -562,7 +562,7 @@ export default function CleanSoilPage() {
                 <li className="bg-white rounded-lg p-3 border border-blue-100">
                   <p className="text-sm text-[#555]">
                     <strong>Dirt with rocks/gravel/concrete?</strong><br />
-                    → Use <strong>Mixed Materials</strong> dumpster ($750)
+                    → Use <strong>Mixed Materials</strong> dumpster ($899)
                   </p>
                 </li>
                 <li className="bg-white rounded-lg p-3 border border-blue-100">

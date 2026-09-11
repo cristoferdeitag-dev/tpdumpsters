@@ -50,17 +50,17 @@ const SERVICES: Record<string, { sizes: Record<string, { price: number; dims: st
   },
   "Mixed Materials": {
     sizes: {
-      "10 Yard": { price: 749, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
+      "10 Yard": { price: 899, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
     },
   },
   "Bricks": {
     sizes: {
-      "10 Yard": { price: 749, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
+      "10 Yard": { price: 899, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
     },
   },
   "Clean Asphalt": {
     sizes: {
-      "10 Yard": { price: 749, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
+      "10 Yard": { price: 899, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
     },
   },
 };

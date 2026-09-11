@@ -95,8 +95,8 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        basePrice: 799,
-        price: 749,
+        basePrice: 949,
+        price: 899,
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",

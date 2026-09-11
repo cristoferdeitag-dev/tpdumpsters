@@ -117,7 +117,7 @@ const faqSchema = {
       name: "Can I put concrete with rebar in a clean concrete dumpster?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "No. Concrete with rebar does not qualify as clean concrete and will incur a contamination fee of $125-$150. If your concrete has rebar, use our Mixed Materials dumpster at $750 instead.",
+        text: "No. Concrete with rebar does not qualify as clean concrete and will incur a contamination fee of $125-$150. If your concrete has rebar, use our Mixed Materials dumpster at $899 instead.",
       },
     },
     {
@@ -149,7 +149,7 @@ const faqSchema = {
       name: "Can I mix concrete with dirt in a clean concrete dumpster?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "No. Concrete mixed with dirt does not qualify as clean concrete and will incur a contamination fee. If you have both concrete and dirt, use our Mixed Materials dumpster at $750 or rent separate dumpsters.",
+        text: "No. Concrete mixed with dirt does not qualify as clean concrete and will incur a contamination fee. If you have both concrete and dirt, use our Mixed Materials dumpster at $899 or rent separate dumpsters.",
       },
     },
     {
@@ -230,7 +230,7 @@ const faqsLeft = [
     question: "Can I put concrete with rebar in a clean concrete dumpster?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        No. Concrete with rebar does not qualify as clean concrete and will incur a <strong>contamination fee of $125–$150</strong>. If your concrete has rebar, use our <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster at $750 instead.
+        No. Concrete with rebar does not qualify as clean concrete and will incur a <strong>contamination fee of $125–$150</strong>. If your concrete has rebar, use our <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster at $899 instead.
       </p>
     ),
   },
@@ -265,7 +265,7 @@ const faqsRight = [
     question: "Can I mix concrete with dirt?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        No. Concrete mixed with dirt does not qualify as clean concrete and will incur a <strong>contamination fee of $125–$150</strong>. If you have both concrete and dirt, use our <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster at $750 or rent separate dumpsters.
+        No. Concrete mixed with dirt does not qualify as clean concrete and will incur a <strong>contamination fee of $125–$150</strong>. If you have both concrete and dirt, use our <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster at $899 or rent separate dumpsters.
       </p>
     ),
   },
@@ -273,7 +273,7 @@ const faqsRight = [
     question: "What happens if my load isn&apos;t 95% pure?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        If your load contains contaminants (rebar, dirt, brick, garbage), a <strong>contamination fee of $125–$150</strong> will be applied because the load must be diverted to a mixed materials facility. To avoid this, ensure your concrete is clean before loading. If you know your load has mixed materials, consider our <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster at $750.
+        If your load contains contaminants (rebar, dirt, brick, garbage), a <strong>contamination fee of $125–$150</strong> will be applied because the load must be diverted to a mixed materials facility. To avoid this, ensure your concrete is clean before loading. If you know your load has mixed materials, consider our <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster at $899.
       </p>
     ),
   },
@@ -564,19 +564,19 @@ export default function CleanConcretePage() {
                 <li className="bg-white rounded-lg p-3 border border-blue-100">
                   <p className="text-sm text-[#555]">
                     <strong>Concrete with rebar?</strong><br />
-                    → Use <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster ($750)
+                    → Use <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster ($899)
                   </p>
                 </li>
                 <li className="bg-white rounded-lg p-3 border border-blue-100">
                   <p className="text-sm text-[#555]">
                     <strong>Concrete mixed with dirt?</strong><br />
-                    → Use <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster ($750)
+                    → Use <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster ($899)
                   </p>
                 </li>
                 <li className="bg-white rounded-lg p-3 border border-blue-100">
                   <p className="text-sm text-[#555]">
                     <strong>Asphalt or brick?</strong><br />
-                    → Use <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster ($750)
+                    → Use <Link href="/mixed-materials" className="text-tp-red font-semibold hover:underline">Mixed Materials</Link> dumpster ($899)
                   </p>
                 </li>
               </ul>

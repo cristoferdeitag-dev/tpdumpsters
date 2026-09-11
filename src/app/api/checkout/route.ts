@@ -26,12 +26,14 @@ const ONLINE_PRICES: Record<string, Record<string, number>> = {
   "Green Waste":         { "10": 599, "20": 699, "30": 799 },
   "Clean Soil":          { "10": 599 },
   "Clean Concrete":      { "10": 599 },
-  "Mixed Materials":     { "10": 749 },
-  // Bricks subió a $949 lista / $899 online el 9-sep-2026 (cambio de Asaí en
-  // ServiceStep). Esta tabla es la que COBRA: si se queda atrás, la pantalla
-  // dice $899 y Stripe cobra $749 sin que nadie lo note.
+  "Mixed Materials":     { "10": 899 },
+  // 11-sep-2026 (Asaí, msg 3189): TODO lo de Mixed Materials cuesta lo mismo,
+  // $949 lista / $899 online — da igual si es tierra+concreto, asfalto o
+  // ladrillo. Antes Bricks iba aparte en $899 y los otros dos en $749.
+  // Esta tabla es la que COBRA: si se queda atrás, la pantalla dice $899 y
+  // Stripe cobra $749 sin que nadie lo note.
   "Bricks":              { "10": 899 },
-  "Clean Asphalt":       { "10": 749 },
+  "Clean Asphalt":       { "10": 899 },
 };
 const EXTRA_DAY_FEE = 75;
 
