@@ -101,7 +101,7 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "30 Yard Construction Debris Dumpster",
-      price: "749",
+      price: "799",
       priceCurrency: "USD",
       description: "30 yard dumpster — 3 tons included, 7-day rental, 16ft L × 8ft W × 6ft H",
     },
@@ -142,7 +142,7 @@ const faqSchema = {
       name: "How much does a construction dumpster cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $749 (3 tons, 7 days). All prices include delivery, pickup, and disposal. Additional days are $75/day and overweight charges are $199/ton.",
+        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $799 (3 tons, 7 days). All prices include delivery, pickup, and disposal. Additional days are $75/day and overweight charges are $199/ton.",
       },
     },
     {

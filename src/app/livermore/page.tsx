@@ -81,8 +81,8 @@ const livermoreFaqs = [
     question: "How much does a dumpster rental cost in Livermore?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Livermore dumpster rental prices start at <strong>$649 for a 10-yard</strong> dumpster
-        (7-day rental, 1 ton included). The 20-yard starts at $699 and the 30-yard at $849.
+        Livermore dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster
+        (7-day rental, 1 ton included). The 20-yard starts at $699 and the 30-yard at $799.
         Transparent pricing with no hidden fees. Call <strong>(510) 650-2083</strong> for an
         exact quote tailored to your Livermore project.
       </p>
@@ -196,7 +196,7 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "30 Yard Dumpster Rental", description: "Large dumpster for full renovations, construction debris, and estate cleanouts. 7-day rental, 3 tons included." },
-        price: "749",
+        price: "799",
         priceCurrency: "USD",
       },
     ],

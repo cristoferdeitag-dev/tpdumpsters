@@ -191,7 +191,7 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "30 Yard Dumpster Rental", description: "Large dumpster for full renovations, construction debris, and estate cleanouts. 7-day rental, 3 tons included." },
-        price: "749",
+        price: "799",
         priceCurrency: "USD",
       },
     ],

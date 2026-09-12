@@ -93,7 +93,7 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "30 Yard Roofing Dumpster",
-      price: "749",
+      price: "799",
       priceCurrency: "USD",
       description: "30 yard roofing dumpster — 3 tons included, 7-day rental, 16ft L × 8ft W × 6ft H. ",
     },

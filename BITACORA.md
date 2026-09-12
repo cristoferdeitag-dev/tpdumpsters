@@ -1,3 +1,168 @@
+## 2026-09-12 · 23:15 UTC · instancia `cris` · 💲 Precios homogeneizados al booking en línea (35 archivos, SIN desplegar)
+
+**Orden de Cris (msg 21456):** *«Los precios que debe de tener son los que tenemos en el Booking en línea. Y todo debe ser homogéneo.»*
+
+### El problema real (no era el que yo reporté)
+Primero le dije a Cris que el `$849` del 30 yd contradecía la tabla que cobra. **Era falso:** `PricingTable.tsx` lo dice textual — `basePrice` = lista, `price` = en línea (lista − $50). Las dos escaleras son legítimas: lista 649/749/849 · en línea 599/699/799.
+
+**Lo que sí estaba roto, y en producción:** el **30 yd se anunciaba en $749**, que no es ni lista ni en línea — es el precio de **lista del 20 yd**. Verificado en vivo en union-city, newark y el-cerrito antes de tocar nada.
+
+### Qué cambió (35 archivos, 72 inserciones / 72 borrados — simetría exacta)
+| Antes | Ahora | Dónde |
+|---|---|---|
+| `30-yard at $749` | `$799` | 19 páginas de ciudad |
+| `30-yard: $749` | `$799` | 4 páginas de servicio |
+| `the 30-yard at $849` | `$799` | 7 páginas que mezclaban lista y en línea |
+| `$649 for a 10-yard` | `$599` | esas mismas 7 |
+| `price: "749"` | `"799"` | 35 bloques JSON-LD (lo que lee Google) |
+
+### Verificación
+- Patrones viejos (`749`, `649`, `849` en JSON-LD): **0 ocurrencias**.
+- Los 35 `price: "799"` quedaron **todos bajo encabezado de 30 yardas** (comprobado leyendo el contexto de cada uno, no a ojo).
+- 20 yd (`"699"` ×35) y 10 yd (`"599"` ×37) **intactos**.
+- `npx tsc --noEmit` → **código 0**.
+
+### Trampa que casi me cuesta
+`price: "749"` salía 35 veces pero sólo 30 bajo `"30 Yard Dumpster Rental"`. Parecían 5 falsos positivos del 20 yd; al leer el contexto, las 5 eran del 30 yd en páginas que escriben `"30 Yard Construction Debris Dumpster"`. **Contar encabezados no basta: hay que leer el contexto de cada ocurrencia.**
+
+### Pendientes
+- 🔴 **NO commiteado y NO desplegado** — espera GO de Cris. Ojo: el árbol trae además un cambio ajeno sin commitear (`src/app/api/webhook/route.ts`, el arreglo de `invoice.total`) que **no toqué** y que hay que apartar antes de compilar, porque el deploy de TP sube el árbol de trabajo.
+- 🟡 Respaldo previo: `.respaldos/precios-20260912T231246Z.tgz`.
+
+## 2026-09-11 · 15:40 UTC · instancia `asai` · 💲 TODO Mixed Materials a $949 lista / $899 online — EN PRODUCCIÓN
+
+**Commit `49fb6a1`, desplegado y verificado en vivo.** Orden de Asaí por Telegram: *«Mixed no importa de que sea va a costar $899»* (msg 3187) y *«Por ahora solo sube que los mixed son $899»* (msg 3189). Los 20 y 30 yd **quedaron fuera a propósito** — *«Lo de los 20y30 lo dejamos para después»* (msg 3190).
+
+### Qué cambió
+Las 3 variantes de Mixed Materials quedan al mismo precio, sin importar el material:
+
+| Variante | Antes (lista/online) | Ahora |
+|---|---|---|
+| Soil + Concrete Mix | $799 / $749 | **$949 / $899** |
+| Clean Asphalt | $799 / $749 | **$949 / $899** |
+| Bricks Only | $949 / $899 | sin cambio |
+
+Los $899 se interpretaron como el **precio en línea**, con $949 de lista — es la opción que se le recomendó por Telegram y la que ya tenía Bricks, así que el descuento de $50 sigue parejo en todo el sitio. Clean Soil y Clean Concrete siguen en $649/$599, intactos.
+
+### 🔴 Lo importante: los precios viven en 4 lugares que COBRAN, no solo en la pantalla
+Cambiar únicamente `ServiceStep` habría dejado la pantalla diciendo $899 y a Stripe cobrando $749. Se tocaron los cuatro:
+- `src/app/booking/components/ServiceStep.tsx:125-148` — lo que ve el cliente
+- `src/app/api/checkout/route.ts:21-37` — `ONLINE_PRICES`, **la tabla server-authoritative que cobra de verdad**
+- `src/app/api/quote/route.ts` y `src/app/api/invoice/route.ts` — cotizaciones y facturas manuales del panel
+
+**Se cerró de paso un desfase que ya existía y costaba dinero:** `quote` e `invoice` facturaban **Bricks a $749** mientras el sitio lo vendía en **$899** — $150 menos por cada carga hecha a mano desde el panel.
+
+### Vitrina alineada (para que no haya dos precios a la vista)
+`PricingTable.tsx:98-99`, `/services` (`startPrice`), `/mixed-materials` (10 menciones **+ el `price` del JSON-LD que lee Google**, que seguía en 750), `/clean-soil` (5), `/clean-concrete` (8) y el bot de chat (`api/chat/route.ts:272-273`, ES e EN).
+
+### Verificación ✅✅ (build local *y* HTTPS en vivo, que no es lo mismo)
+- `BUILD_ID` en Hostinger = `NQpi00HIbpEtC2P3GUhnF`, el del build de este commit.
+- `/mixed-materials` en vivo: **20 veces $899, cero $750**, y el JSON-LD sirve `"price":"899"`.
+- `/clean-soil` 10 menciones, `/clean-concrete` 16, `/services` con $899.
+- Chunk del wizard servido por HTTPS: `Soil + Concrete Mix … basePrice:949,price:899` y lo mismo en Clean Asphalt.
+- **La tabla que cobra, leída dentro del servidor:** `Mixed Materials":{10:899},Bricks:{10:899},"Clean Asphalt":{10:899}`.
+- Control de que no se movió lo que no debía: en el bundle del wizard siguen vivos `basePrice:749` (20 yd) y `basePrice:849` (30 yd), y tres `basePrice:649`.
+
+### ⚠️ Cuidados que hay que repetir la próxima vez
+- **El working tree traía un cambio AJENO sin commitear** en `src/app/api/webhook/route.ts` (el fix `invoice.total` de `cris`/`cris2`, pendiente de decisión). Como el deploy de TP sube el `.next` del working tree, ese cambio se habría ido a producción de contrabando. Se respaldó, se puso el archivo en su versión publicada **antes de compilar**, y se devolvió al working tree al terminar (diff idéntico: 9 inserciones, 1 borrado). **Sigue sin commitear, como estaba.**
+- Es una **prueba de 2 semanas**: el commit va solo y sin nada más encima, para poder revertirlo de un jalón (`git revert 49fb6a1`) alrededor del **25-sep-2026**.
+
+### Pendientes que quedan sobre la mesa
+1. **20 y 30 yd** — Asaí los quiere en $700/$650 y $800/$750, pero los pospuso. Cuando toque: son los mismos 6 archivos + **42 páginas** de ciudad/servicio con el precio escrito en el texto y en el JSON-LD.
+2. **El texto de la tarjeta de Mixed** — pidió que se lea qué incluye (*«siento que no le pican porque no saben»*). Redactado y **no subido**: `"Clean soil & clean concrete, clean asphalt, or bricks only"` en lugar de `"Pick the type of clean load — different rules apply."`. Espera su sí.
+3. **Green Waste no advierte que no va tierra** en el flujo de reserva ✅✅ — solo lo dice `/green-waste`, en una FAQ y en la lista de prohibidos, donde quien reserva directo nunca lo ve. Propuesto: la nota ⚠️ que ya traen Clean Soil y Mixed.
+4. **Desfase que sigue vivo** en `quote`/`invoice` ✅ una vía (código, falta cruzarlo contra Stripe): **30 yd** factura $749 cuando el sitio cobra $799, y **General Debris 10 yd** factura $649 cuando el sitio cobra $599. No se tocó: Asaí acotó el encargo a Mixed.
+
+---
+
+## 2026-09-10 · 06:05 UTC · instancia `asai` · 📋 Entregada a Asaí la lista completa de los 48 grupos duplicados (solo lectura)
+
+**Sin cambios en el repo ni en Stripe.** Retomé el mensaje de Asaí (*«sí, pásame la lista completa de los 48»*) que la instancia `cris` rescató del 7º-10º congelamiento de la noche y dejó en `/root/.locks/instance-relay/asai/`.
+
+Reproduje el barrido desde los datos crudos de la sesión `5b063987` (`tp_custs_full.json` 543 clientes, `tp_invs_full.json` 1,012 facturas) y **los números cuadran exacto** con lo reportado a las 05:40: **48 grupos reales · 110 fichas · 22 con el dinero partido · $59,873.30**. Los 8 grupos excluidos por ser pruebas internas son `asai.lopez@hotmail.com`, `cristoferdeita@hotmail.com`, `dumpster@tpservicesca.com`, `piano258@gmail.com`, `piano258@hotmail.com`, `piano@gmail.com`, `sdcsd@gmail.com`, `test@haztumarketing.com` (35 fichas; 145 − 35 = 110 ✅).
+
+Procedencia: **✅ una vía** (API de Stripe, cuenta `acct_1RW0CFIRhgZxSFKH`, agrupado por correo y cruzado con las facturas `paid`). Es la misma fuente de la medición anterior, no una segunda vía independiente — se le dijo así a Asaí.
+
+**Entregado por Telegram** (msgs 3168-3169): resumen de los 22 partidos + los 26 restantes, con el detalle ficha por ficha (ID, nombre, fecha de creación, facturas pagadas, monto, y si nació del checkout web o a mano) adjunto como `duplicados_stripe_tp_48_grupos.md`. Copia en el scratchpad de la sesión `a5d13a5d`.
+
+**Pendientes que siguen esperando GO de Asaí (nada se tocó):**
+1. Señalizar los 22 grupos partidos (`description` + `metadata.ficha_principal` → ficha buena). Solo texto, 100 % reversible. **Nunca borrar fichas.**
+2. Corregir el ZIP `95454` → `94954` en las 2 fichas de Katadyn/Arietta.
+
+## 2026-09-10 · 05:40 UTC · instancia `asai` · 🔍 Los 2 clientes duplicados NO se pueden fusionar — y no son 2, son 48 grupos con $59,873 de historial partido
+
+**Sin cambios en el repo ni en Stripe.** Revisión 100 % solo lectura, pedida por Asaí (*«sí, revisa si hay que fusionar los duplicados»*, rescatada por la instancia `cris` tras un congelamiento). Sale de la investigación del ZIP 95454 de las 03:59.
+
+### La respuesta corta: Stripe no tiene "fusionar"
+
+Verificado ✅✅ por dos vías independientes:
+1. **API**: `GET /v1/customers/{id}/merge` → `Unrecognized request URL`. No existe el endpoint.
+2. **Doc oficial de Stripe** ([support.stripe.com](https://support.stripe.com/questions/can-i-merge-multiple-customers-into-one)): *«Unfortunately, Stripe does not support merging Customers.»* Su recomendación es quedarse con la ficha más completa y prevenir duplicados nuevos.
+
+O sea: la pregunta *«¿hay que fusionarlos?»* no tiene un botón detrás. Lo único que existe es **borrar** una ficha, que es irreversible y desliga el historial — **no se hizo ni se recomienda**.
+
+### El par de Asaí: es la misma persona, sin duda
+
+| | `cus_Ug9hHmNTEIPKFS` | `cus_UtjTudweNvIhDR` |
+|---|---|---|
+| Nombre | Katadyn Desalination | Andrew Arietta |
+| Creada | 2026-06-10 | 2026-07-16 |
+| Correo | andrew@spectrawatermakers.com | *(idéntico)* |
+| Teléfono | (415) 526-2780 | *(idéntico)* |
+| Domicilio | 2220 S. McDowell Blvd Ext, Petaluma, **95454** | *(idéntico)* |
+| Facturas pagadas | 3 × $799 = **$2,397** | 1 × $799 = **$799** |
+| Tarjeta | Mastercard ···9928 5/2030 | *(idéntica)* |
+
+**La prueba dura es el `fingerprint` de la tarjeta: `7d1bDYgkP3SYz18a` en las dos fichas.** Stripe le da el mismo fingerprint sólo al mismo plástico físico. No es "parecido": es el mismo pagador. Los $3,196 cuadran exacto con la nota del booking de julio (*«same spot as the 3 dumpsters last month»*) — 2ª vía. Ninguna tiene suscripciones, saldo, ni facturas abiertas: **no hay deuda ni cobro recurrente que arreglar**.
+
+⚠️ Ojo con los 5 cargos `failed` del 19-jun en Katadyn: son reintentos de un mismo cobro de $799 que acabó en `succeeded` el mismo día. Ruido, no dinero perdido.
+
+### 🔴 El hallazgo grande: no eran 2
+
+Barrido completo de los **543 clientes** de la cuenta (`acct_1RW0CFIRhgZxSFKH`) agrupando por correo — [[feedback_enumerar_todas_las_cuentas_antes_de_reportar_cero]]:
+
+- **56 correos con ficha repetida** → 48 grupos son clientes reales (8 son pruebas internas de Cris/Asaí: `piano258@`, `test@haztumarketing`, etc.).
+- **110 fichas** de las 543 son parte de un grupo duplicado.
+- **22 grupos tienen el dinero PARTIDO** entre fichas — **$59,873.30** de facturas pagadas que no se ven juntas en ninguna pantalla de Stripe.
+
+Los peores, cruzados contra las 1,012 facturas de la cuenta:
+
+| Cliente | $ partido | Fichas |
+|---|---|---|
+| Jonah Abkowitz | $8,143.70 | 2 |
+| Byron Miles | $5,002.00 | 2 |
+| Openridge Investments LLC | $4,912.00 | **7** (una con otro nombre: *West Fifth Holdings LLC*) |
+| Dong w Lee | $4,278.06 | 4 |
+| August Roof | $3,373.59 | 3 |
+| **Katadyn / Arietta** | **$3,196.00** | 2 |
+| Sierra School Equipment | $3,111.41 | 3 |
+
+El par de Asaí es el **6º** por monto. Es un síntoma, no el caso.
+
+### De dónde nacían: del sitio, y ya está tapado
+
+De las **62 fichas extra** de clientes reales, **61 traen `metadata.booking_id`** → nacieron del checkout de tpdumpsters.com, no de Stripe a mano (sólo 1, `cus_UwhOfRP6VcVHoN`, se creó fuera). La causa era que `/api/checkout` creaba ficha nueva en cada booking sin buscar por correo.
+
+**Ya está arreglado y desplegado.** `findOrCreateCustomer()` (`src/lib/stripe.ts:61`) busca por correo y actualiza la ficha existente más reciente. Commit **`edab4ad`** *«Un cliente = una ficha en Stripe: find-or-create por correo»*, 4-sep-2026.
+
+Verificado ✅✅ que **corre en producción**, que no es lo mismo que estar en `main` (lección del `invoice.total`, 22 días parado):
+1. **Fuente desplegada** en Hostinger: `public_html/public_html/src/lib/stripe.ts:69` trae `customers.list({ email, limit: 10 })`.
+2. **Binario compilado** (build del **9-sep 23:25**): 8 chunks `[root-of-the-server]__*.js` contienen `customers.list` **y** la cadena `"no se pudo buscar por correo"` — texto en español que **sólo** existe en el código de `edab4ad`. Un `grep` de un identificador genérico no habría probado nada; el string en español sí, porque es huella única del commit.
+
+**⚠️ Lo que NO está probado, y hay que decirlo:** que el fix *funcione* en vivo. Desde el 4-sep sólo se han creado **5 clientes**, los 5 con correo distinto → 0 duplicados nuevos. Con n=5 eso **no es evidencia** de que funcione, sólo ausencia de contraejemplo. La prueba real llega con el volumen de las próximas semanas.
+
+**Detalle operativo que Asaí debe saber:** el código se queda con la ficha **más reciente** por correo. Para este cliente eso es **Arietta** (16-jul). Los próximos bookings de ese correo caerán ahí, y la ficha de **Katadyn** — la que tiene los $2,397 — queda huérfana. Lo mismo aplica a los otros 21 grupos.
+
+### Qué se propuso (pendiente de GO de Asaí)
+
+Como fusionar no existe, lo único reversible y útil es **señalizar**: dejar en cada ficha duplicada una nota (`description` + `metadata.ficha_principal`) que apunte a la ficha buena, para que nadie facture sobre la equivocada. Es editar texto: 100 % reversible. **Nada de borrar fichas.**
+
+**Sigue abierta la corrección del ZIP 95454 → 94954** en esas 2 fichas: Asaí la pidió en un mensaje que se truncó al rescatarlo, se le pidió confirmación completa y todavía no llega. **No se tocó nada.**
+
+**Datos crudos** (scratchpad sesión `5b063987`): `tp_custs_full.json` (543 clientes), `tp_invs_full.json` (1,012 facturas).
+
+---
+
 ## 2026-09-10 · 05:45 UTC · instancia `cris2` (Laso) · 🧨 El bug que el fix `invoice.total` iba a arreglar NO EXISTE (medido ✅✅✅) — fix ESTACIONADO sin commitear
 
 **Sin cambios en el código.** Cris pidió (msg 6315) *"antes de hacerlo rebótalo con Prisma y con Web HTM"*. Se rebotó — y el rebote tumbó la premisa.
