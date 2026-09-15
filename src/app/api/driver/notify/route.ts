@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   } else if (action === "picked-up") {
     body = `Your dumpster has been picked up! ✅\n\n` +
       `Thank you for choosing TP Dumpsters. We hope we made your project easier!\n\n` +
-      `Need another dumpster? Book online at tpdumpsters.com/booking for 5% off!\n\n` +
+      `Need another dumpster? Book online at tpdumpsters.com/booking for $50 off!\n\n` +
       `— TP Dumpsters`;
   }
 

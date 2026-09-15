@@ -82,7 +82,7 @@ const sanLeandroFaqs = [
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
         San Leandro dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster
-        (7-day rental, 1 ton included). The 20-yard starts at $649 and the 30-yard at $749.
+        (3-day rental, 1 ton included). The 20-yard starts at $649 and the 30-yard at $749.
         Straightforward pricing with no hidden fees. Call <strong>(510) 650-2083</strong> for a
         precise quote based on your project needs.
       </p>

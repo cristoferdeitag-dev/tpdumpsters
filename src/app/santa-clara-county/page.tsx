@@ -77,7 +77,7 @@ const countyFaqs = [
     question: "How much does a dumpster rental cost in Santa Clara County?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Pricing starts at <strong>$649</strong> for a 10-yard dumpster (7-day rental, 1 ton included), <strong>$699</strong> for a 20-yard (2 tons), and <strong>$799</strong> for a 30-yard (3 tons). No hidden fees, no surprise charges. Book online and get an additional <strong>$50 discount</strong>.
+        Pricing starts at <strong>$649</strong> for a 10-yard dumpster (3-day rental, 1 ton included), <strong>$699</strong> for a 20-yard (2 tons), and <strong>$799</strong> for a 30-yard (3 tons). No hidden fees, no surprise charges. Book online and get an additional <strong>$50 discount</strong>.
       </p>
     ),
   },
@@ -242,7 +242,7 @@ export default function SantaClaraCountyPage() {
               href="/booking"
               className="inline-flex items-center gap-2 w-full sm:w-auto justify-center px-7 py-3 rounded-lg text-lg font-semibold bg-tp-red text-white hover:bg-tp-red-dark transition-all duration-300 font-[var(--font-poppins)]"
             >
-              <FaCalendarDays /> Book Online — 5% Off
+              <FaCalendarDays /> Book Online — $50 Off
             </a>
             <a
               href="tel:+15106502083"
@@ -382,7 +382,7 @@ export default function SantaClaraCountyPage() {
                   href="/booking"
                   className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg text-lg font-semibold bg-tp-red text-white hover:bg-tp-red-dark transition-all duration-300 font-[var(--font-poppins)]"
                 >
-                  <FaCalendarDays /> Book Online — 5% Off
+                  <FaCalendarDays /> Book Online — $50 Off
                 </a>
                 <a
                   href="tel:+15106502083"
