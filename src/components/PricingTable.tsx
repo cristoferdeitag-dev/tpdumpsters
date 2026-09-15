@@ -42,7 +42,7 @@ const services: ServiceCategory[] = [
       },
       {
         size: "20 Yard",
-        basePrice: 749,
+        basePrice: 699,
         price: 649,
         dimensions: "16' L × 8' W × 4' H",
         weightLimit: "2 tons",
@@ -50,7 +50,7 @@ const services: ServiceCategory[] = [
       },
       {
         size: "30 Yard",
-        basePrice: 849,
+        basePrice: 799,
         price: 749,
         dimensions: "16' L × 8' W × 6' H",
         weightLimit: "3 tons",

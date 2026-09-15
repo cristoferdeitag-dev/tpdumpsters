@@ -493,7 +493,7 @@ export default function ServicesPage() {
                   16&apos;L × 8&apos;W × 4&apos;H
                 </p>
                 <div className="flex items-baseline justify-center gap-2 mb-1">
-                  <span className="text-base text-gray-400 line-through">$749</span>
+                  <span className="text-base text-gray-400 line-through">$699</span>
                   <span className="text-3xl font-black text-gray-900">$649</span>
                 </div>
                 <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>
@@ -536,7 +536,7 @@ export default function ServicesPage() {
                   16&apos;L × 8&apos;W × 6&apos;H
                 </p>
                 <div className="flex items-baseline justify-center gap-2 mb-1">
-                  <span className="text-base text-gray-400 line-through">$849</span>
+                  <span className="text-base text-gray-400 line-through">$799</span>
                   <span className="text-3xl font-black text-gray-900">$749</span>
                 </div>
                 <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>

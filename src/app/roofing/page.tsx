@@ -203,7 +203,7 @@ const dumpsterSizes = [
   },
   {
     name: "20 Yard",
-    basePrice: "$749",
+    basePrice: "$699",
     roofingPrice: "$649",
     dimensionsClean: "16&apos;L × 8&apos;W × 4&apos;H",
     weight: "2 tons included",
@@ -214,7 +214,7 @@ const dumpsterSizes = [
   },
   {
     name: "30 Yard",
-    basePrice: "$849",
+    basePrice: "$799",
     roofingPrice: "$749",
     dimensionsClean: "16&apos;L × 8&apos;W × 6&apos;H",
     weight: "3 tons included",
