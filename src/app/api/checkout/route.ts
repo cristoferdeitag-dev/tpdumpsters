@@ -12,18 +12,18 @@ let dbInitialized = false;
 // ── SERVER-AUTHORITATIVE PRICING ──────────────────────────────────────
 // The browser sends booking.totalPrice, but we DO NOT trust it for the
 // actual charge. A client-side bug (e.g. the old double-$50-online-discount
-// that undercharged booking TP-MQ5MS7Y0 / Louann $649 instead of $699 on
+// that undercharged booking TP-MQ5MS7Y0 / Louann $649 instead of $649 on
 // 2026-06-08) or a tampered POST could under/over-charge. The server
 // recomputes the real price from this ONE table — the ONLINE price the
 // customer is shown (sticker − $50 online discount) per service + size —
 // and charges THAT. Keep in sync with the booking flow (ServiceStep
 // GENERAL_SIZES) and /api/invoice.
 const ONLINE_PRICES: Record<string, Record<string, number>> = {
-  "General Debris":      { "10": 599, "20": 699, "30": 799 },
-  "Household Clean Out": { "10": 599, "20": 699, "30": 799 },
-  "Construction Debris": { "10": 599, "20": 699, "30": 799 },
-  "Roofing":             { "10": 599, "20": 699, "30": 799 },
-  "Green Waste":         { "10": 599, "20": 699, "30": 799 },
+  "General Debris":      { "10": 599, "20": 649, "30": 749 },
+  "Household Clean Out": { "10": 599, "20": 649, "30": 749 },
+  "Construction Debris": { "10": 599, "20": 649, "30": 749 },
+  "Roofing":             { "10": 599, "20": 649, "30": 749 },
+  "Green Waste":         { "10": 599, "20": 649, "30": 749 },
   "Clean Soil":          { "10": 599 },
   "Clean Concrete":      { "10": 599 },
   "Mixed Materials":     { "10": 899 },
@@ -35,7 +35,7 @@ const ONLINE_PRICES: Record<string, Record<string, number>> = {
   "Bricks":              { "10": 899 },
   "Clean Asphalt":       { "10": 899 },
 };
-const EXTRA_DAY_FEE = 75;
+const EXTRA_DAY_FEE = 49;
 
 // Authoritative total for a booking, or null if the service/size isn't in
 // the catalog (caller then falls back to the client value, logged loudly).
@@ -301,7 +301,7 @@ export async function POST(request: Request) {
       isLight
         ? [
             sizeBullet,
-            `Rental includes ${rentalDays} days — extra days: $75/day`,
+            `Rental includes ${rentalDays} days — extra days: $49/day`,
             `Weight limit: ${weightLimit}`,
             LIGHT_PURITY[booking.service.serviceType] || "Clean loads must be 95% pure",
             `Extra fee: $150 if prohibited items are added`,
@@ -309,9 +309,9 @@ export async function POST(request: Request) {
           ]
         : [
             sizeBullet,
-            `Rental includes ${rentalDays} days — extra days: $75/day`,
+            `Rental includes ${rentalDays} days — extra days: $49/day`,
             `Weight limit: ${weightLimit}`,
-            `Overweight fee: $199 per extra ton (prorated)`,
+            `Overweight fee: $179 per extra ton (prorated)`,
             `Mattresses / appliances / electronics / tires: $20-$60 each`,
             `Do not exceed the marked fill line`,
             `No prohibited materials`,

@@ -93,14 +93,14 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "20 Yard General Debris Dumpster",
-      price: "699",
+      price: "649",
       priceCurrency: "USD",
       description: "20 yard dumpster — 2 tons included, 7-day rental, 16ft L × 8ft W × 4ft H",
     },
     {
       "@type": "Offer",
       name: "30 Yard General Debris Dumpster",
-      price: "799",
+      price: "749",
       priceCurrency: "USD",
       description: "30 yard dumpster — 3 tons included, 7-day rental, 16ft L × 8ft W × 6ft H",
     },
@@ -141,7 +141,7 @@ const faqSchema = {
       name: "How much does a general debris dumpster cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $799 (3 tons, 7 days). All prices include delivery, pickup, and disposal.",
+        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $649 (2 tons, 7 days). 30-yard: $749 (3 tons, 7 days). All prices include delivery, pickup, and disposal.",
       },
     },
     {
@@ -149,7 +149,7 @@ const faqSchema = {
       name: "How long can I keep the dumpster?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "General debris rentals include 3 days on the 10-yard and 7 days on the 20 and 30-yard. Additional days are available at $75/day with 24-hour notice.",
+        text: "General debris rentals include 3 days on the 10-yard and 7 days on the 20 and 30-yard. Additional days are available at $49/day with 24-hour notice.",
       },
     },
     {
@@ -165,7 +165,7 @@ const faqSchema = {
       name: "What happens if I go over the weight limit?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Extra weight is charged at $199 per additional ton (prorated). We weigh every load at the disposal facility and only charge for actual overage.",
+        text: "Extra weight is charged at $179 per additional ton (prorated). We weigh every load at the disposal facility and only charge for actual overage.",
       },
     },
     {
@@ -255,8 +255,8 @@ const serviceCounties = [
 ];
 
 const extraFees = [
-  { item: "Extra rental days", fee: "$75/day" },
-  { item: "Overweight charges", fee: "$199/ton (prorated)" },
+  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Overweight charges", fee: "$179/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
   { item: "Tires", fee: "$20 each" },
@@ -297,11 +297,11 @@ const faqsLeft = [
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">Our general debris dumpster pricing is straightforward:</p>
         <ul className="list-disc pl-5 mb-2.5">
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>10-yard:</strong> $599 — includes 1 ton and 3-day rental</li>
-          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>20-yard:</strong> $699 — includes 2 tons and 7-day rental</li>
+          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>20-yard:</strong> $649 — includes 2 tons and 7-day rental</li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          Additional days are $75/day, and overweight charges are $199 per ton (prorated). No hidden fees.
+          Additional days are $49/day, and overweight charges are $179 per ton (prorated). No hidden fees.
         </p>
       </>
     ),
@@ -310,7 +310,7 @@ const faqsLeft = [
     question: "How long can I keep the dumpster?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        General debris rentals include <strong>3 days</strong> on the 10-yard and <strong>7 days</strong> on the 20 and 30-yard. Need more time? No problem — additional days are available at $75/day with 24-hour notice. Whether you&apos;re tackling a weekend cleanout or a multi-week renovation, we&apos;ll work with your timeline.
+        General debris rentals include <strong>3 days</strong> on the 10-yard and <strong>7 days</strong> on the 20 and 30-yard. Need more time? No problem — additional days are available at $49/day with 24-hour notice. Whether you&apos;re tackling a weekend cleanout or a multi-week renovation, we&apos;ll work with your timeline.
       </p>
     ),
   },
@@ -329,7 +329,7 @@ const faqsRight = [
     question: "What happens if I go over the weight limit?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        If your dumpster exceeds the included weight allowance, you&apos;ll be charged <strong>$199 per additional ton</strong> (prorated). We weigh every load at the disposal facility and only charge for actual overage. To avoid surprises, keep heavy items like concrete, dirt, and tile to a minimum in general debris loads, and don&apos;t fill above the marked fill line.
+        If your dumpster exceeds the included weight allowance, you&apos;ll be charged <strong>$179 per additional ton</strong> (prorated). We weigh every load at the disposal facility and only charge for actual overage. To avoid surprises, keep heavy items like concrete, dirt, and tile to a minimum in general debris loads, and don&apos;t fill above the marked fill line.
       </p>
     ),
   },

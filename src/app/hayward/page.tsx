@@ -71,7 +71,7 @@ const haywardFaqs = [
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
         Our Hayward dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster
-        (7-day rental, 1 ton included). 20-yard starts at $699 and 30-yard at $799.
+        (7-day rental, 1 ton included). 20-yard starts at $649 and 30-yard at $749.
         Transparent pricing with no hidden fees. Call <strong>(510) 650-2083</strong> for
         an exact quote based on your project.
       </p>
@@ -177,13 +177,13 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "20 Yard Dumpster Rental", description: "Versatile mid-size dumpster for remodels, roofing, and medium cleanouts. 7-day rental, 2 tons included." },
-        price: "699",
+        price: "649",
         priceCurrency: "USD",
       },
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "30 Yard Dumpster Rental", description: "Large dumpster for full renovations, construction debris, and estate cleanouts. 7-day rental, 3 tons included." },
-        price: "799",
+        price: "749",
         priceCurrency: "USD",
       },
     ],

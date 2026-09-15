@@ -18,27 +18,27 @@ function getDims(size: string): string {
 const SERVICES: Record<string, Record<string, { price: number; dims: string; weight: string; days: number }>> = {
   "General Debris": {
     "10 Yard": { price: 649, dims: getDims("10"), weight: "1 ton", days: 3 },
-    "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Household Clean Out": {
     "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
-    "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Construction Debris": {
     "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
-    "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Roofing": {
     "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
-    "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Green Waste": {
     "10 Yard": { price: 599, dims: getDims("10"), weight: "1 ton", days: 3 },
-    "20 Yard": { price: 699, dims: getDims("20"), weight: "2 tons", days: 7 },
+    "20 Yard": { price: 649, dims: getDims("20"), weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: getDims("30"), weight: "3 tons", days: 7 },
   },
   "Clean Soil": {
@@ -247,8 +247,8 @@ export async function POST(request: NextRequest) {
 
     const termLines = [
       ...sizeBullets,
-      `• Rental includes ${rentalDaysForBullet} days; extra days: $75/day`,
-      `• Weight limit: ${weightSummary}${allLight ? "" : ". Overweight: $199 per extra ton (prorated)"}`,
+      `• Rental includes ${rentalDaysForBullet} days; extra days: $49/day`,
+      `• Weight limit: ${weightSummary}${allLight ? "" : ". Overweight: $179 per extra ton (prorated)"}`,
       `• Mattresses/appliances/tires: $20-$60 each (size dependent)`,
       `• Do not exceed the marked fill line. No prohibited materials`,
       `• 24h notice - $150 cancellation fee`,

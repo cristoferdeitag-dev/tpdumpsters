@@ -145,7 +145,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         <p className="text-sm text-blue-800 font-[var(--font-poppins)]">
           ℹ️ <strong>Pickup date is set automatically</strong> based on your rental period ({baseDays} days).
           Done early? You can pick an <strong>earlier pickup date</strong> — same price, the {baseDays} days are always included.
-          Need more time? Pick a later date — extra days are <strong>$75/day</strong>.
+          Need more time? Pick a later date — extra days are <strong>$49/day</strong>.
         </p>
       </div>
 
@@ -333,7 +333,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
             </div>
           </div>
           <p className="text-[10px] text-[#aaa] mt-3">
-            Total rental: {totalDays} days. Extra weight charged at $199/ton (prorated).
+            Total rental: {totalDays} days. Extra weight charged at $179/ton (prorated).
           </p>
         </div>
       )}

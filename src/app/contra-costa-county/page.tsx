@@ -98,7 +98,7 @@ const countyFaqs = [
     question: "How much does a dumpster rental cost in Contra Costa County?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Pricing starts at <strong>$649</strong> for a 10-yard dumpster (7-day rental, 1 ton included), <strong>$699</strong> for a 20-yard (2 tons), and <strong>$849</strong> for a 30-yard (3 tons). No hidden fees, no surprise charges. Book online and get an additional <strong>$50 discount</strong>.
+        Pricing starts at <strong>$649</strong> for a 10-yard dumpster (7-day rental, 1 ton included), <strong>$649</strong> for a 20-yard (2 tons), and <strong>$849</strong> for a 30-yard (3 tons). No hidden fees, no surprise charges. Book online and get an additional <strong>$50 discount</strong>.
       </p>
     ),
   },
@@ -135,7 +135,7 @@ const countyFaqs = [
     question: "How long can I keep the dumpster?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Standard rental is <strong>3 days</strong> on every 10-yard and <strong>7 days</strong> on 20 and 30-yard debris dumpsters, included in the base price. Need more time? Extensions are available at <strong>$75/day</strong>. Just let us know and we&apos;ll keep the dumpster as long as your project needs.
+        Standard rental is <strong>3 days</strong> on every 10-yard and <strong>7 days</strong> on 20 and 30-yard debris dumpsters, included in the base price. Need more time? Extensions are available at <strong>$49/day</strong>. Just let us know and we&apos;ll keep the dumpster as long as your project needs.
       </p>
     ),
   },

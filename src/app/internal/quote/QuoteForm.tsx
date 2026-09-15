@@ -13,7 +13,7 @@ interface ServiceDef { name: string; sizes: ServiceSizes }
 const SERVICES: ServiceDef[] = [
   { name: "General Debris", sizes: {
     "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "1 ton", days: 7 },
-    "20 Yard": { price: 699, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
+    "20 Yard": { price: 649, dims: "16'L × 8'W × 4'H", weight: "2 tons", days: 7 },
     "30 Yard": { price: 749, dims: "16'L × 8'W × 6'H", weight: "3 tons", days: 7 },
   }},
   { name: "Clean Soil", sizes: {
@@ -72,7 +72,7 @@ const COMMON_EXTRAS = [
   { name: "Appliance", price: 40 },
   { name: "Tire", price: 20 },
   { name: "Overweight (per ton)", price: 125 },
-  { name: "Extra Day", price: 75 },
+  { name: "Extra Day", price: 49 },
 ];
 
 function createExtra(): ExtraItem {

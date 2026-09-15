@@ -43,7 +43,7 @@ const services: ServiceCategory[] = [
       {
         size: "20 Yard",
         basePrice: 749,
-        price: 699,
+        price: 649,
         dimensions: "16' L × 8' W × 4' H",
         weightLimit: "2 tons",
         rentalDays: "7 days",
@@ -51,7 +51,7 @@ const services: ServiceCategory[] = [
       {
         size: "30 Yard",
         basePrice: 849,
-        price: 799,
+        price: 749,
         dimensions: "16' L × 8' W × 6' H",
         weightLimit: "3 tons",
         rentalDays: "7 days",
@@ -256,7 +256,7 @@ export default function PricingTable({ cityName }: PricingTableProps) {
         )}
 
         <p className="text-center text-xs text-[#999] mt-6 font-[var(--font-poppins)]">
-          Prices may vary based on location and project specifics. Extra weight charged at $199/ton (prorated). Call for a personalized quote.
+          Prices may vary based on location and project specifics. Extra weight charged at $179/ton (prorated). Call for a personalized quote.
         </p>
       </div>
     </section>

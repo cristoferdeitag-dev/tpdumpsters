@@ -494,7 +494,7 @@ export default function ServicesPage() {
                 </p>
                 <div className="flex items-baseline justify-center gap-2 mb-1">
                   <span className="text-base text-gray-400 line-through">$749</span>
-                  <span className="text-3xl font-black text-gray-900">$699</span>
+                  <span className="text-3xl font-black text-gray-900">$649</span>
                 </div>
                 <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>
                 <p className="text-sm text-gray-500 mb-6">2 tons included · 7 days</p>
@@ -537,7 +537,7 @@ export default function ServicesPage() {
                 </p>
                 <div className="flex items-baseline justify-center gap-2 mb-1">
                   <span className="text-base text-gray-400 line-through">$849</span>
-                  <span className="text-3xl font-black text-gray-900">$799</span>
+                  <span className="text-3xl font-black text-gray-900">$749</span>
                 </div>
                 <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wider">Save $50 online</p>
                 <p className="text-sm text-gray-500 mb-6">3 tons included · 7 days</p>
@@ -615,7 +615,7 @@ export default function ServicesPage() {
                 </h3>
                 <p className="text-gray-300 text-sm">
                   Need more time? No problem. Extra days are just{" "}
-                  <strong className="text-white">$75/day</strong> for any
+                  <strong className="text-white">$49/day</strong> for any
                   dumpster size.
                 </p>
               </div>
@@ -625,7 +625,7 @@ export default function ServicesPage() {
                 </h3>
                 <p className="text-gray-300 text-sm">
                   Exceeded your weight limit?{" "}
-                  <strong className="text-white">$199/ton</strong> prorated.
+                  <strong className="text-white">$179/ton</strong> prorated.
                   Heavy material dumpsters have no weight limit.
                 </p>
               </div>

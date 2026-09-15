@@ -86,14 +86,14 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "20 Yard Roofing Dumpster",
-      price: "699",
+      price: "649",
       priceCurrency: "USD",
       description: "20 yard roofing dumpster — 2 tons included, 7-day rental, 16ft L × 8ft W × 4ft H. ",
     },
     {
       "@type": "Offer",
       name: "30 Yard Roofing Dumpster",
-      price: "799",
+      price: "749",
       priceCurrency: "USD",
       description: "30 yard roofing dumpster — 3 tons included, 7-day rental, 16ft L × 8ft W × 6ft H. ",
     },
@@ -174,7 +174,7 @@ const faqSchema = {
       name: "How long does a roofing project take?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Most residential roof replacements take 1-3 days. The 10-yard includes a 3-day rental; the 20 and 30-yard include 7 days. If your project runs longer, additional days are available at $75/day.",
+        text: "Most residential roof replacements take 1-3 days. The 10-yard includes a 3-day rental; the 20 and 30-yard include 7 days. If your project runs longer, additional days are available at $49/day.",
       },
     },
     {
@@ -204,7 +204,7 @@ const dumpsterSizes = [
   {
     name: "20 Yard",
     basePrice: "$749",
-    roofingPrice: "$699",
+    roofingPrice: "$649",
     dimensionsClean: "16&apos;L × 8&apos;W × 4&apos;H",
     weight: "2 tons included",
     rental: "7-day rental",
@@ -215,7 +215,7 @@ const dumpsterSizes = [
   {
     name: "30 Yard",
     basePrice: "$849",
-    roofingPrice: "$799",
+    roofingPrice: "$749",
     dimensionsClean: "16&apos;L × 8&apos;W × 6&apos;H",
     weight: "3 tons included",
     rental: "7-day rental",
@@ -248,8 +248,8 @@ const serviceCounties = [
 
 const extraFees = [
   
-  { item: "Extra rental days", fee: "$75/day" },
-  { item: "Overweight charges", fee: "$199/ton (prorated)" },
+  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Overweight charges", fee: "$179/ton (prorated)" },
   { item: "Overloaded load (above the top edge)", fee: "$149, charged at pickup" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
@@ -333,7 +333,7 @@ const faqsRight = [
     question: "How long does a roofing project take?",
     answer: (
       <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Most residential roof replacements take <strong>1-3 days</strong>. The 10-yard includes a <strong>3-day</strong> rental and the 20 and 30-yard include <strong>7 days</strong> — plenty of time to complete the job without rushing. If your project runs longer due to weather delays or complexity, additional days are available at $75/day with 24-hour notice.
+        Most residential roof replacements take <strong>1-3 days</strong>. The 10-yard includes a <strong>3-day</strong> rental and the 20 and 30-yard include <strong>7 days</strong> — plenty of time to complete the job without rushing. If your project runs longer due to weather delays or complexity, additional days are available at $49/day with 24-hour notice.
       </p>
     ),
   },

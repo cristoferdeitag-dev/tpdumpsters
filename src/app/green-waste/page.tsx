@@ -92,14 +92,14 @@ const jsonLd = {
     {
       "@type": "Offer",
       name: "20 Yard Green Waste Dumpster",
-      price: "699",
+      price: "649",
       priceCurrency: "USD",
       description: "20 yard dumpster — 2 tons included, 7-day rental, 16ft L × 8ft W × 4ft H",
     },
     {
       "@type": "Offer",
       name: "30 Yard Green Waste Dumpster",
-      price: "799",
+      price: "749",
       priceCurrency: "USD",
       description: "30 yard dumpster — 3 tons included, 7-day rental, 16ft L × 8ft W × 6ft H",
     },
@@ -140,7 +140,7 @@ const faqSchema = {
       name: "How much does a green waste dumpster cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $699 (2 tons, 7 days). 30-yard: $799 (3 tons, 7 days). All prices include delivery, pickup, and disposal. No hidden fees.",
+        text: "10-yard: $599 (1 ton, 7 days). 20-yard: $649 (2 tons, 7 days). 30-yard: $749 (3 tons, 7 days). All prices include delivery, pickup, and disposal. No hidden fees.",
       },
     },
     {
@@ -254,8 +254,8 @@ const serviceCounties = [
 ];
 
 const extraFees = [
-  { item: "Extra rental days", fee: "$75/day" },
-  { item: "Overweight charges", fee: "$199/ton (prorated)" },
+  { item: "Extra rental days", fee: "$49/day" },
+  { item: "Overweight charges", fee: "$179/ton (prorated)" },
   { item: "Mattresses", fee: "$60 each" },
   { item: "Appliances (with freon)", fee: "$40 each" },
   { item: "Tires", fee: "$20 each" },
@@ -296,11 +296,11 @@ const faqsLeft = [
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">Our green waste dumpster pricing is straightforward:</p>
         <ul className="list-disc pl-5 mb-2.5">
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>10-yard:</strong> $599 — includes 1 ton and 3-day rental</li>
-          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>20-yard:</strong> $699 — includes 2 tons and 7-day rental</li>
+          <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>20-yard:</strong> $649 — includes 2 tons and 7-day rental</li>
           <li className="text-sm text-[#666] leading-[1.7] mb-1"><strong>30-yard:</strong> $749 — includes 3 tons and 7-day rental</li>
         </ul>
         <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          All prices include delivery, pickup, and disposal. Additional days are $75/day, and overweight charges are $199 per ton (prorated).
+          All prices include delivery, pickup, and disposal. Additional days are $49/day, and overweight charges are $179 per ton (prorated).
         </p>
       </>
     ),

@@ -53,8 +53,8 @@ interface ServiceCategory {
 // The booking flow charges `price` and shows the base struck through.
 const GENERAL_SIZES: SizeOption[] = [
   { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "1 ton", rentalDays: 3 },
-  { size: "20 Yard", basePrice: 749, price: 699, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
-  { size: "30 Yard", basePrice: 849, price: 799, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
+  { size: "20 Yard", basePrice: 749, price: 649, dimensions: "16' L × 8' W × 4' H", weightLimit: "2 tons", rentalDays: 7 },
+  { size: "30 Yard", basePrice: 849, price: 749, dimensions: "16' L × 8' W × 6' H", weightLimit: "3 tons", rentalDays: 7 },
 ];
 
 const services: ServiceCategory[] = [
@@ -463,7 +463,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       </div>
 
       <p className="text-center text-xs text-[#bbb] mt-8 mb-10 font-[var(--font-poppins)]">
-        Extra weight charged at $199/ton (prorated) · Extra days: $75/day
+        Extra weight charged at $179/ton (prorated) · Extra days: $49/day
       </p>
 
       {/* Spacer so sticky CTA never overlaps content above */}
