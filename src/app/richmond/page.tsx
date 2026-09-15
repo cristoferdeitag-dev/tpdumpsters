@@ -180,19 +180,19 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "10 Yard Dumpster Rental", description: "Compact dumpster for tight spaces, soil, concrete, and small cleanups. 3-day rental, 1 ton included." },
-        price: "600",
+        price: "599",
         priceCurrency: "USD",
       },
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "20 Yard Dumpster Rental", description: "Versatile mid-size dumpster for remodels, roofing, and medium cleanouts. 7-day rental, 2 tons included." },
-        price: "650",
+        price: "649",
         priceCurrency: "USD",
       },
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "30 Yard Dumpster Rental", description: "Large dumpster for full renovations, construction debris, and estate cleanouts. 7-day rental, 3 tons included." },
-        price: "700",
+        price: "749",
         priceCurrency: "USD",
       },
     ],

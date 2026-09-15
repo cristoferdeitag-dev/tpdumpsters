@@ -23,7 +23,7 @@ const SERVICES: ServiceDef[] = [
     "10 Yard": { price: 599, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
   }},
   { name: "Mixed Materials", sizes: {
-    "10 Yard": { price: 749, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
+    "10 Yard": { price: 899, dims: "12'L × 8'W × 2.5'H", weight: "No weight limit", days: 3 },
   }},
 ];
 
@@ -71,7 +71,7 @@ const COMMON_EXTRAS = [
   { name: "Mattress", price: 60 },
   { name: "Appliance", price: 40 },
   { name: "Tire", price: 20 },
-  { name: "Overweight (per ton)", price: 125 },
+  { name: "Overweight (per ton)", price: 179 },
   { name: "Extra Day", price: 49 },
 ];
 

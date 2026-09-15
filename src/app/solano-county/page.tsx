@@ -197,19 +197,19 @@ const jsonLd = {
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "10 Yard Dumpster Rental", description: "Compact roll-off for tight spaces, soil, concrete, and small cleanups." },
-        price: "600",
+        price: "599",
         priceCurrency: "USD",
       },
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "20 Yard Dumpster Rental", description: "Mid-size roll-off for remodels, roofing, and medium cleanouts." },
-        price: "650",
+        price: "649",
         priceCurrency: "USD",
       },
       {
         "@type": "Offer",
         itemOffered: { "@type": "Service", name: "30 Yard Dumpster Rental", description: "Large roll-off for full renovations, construction, and estate cleanouts." },
-        price: "700",
+        price: "749",
         priceCurrency: "USD",
       },
     ],

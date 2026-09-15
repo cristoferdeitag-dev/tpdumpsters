@@ -201,7 +201,7 @@ const jsonLd = {
         },
         priceSpecification: {
           "@type": "PriceSpecification",
-          price: "600",
+          price: "599",
           priceCurrency: "USD",
         },
       },
@@ -215,7 +215,7 @@ const jsonLd = {
         },
         priceSpecification: {
           "@type": "PriceSpecification",
-          price: "650",
+          price: "649",
           priceCurrency: "USD",
         },
       },
@@ -229,7 +229,7 @@ const jsonLd = {
         },
         priceSpecification: {
           "@type": "PriceSpecification",
-          price: "700",
+          price: "749",
           priceCurrency: "USD",
         },
       },
