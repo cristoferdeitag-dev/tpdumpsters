@@ -53,8 +53,8 @@ export default function BookingPage() {
                 Se muestran los dos: el tachado ancla el valor y hace visible el ahorro. */}
             {[
               { yd: "10", list: "649", online: "599" },
-              { yd: "20", list: "749", online: "699" },
-              { yd: "30", list: "849", online: "799" },
+              { yd: "20", list: "749", online: "649" },
+              { yd: "30", list: "849", online: "749" },
             ].map(({ yd, list, online }) => (
               <li
                 key={yd}
@@ -96,7 +96,7 @@ export default function BookingPage() {
             3–7 day rental · delivery, pickup &amp; disposal included
           </p>
           <p className="mt-2 font-[var(--font-poppins)] text-[13px] sm:text-[15px] font-semibold text-tp-gold">
-            $50 off when you book online
+            Up to $100 off when you book online
           </p>
 
           <a
