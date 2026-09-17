@@ -19,7 +19,24 @@ Complementa lo que hizo Asaí una hora antes (entrada de arriba): ella quitó de
 - Renders headless a 700px y 390px (`shot.py`) **revisados con los ojos**: logo carga, dorado presente, rojo sólo donde debe, 7 filas legibles, sin desbordes en móvil.
 - ❌ **Envío real: NO probado.** Imposible hasta tener la contraseña.
 
-### 🔴 Pendientes (bloquean el deploy)
+### ✅ DESPLEGADO 22:56–23:10Z (GO de Cris msg 6741: *"Dale a tu recomendación y que todo quede listo"*)
+Commit **472af5e** · **BUILD_ID `htE33kR7m-qHaSj60UPqd`** (mismo en local y en Hostinger).
+
+- **Contraseña del buzón:** Cris la cambió en hPanel con ayuda de la extensión (la extensión llegó al diálogo pero **no teclea contraseñas**, correcto). Vive en `/root/.env.tp-mail` (600) y en `/home/u781187371/mail-creds.json` (600). Registrada en `ref_llaves_index.md` — **sólo dónde vive, nunca el valor**.
+- **🪤 TRAMPA QUE CASI DA UN FALSO NEGATIVO:** el primer intento de login dio **"Connection timeout"**, no "contraseña incorrecta". Medido: desde el VPS Hetzner los puertos **465 y 25 están BLOQUEADOS de salida** y el **587 abre**; desde Hostinger **abren los dos**. Si me quedo con el timeout, reporto "la contraseña no sirve" y era mentira. Por eso `/root/.env.tp-mail` va con **587** y el `mail-creds.json` de producción con **465**.
+- **🪤 SEGUNDA TRAMPA:** el `node_modules` de producción **no tiene `nodemailer`** (sólo 11 paquetes). No truena porque Next lo empaqueta dentro de `.next/server` — **comprobado por comportamiento** (correo real enviado desde el sitio vivo), no por suposición.
+- **Verificación ✅✅ por el camino de producción:** `POST /api/abandoned-watch {"test":"..."}` contra **tpdumpsters.com** devolvió `success:true` **antes y después** de desplegar, a los correos de Cris y de Asaí. Más el `dry` run: `mailConfigured:true`, `resumeConfigured:true`, 6 candidatos reales. En el build desplegado: "Rental confirmed" presente, `#E02B20` presente, `nodemailer` empaquetado, llave de Maps en **11 chunks**.
+
+### 📮 Efecto secundario ANUNCIADO a Cris antes de encenderlo (no fue sorpresa)
+Crear `mail-creds.json` no sólo enciende la confirmación: **despierta el correo de carritos abandonados**, dormido desde agosto porque lo único que lo gateaba era la falta de credenciales (no hay interruptor aparte). El cron `/root/scripts/tp_abandoned_watch.sh` corre **cada 20 min**. Se le avisó a Cris con la vista previa del correo y dio GO. Ventana revisada y sana: sólo carritos de **entre 30 min y 20 horas**, enfriamiento de 3 días por cliente y salta a quien ya pagó. Sin riesgo de escribirle a alguien de hace meses.
+
+### 🎨 De paso
+El correo de rescate usaba rojo `#C62828`, que **no es el rojo de TP**. Alineado a `#E02B20` (`ref_tp_vs_wise_identidad_visual`). Sigue siendo una plantilla sencilla, sin logo ni cabecera, y muestra la fecha en crudo (`2026-09-19`) en vez de "Friday, September 19" — **pendiente menor ofrecido a Cris**, no urgente.
+
+### ✅ Cambio ajeno: RESUELTO, subió con este commit
+Analizado antes de decidir: era **un solo hunk** (`@@ -313`), `inv.amount_paid` → `inv.total` en la conversión offline a Google Ads. Las facturas cobradas fuera de línea (efectivo/Zelle) liquidan con `amount_paid=0`, así que esas ventas subían a Google como **$0** — Smart Bidding aprendiendo con datos falsos cada día que seguía sin publicarse. Respaldo propio del autor en `.respaldos/AJENO-webhook-invoice-total.patch`. Recomendación dada a Cris y aprobada.
+
+### Pendientes previos (ya resueltos arriba)
 1. **Contraseña SMTP de `contact@tpdumpsters.com`** — pedida a Cris (msg 6730). Al llegar: crear `/home/u781187371/mail-creds.json` (`host smtp.hostinger.com`, `port 465`, `user contact@tpdumpsters.com`, `fromName "TP Dumpsters"`) con `chmod 600`, registrar en `ref_llaves_index.md` **sólo dónde vive, nunca el valor**, y **mandar un correo de prueba real antes de decir que funciona**.
 2. **⚠️ CAMBIO AJENO SIN PUBLICAR en `webhook/route.ts`** desde el 12-sep (conversiones offline a Google Ads, `inv.total` en vez de `amount_paid`). Asaí dejó el aviso "OJO AL SIGUIENTE QUE DESPLIEGUE TP" en GLOBAL_EVENTS. **Respaldado** en el scratchpad de esta sesión (`ajeno_webhook_20260917.patch`, 1112 B verificados). Preguntado a Cris si sube junto o se aparta. **No commitear por cuenta propia, no perderlo.**
 3. Nada commiteado, nada desplegado en esta sesión.
