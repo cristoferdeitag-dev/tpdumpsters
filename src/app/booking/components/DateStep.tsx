@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { BookingData } from "./BookingWizard";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
+import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
 
 const DELIVERY_WINDOWS = [
   { id: "morning", emoji: "🌅", label: "Morning", time: "7:00 AM - 12:00 PM" },
@@ -70,6 +71,13 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     ? addDays(booking.deliveryDate, 1)
     : "";
 
+  // Tope de renta (Asaí, 17-sep-2026): los días incluidos + 2 semanas extra.
+  // Antes el campo sólo tenía `min`, así que se podía elegir cualquier día del
+  // futuro y el servidor recortaba el cobro sin avisar.
+  const maxPickupDate = booking.deliveryDate
+    ? addDays(booking.deliveryDate, baseDays + MAX_EXTRA_DAYS)
+    : "";
+
   // Inline error for unavailable delivery dates (yard fully booked).
   const [deliveryError, setDeliveryError] = useState("");
 
@@ -93,10 +101,23 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     });
   };
 
+  const [pickupError, setPickupError] = useState("");
+
   const handlePickupChange = (date: string) => {
     if (!booking.deliveryDate) return;
     const totalDays = daysBetween(booking.deliveryDate, date);
     const extra = Math.max(0, totalDays - baseDays);
+    // El `max` del input no basta: escribiendo la fecha a mano el navegador la
+    // deja pasar. Se recorta al tope y se DICE por qué, en vez de mover la
+    // fecha en silencio.
+    if (extra > MAX_EXTRA_DAYS) {
+      setPickupError(
+        `The longest rental we can book online is ${baseDays} days plus ${MAX_EXTRA_DAYS} extra. Call (510) 650-2083 for anything longer.`
+      );
+      updateBooking({ pickupDate: maxPickupDate, extraDays: MAX_EXTRA_DAYS });
+      return;
+    }
+    setPickupError("");
     updateBooking({
       pickupDate: date,
       extraDays: extra,
@@ -207,6 +228,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
           <input
             type="date"
             min={minPickupDate}
+            max={maxPickupDate}
             value={booking.pickupDate}
             onChange={(e) => handlePickupChange(e.target.value)}
             disabled={!booking.deliveryDate}
@@ -216,6 +238,11 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
                 : "border-gray-200 bg-white"
             }`}
           />
+          {pickupError && (
+            <p className="text-xs text-tp-red font-semibold mt-1.5 font-[var(--font-poppins)]">
+              {pickupError}
+            </p>
+          )}
           {booking.pickupDate && (
             <p className="text-xs text-[#888] mt-1.5">
               {formatDate(booking.pickupDate)}

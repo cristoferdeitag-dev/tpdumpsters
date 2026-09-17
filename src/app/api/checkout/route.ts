@@ -6,6 +6,7 @@ import { getPool, initDB } from "@/lib/db";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { isOutsideServiceArea } from "@/lib/service-area";
+import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
 
 let dbInitialized = false;
 
@@ -44,7 +45,7 @@ function serverTotalFor(serviceType: string, size: string, extraDays: number): n
   const sizeNum = String(size || "").replace(/[^0-9]/g, "");
   const base = ONLINE_PRICES[serviceType]?.[sizeNum];
   if (base == null) return null;
-  const days = Number.isFinite(extraDays) && extraDays > 0 ? Math.min(extraDays, 60) : 0;
+  const days = Number.isFinite(extraDays) && extraDays > 0 ? Math.min(extraDays, MAX_EXTRA_DAYS) : 0;
   return base + days * EXTRA_DAY_FEE;
 }
 
@@ -77,6 +78,18 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Rental-length guard (Asaí, 17-sep-2026): máximo 2 semanas de días
+    // extra. Se RECHAZA en vez de recortar en silencio — si el cliente pidió
+    // 30 días y le cobramos 14, cree que tiene el contenedor un mes.
+    const pedidos = Number(booking.extraDays);
+    if (Number.isFinite(pedidos) && pedidos > MAX_EXTRA_DAYS) {
+      console.warn(`🚫 Checkout rejected — extraDays=${pedidos} > ${MAX_EXTRA_DAYS}`);
+      return NextResponse.json(
+        { error: `The longest rental we can book online is ${MAX_EXTRA_DAYS} extra days. Call (510) 650-2083 for anything longer.` },
         { status: 400 }
       );
     }
