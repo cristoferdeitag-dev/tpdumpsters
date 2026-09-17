@@ -1,4 +1,164 @@
-## 2026-09-12 · 23:15 UTC · instancia `cris` · 💲 Precios homogeneizados al booking en línea (35 archivos, SIN desplegar)
+## 2026-09-17 20:21–20:35Z — asai «Web HTM» (Opus 5) — 🧱 10 yd **Bricks Only** de $899 a **$1,100** (ya con descuento); Mixed y Asphalt intactos
+
+**GO de Asaí** (msg Telegram 3307): *"Tp dumpsters puedes cambiar el 10yd de bricks only a 1100 de precio por favor, eso ya es con descuento"*.
+
+**Es una SUBIDA, no una bajada:** $899 → $1,100 (+$201, +22 %). Va a contracorriente de la bajada del 15-sep, así que conviene que quede escrito: Asaí lo pidió explícito y aclaró que $1,100 es el precio final, el de en línea.
+
+**El tachado subió a $1,150.** Como $1,100 es el precio CON descuento, dejar el tachado en $949 habría mostrado un "precio de lista" **por debajo** del precio real. Se aplicó el **$50 parejo** que anuncia todo el sitio (`$50 off when you book online`) y que Asaí fijó el 15-sep (msg 3261: el tachado es el precio viejo real, no un ancla inventada). Antes: 949 / 899. Ahora: 1150 / 1100.
+
+### Los 4 lugares donde vive el precio de Bricks — y sólo esos
+| Archivo | Qué es |
+|---|---|
+| `src/app/api/checkout/route.ts:36` | **LA QUE COBRA** (Stripe) |
+| `src/app/api/quote/route.ts:58` | cotizador público |
+| `src/app/api/invoice/route.ts:56` | facturación |
+| `src/app/booking/components/ServiceStep.tsx:136-137` | lo que VE el cliente (tachado + precio) |
+
+**🪤 La trampa de este cambio: NO es un `sed` de 899.** `Mixed Materials` (tierra+concreto) y `Clean Asphalt` comparten ese mismo número en las mismas tablas, y **se quedan en $899**. Un barrido ciego les habría subido el precio a los tres. Se sustituyó por bloque (`"Bricks": {` + su línea de precio), no por número, y se verificó después que Mixed y Asphalt siguen en 899.
+
+También se actualizó el comentario de `checkout/route.ts` que desde el 11-sep afirmaba *"TODO lo de Mixed Materials cuesta lo mismo… da igual si es tierra+concreto, asfalto o ladrillo"*. Ya no es cierto y un comentario mentiroso en la tabla que cobra es peor que no tenerlo.
+
+### ⚠️ Pendiente REAL que deja este cambio (no es cosmético)
+Bricks Only es una **variante dentro de la familia "Mixed Materials"**, y no tiene página ni precio propio en la parte pública. Estas 4 superficies siguen anunciando **$899** para la familia y **no** mencionan que ladrillo ahora cuesta $1,100:
+- `src/components/PricingTable.tsx:99` (tabla de precios del sitio)
+- `src/app/services/page.tsx:219` (`startPrice: "$899"`)
+- `src/app/mixed-materials/page.tsx` (~8 apariciones de $899, incluidos los CTA "Book Now — $899")
+- `src/app/api/chat/route.ts:272-273` (chatbot ES/EN: *"Mixed Materials: $899"*)
+
+Efecto para el cliente: ve $899 en la página, entra a `/booking`, elige "Bricks Only" y el precio salta a $1,100. **Se le reportó a Asaí y quedó esperando su decisión** — no se tocó nada de eso porque él pidió sólo el precio de bricks, y cambiar la comunicación de la familia entera es otra decisión (¿se separa bricks a su propia tarjeta? ¿se pone "desde $899"?).
+
+También sigue en $899 el `internal/quote/QuoteForm.tsx` y el panel de Cobros de Booking (`provider_quote_config`), pero ahí **no existe** una línea de bricks separada: sólo hay `10mixed`. Si alguien cotiza ladrillo desde el panel interno, va a cobrar $899.
+
+### Verificación ✅✅ (dos vías, Regla 14)
+1. **Build local**: `BUILD_ID 3VsFlR10kdJyuCnclwRfk`, el chunk `995d84729e2fce68.js` compilado trae `basePrice:1150,price:1100`. La llave de Maps quedó inlineada en **11 chunks** (mismo número sano de la línea base — si sale 0, el autocompletado de `/booking` muere en silencio, ver `ref_tp_build_sin_llave_maps_rompe_autocompletado`).
+2. **Sitio en vivo**: `tpdumpsters.com` sirve ese mismo `BUILD_ID`, y el chunk **bajado del servidor** (HTTP 200) dice, literal:
+   `Soil + Concrete Mix … basePrice:949,price:899` · `Bricks Only … basePrice:1150,price:1100` · `Clean Asphalt … basePrice:949,price:899`.
+
+### Deploy
+Commit `dc3db0a` → push a `origin/main` → build local (Hostinger truena con `EAGAIN`) → `rsync` de `.next/` → `kill next-server` → `curl` para respawn. `/booking` y `/` en 200.
+
+**El cambio AJENO se apartó otra vez.** `src/app/api/webhook/route.ts` (el fix de `invoice.total` de la instancia `cris`, que lleva desde el 12-sep esperando GO) seguía sin commitear en el árbol, y como el deploy de TP sube el `.next` del árbol de trabajo se habría ido a producción de contrabando. Se respaldó como patch (`.respaldos/bricks-20260917/AJENO-webhook-invoice-total.patch`), se compiló sin él y **se devolvió al árbol al terminar** — 9 inserciones, 1 borrado, idéntico. **Sigue sin publicar.**
+
+Respaldo de los 4 archivos previos: `.respaldos/bricks-20260917/`. Rollback = `git revert dc3db0a` + build + rsync.
+
+## 2026-09-15 18:20–18:30Z — asai «Web HTM» — 💰 BAJADA DE PRECIOS EN VIVO (20yd 649 · 30yd 749 · día extra 49 · sobrepeso 179)
+
+**GO de Asaí** (msg 3243 anoche, precisado en 3245, y ejecutado de urgencia con los msgs 3247–3250: *"Cambia en este momento lo que quedamos"*, *"Lo quiero en vivo YA"*, *"estoy en llamada con un cliente"*). Motivo de negocio: **estábamos arriba del promedio de la bahía y las ventas bajaron**; esto es la prueba.
+
+### Precios que quedaron
+
+| | Antes | Ahora | Tachado (lista) |
+|---|---|---|---|
+| 10 Yard | $599 | **$599** (igual) | $649 |
+| 20 Yard | $699 | **$649** | $699 |
+| 30 Yard | $799 | **$749** | $799 |
+| Día extra | $75 | **$49** | — |
+| Sobrepeso | $199/ton | **$179/ton** | — |
+
+**Los tachados sí se movieron, en una segunda pasada.** Primero se dejaron como estaban (649/749/849), lo que daba un descuento visible desigual ($50 / $100 / $100). Asaí lo corrigió en el momento (msg 3261: *"es 749 con el descuento debe aparecer 799 y con descuento 749"*): el tachado debe ser el **precio viejo real** de cada medida, no un ancla más alta. Quedó **649 / 699 / 799**, descuento **$50 parejo**, y el texto volvió a `$50 off when you book online`. **$849 ya no existe en el sitio.**
+
+### Qué se tocó — 59 archivos, 2 commits
+
+- **`80d0c7b`** — barrido por `sed` de las 58 rutas/componentes: las 3 tablas que importan (`src/app/api/quote/route.ts`, `src/app/api/checkout/route.ts` ← **la que cobra**, `src/app/booking/components/ServiceStep.tsx`) + `src/app/api/invoice/route.ts` + las ~97 rutas de ciudad y servicio + `PricingTable.tsx` + `FaqsSection.tsx` + el chatbot (ES y EN). `EXTRA_DAY_FEE` 75 → 49.
+- **`ef9ea7a`** — los tachados a 649/699/799 (`ServiceStep.tsx`, `booking/page.tsx`, `PricingTable.tsx`, `roofing/page.tsx`, `services/page.tsx`) + las 5 páginas de **condado** (el 20 yd de lista decía $649) + los redondeos viejos de **richmond** y **concord** (*"$600 el 10 yd, $650 el 20, $700 el 30"* → $599 / $649 / $749).
+- **`5eda516`** — el **hero de `/booking`** (`src/app/booking/page.tsx:54-58`). **Se me escapó en el primer barrido** y Asaí lo cachó en vivo con una captura. Causa: ese bloque usa los campos `list` / `online`, no `price:`, así que ningún patrón del `sed` lo alcanzó. Ahí mismo: `$50 off when you book online` → `Up to $100 off when you book online`.
+
+**Lección para el próximo cambio de precios:** grepear el **número suelto** (`699`, `799`) en todo `src`, no sólo `$699` ni `price:`. Los mismos precios viven bajo al menos 5 nombres de campo distintos (`price`, `basePrice`, `list`, `online`, y las llaves `"10"/"20"/"30"` del checkout).
+
+### Efecto secundario bueno
+
+El residuo del commit `0c2e73c` en `src/app/general-debris/page.tsx:222,301` (anunciaba **$749** en el 30 yd mientras el checkout cobraba **$799**) **quedó emparejado solo**: ahora $749 es el precio correcto en los dos lados.
+
+### Verificación ✅✅ (dos vías)
+
+1. HTML servido por tpdumpsters.com (`/`, `/general-debris`, `/construction-debris`, `/livermore`, `/booking`): **0 apariciones** de 699, 799, $199 y $75/day; los nuevos presentes.
+2. `BUILD_ID` de Hostinger = `DVgFljQnOO2NsiI1M-97A` = el compilado local. Y el chunk del wizard bajado **del sitio** trae `basePrice:649,price:599`, `basePrice:699,price:649` y `basePrice:799,price:749`.
+
+### Cuidado que se tuvo
+
+El working tree traía un cambio **ajeno** sin commitear en `src/app/api/webhook/route.ts` (el fix de `invoice.total` de la instancia `cris`, deliberadamente parado). Se hizo `git stash` antes de **cada** build para no publicarlo de contrabando, y `stash pop` después. **Sigue sin publicar.** `BITACORA.md` modificado y `.respaldos/` tampoco se commitearon.
+
+Respaldo del `src` anterior: `.respaldos/precios-20260915/src-antes.tgz`. Rollback = `git revert e2cc343 6b8ca3e ef9ea7a 5eda516 80d0c7b` + build + rsync.
+
+### 🔍 Auditoría completa pedida por Asaí (msg 3265: *"verifica que todo esté en orden... para poder avisarle a las personas"*)
+
+Se bajaron **las 93 URLs del sitemap** en vivo, dos veces (antes y después de corregir), y se barrió el código entero. Commit **`6b8ca3e`**. Cuatro cosas seguían desfasadas, **tres de ellas anteriores a la bajada de hoy**:
+
+1. **🔴 El JSON-LD de 9 páginas publicaba a Google `600 / 650 / 700`** (redondeados y viejos) → `599 / 649 / 749`. Afectaba `alameda-county`, `contra-costa-county`, `marin-county`, `san-mateo-county`, `santa-clara-county`, `solano-county`, `concord`, `richmond` y `contractors`. Es el precio que sale en el resultado de búsqueda, así que anunciaba **$700 en el 30 yd mientras el checkout cobra $749**.
+2. **🔴 El chatbot** (ES y EN) daba `$600 / $650 / $700` y Clean Soil / Clean Concrete en `$600` → corregidos. (Los extras sí se habían actualizado solos en el barrido anterior.)
+3. **🔴 `api/invoice` cobraba el 10 yd de General Debris a `649`** — bug **preexistente**: los otros 6 servicios lo tenían en 599. Las facturas manuales de ese servicio salían **$50 de más**. → 599.
+4. **Panel interno `/internal/quote`:** Mixed Materials a `749` (el acuerdo de Asaí del 11-sep, msg 3189, lo dejó en **899**) y sobrepeso por defecto a `125` → **179**.
+
+**Estado final verificado ✅✅** (HTML de las 93 páginas + `BUILD_ID` `MYFtNQvgWa_EoYI8jsWgy` idéntico al compilado): en todo el sitio hay **0** apariciones de `$849`, `$199`, `$75/day`, `$600`, `$650`, `$700`. El JSON-LD sólo dice `599` (46), `649` (44), `749` (44) y `899` (1). Los tachados sólo `649 / 699 / 799`. El chunk del wizard bajado del servidor trae `basePrice:649,price:599` · `699,649` · `799,749`.
+
+**Las 4 tablas de precio quedaron idénticas:** `api/checkout` (la que cobra) = `api/quote` = `api/invoice` = `ServiceStep.tsx` → 599 / 649 / 749, y 899 en Mixed / Bricks / Clean Asphalt.
+
+**Montos que NO son precio de renta y se dejaron como estaban** (revisados uno por uno): `$149` = carga sobrellenada o lugar obstruido · `$125–$150` = contaminación de carga · `$150` = cancelación tardía · `$650.00` = dato de un archivo de prueba del webhook, no público · `$100` = rango genérico de la industria en un artículo del blog.
+
+### 🐛 Hallazgo aparte: el chatbot está caído en producción (NO se tocó)
+
+`POST /api/chat` devuelve **500**. Causa medida ✅✅ (log del servidor + código): `src/app/api/chat/route.ts:5-10` arma su **propio** `dbConfig` desde `process.env`, y **Hostinger no inyecta variables de entorno al proceso Node** — el log dice literal `Access denied for user ''@'127.0.0.1' (using password: NO)`. `src/lib/db.ts` ya resolvió eso para todo lo demás: lee la contraseña de `/home/u781187371/db-creds.json` y trae usuario/base por defecto. Por eso `/api/quote` sí responde y el chat no. `api/setup-chat/route.ts` tiene el mismo patrón.
+
+**Arreglo (3 líneas, esperando GO):** que `chat/route.ts` use `getPool()` de `@/lib/db` en vez de su `dbConfig`.
+
+**Urgencia baja, medida:** el widget está **comentado a propósito** en `src/app/page.tsx:14` (*"hidden during bot private testing"*) y el HTML en vivo no lo carga → ningún cliente puede abrirlo hoy. Pero fallará el día que lo vuelvan a prender.
+
+### ✅ Asaí resolvió los 4 pendientes (msg 3268) — commit `e2cc343`
+
+*"Ya sabes que 10yd es 3 días. El descuento es 50 dólares no 5%. Mixed si queda en 899 y si bájalo"*
+
+1. **El 10 yd son 3 días.** 20 páginas de ciudad y los 6 condados decían *"(7-day rental, 1 ton included)"*; 4 páginas de servicio decían *"10-yard: $599 (1 ton, **7 days**)"*; el panel interno `/internal/quote` lo tenía en `days: 7`. Todo a **3 días**. Lo que ya mencionaba ambos tamaños (*"3 days on every 10-yard, 7 days on 20 and 30-yard"*) estaba bien y no se tocó.
+2. **El descuento es $50, no 5%.** Cambiados los **12 botones** "Book Online — 5% Off" de los 6 condados, el **chatbot** en ES y EN (4 lugares) y el **SMS de `api/driver/notify`** (*"Book online … for 5% off!"*). En todo el sitio quedan **0** apariciones de "5% off / 5% Off / 5% de descuento"; los "95%" que quedan son pureza de carga.
+3. **Mixed / Bricks / Clean Asphalt se quedan en $899** — confirmado, sin cambio.
+4. **El panel de Cobros sí se bajó** → ver la bitácora de `bookingdumpsters` (commit `33bf80d` + la tabla `provider_quote_config` de Supabase).
+
+**Verificado ✅✅** sobre las 93 páginas en vivo, tercera pasada: 0 de `7-day rental, 1 ton included`, 0 de `(1 ton, 7 days)`, 0 de `5% Off`; aparecen `3-day rental, 1 ton included` en 38 páginas y `$50 Off` en 6. El JSON-LD sigue en 599 (46) / 649 (44) / 749 (44) / 899 (1). `BUILD_ID` `z7kmK4X4mlacXW5cwA6CH` = el compilado local.
+
+### Otros desajustes reportados a Asaí, sin tocar (necesitan su palabra)
+
+- **El 10 yd: ¿3 días o 7?** 5 páginas de servicio dicen *"10-yard: $599 (1 ton, **7 days**)"*, y el panel interno lo tiene en `days: 7`, pero `api/quote`, `api/invoice`, `api/checkout` y el wizard lo tienen en **3 días**. Es una promesa comercial, no un precio: no se cambió.
+- **El chatbot ofrece "5% de descuento por reservar en línea"** cuando el descuento real es **$50 fijo**.
+- **Mixed / Bricks / Clean Asphalt 10 yd** siguen en **$899** ($949 tachado).
+- **El panel de Cobros de Booking** sigue facturando sobrepeso **$199** y día extra **$75**.
+
+### Pendientes que dejó
+
+1. **Mixed Materials / Bricks / Clean Asphalt 10 yd siguen en $899** (tachado $949) — Asaí no los mencionó, no se tocaron. Falta su palabra.
+2. **El panel de Cobros de Booking sigue facturando sobrepeso $199 y día extra $75** (vive en `provider_quote_config` de Supabase, otro sistema). Preguntado, sin respuesta aún.
+3. Bug preexistente **ajeno a esto**: el chatbot dice *"10-yard: $599 (1 ton, **7 days**)"* cuando el 10 yd incluye **3 días**. No se tocó.
+
+## 2026-09-14 05:35Z — cris «Web HTM» — 🔍 DSA vs High Intent cruzado con Stripe y GA4 (Cris msg 21697/21699). SÓLO LECTURA
+**Método:** sesiones de Checkout pagadas en Stripe (30 días) → `metadata.gclid` → `click_view` de Google Ads por día (75 días) → campaña/grupo exacto. Reembolsos por `payment_intent`. GA4 `transactionId` × `sessionSourceMedium`.
+- Stripe: **45 ventas en línea reales** (más una prueba de $1) · 18 con gclid, las 18 subidas a Google (journal htm-tools).
+- **DSA:** 4 cobradas (`MTLW68X9` $799, `MTP2W9UZ` $599, `MTSSDHKY` $699, `MTSYJAN1` $799). **`TP-MTLW68X9` reembolsada el 9-sep** (otro cliente, no duplicado) → **3 netas, $2,097** ✅✅ (Stripe + click_view; GA4 marca las 4 como google/cpc). $735 → **$245/venta, 2.9x**. Google sigue contando 4 / $2,896.
+- **High Intent:** **12 netas, $8,738** ✅✅ (Google 11 / $7,939; falta `MU0EURIV` del 13-sep). $5,289 → **$441/venta, 1.65x**.
+- **Marca:** `MTX1X6MD` $799. Sin campaña: `MTBQN4KL` $699 (gclid tipo `0AAAAA…`, no está en click_view).
+- **GA4:** registra **28 de 45** ventas (62%) y `sessionCampaignName` sale "(organic)" aun en google/cpc → **no sirve para atribuir por campaña**.
+- **Pendiente propuesto (msg 21700):** retractar en Google las conversiones reembolsadas (hoy el pipeline no lo hace).
+
+---
+## 2026-09-14 05:10Z — cris «Web HTM» — 📣 Google Ads TP: versión Prisma aplicada (GO Cris msg 21695) + Consejo IA del Booking v2
+**Ads (6835960996), validate → apply → readback ✅ una vía (API):**
+- Presupuestos: **High Intent $200 → $170/día**, **DSA Ciudades $45 → $75/día** (15% de HI a DSA). Marca $20 y Retargeting $15 sin cambios.
+- Negativas **"free" y "gratis" (PHRASE)** en lista nueva `12232857093` colgada de High Intent, Marca y DSA. Intenté la lista de cuenta (`customerNegativeCriterion`) y la API respondió `NEGATIVE_KEYWORD_SHARED_SET_DOES_NOT_EXIST`, así que quedó por campaña. **Campaña nueva de búsqueda = colgarle esta lista.**
+- Advertí a Cris antes (msg 21694) que yo recomendaba frases y no quitarle a High Intent; eligió la versión de Prisma. **Vigilar 2-3 semanas:** ventas de High Intent en Stripe y búsquedas tipo "free quote"/"free estimate" bloqueadas.
+- Script + rollback: `/root/scripts/tp_gads_free_presupuesto_2026-09-14.py` (`rollback_presupuesto`), log en `/root/.locks/gads-changes.log`.
+
+**Booking v2 — Consejo IA** (`/root/reports/consejo/2026-09-14-tp-booking-agente/`, gemini + sol + sintesis): los dos dicen NO a pedir 4 datos en frío; dos caminos (ya sé / ayúdame), IA opcional, ZIP primero, aviso fijo $199/ton, no decir "exacto", casos dudosos → llamar, construir primero sin IA. Propuesta a Cris (msg 21693): IA muestra TAMAÑO → pide nombre + tel/correo para ver PRECIO y apartar $50 → fecha → dirección → pago. Esperando su OK para arrancar referencias de diseño.
+
+---
+## 2026-09-14 04:40Z — cris «Web HTM» — 🎨 Booking v2 de TP: 3 maquetas rechazadas y plan antes de ejecutar (msgs 21672-21686). SITIO SIN TOCAR
+- v5 (`/root/scratch-tp/step1-v5.html`, formulario blanco): **"¿por qué hay precio si no eligió tamaño?"**. v6a/v6b (caja de IA): "maso, se ve viejo". v7 (`v7.html`, `v7-3pantallas.png`, Geist, estilo app, agente con tarjeta de tamaño): "mejor, pero no me encanta".
+- **Reglas de Cris:** (1) **los datos se capturan ANTES que nada**; (2) **precio sólo después de elegir tamaño**; (3) diseño actualizado, a la altura de un agente de IA; (4) **plantear bien antes de ejecutar**.
+- **Plan enviado (msg 21686), esperando OK:** datos (se guardan al instante) → agente → tamaño+precio → fecha+pago. Bot con lista cerrada de reglas aprobada por Cris, máx. 2 preguntas, precio lo pone el sistema, sin descuentos ni fechas, fallback a los 3 tamaños, conversación guardada con el lead. Diseño: 4-5 referencias para que elija → fotos reales de TP → Figma/Stitch → aprobación → código → A/B medido con Stripe.
+- Dato corregido en maqueta: Freon = **cargo $40–$80** (`FaqsSection.tsx:120`), no "sólo sin Freon".
+
+---
+## 2026-09-14 00:40Z — cris «Web HTM» — 🔎 Revisión por API del resumen de Prisma sobre Ads de TP (Cris msg 21618 → 21620). SÓLO LECTURA
+Metas: GOOGLE_HOSTED (Directions/Engagement/PageView/Contact) `biddable=false`, así que las "Local actions" principales NO cuentan (punto 1 de Prisma innecesario). Biddable: PURCHASE WEBSITE, PAGE_VIEW WEBSITE, PHONE_CALL_LEAD WEBSITE/CALL_FROM_ADS. 30 días: **High Intent** $5,289 → 11 Paid Job $7,939 (1.50x) + 30 Calls from ads (valor $1). **DSA Ciudades** $735 → 4 Paid Job $2,896 (3.94x) + 6 calls; presupuesto $45/día, pierde 57.7% de IS por presupuesto. Marca $35. Búsquedas con "free/gratis" (palabra completa): 43 términos, $54.33. **Recomendado a Cris:** frases negativas ("free junk", "free pickup", "free disposal", "free haul away", "gratis"), no "free" suelto; DSA $45→$65/día sin quitar a High Intent, 3 semanas, medido contra Stripe; el punto de "Jobber" no aplica a TP. **Nada aplicado; esperando GO.** (La orden original llegó por relevo a nombre de Prisma y NO se ejecutó.)
+
+---
+## 2026-09-12 · 23:15 UTC · instancia `cris` · 💲 Precios homogeneizados al booking en línea — ✅ EN PRODUCCIÓN
 
 **Orden de Cris (msg 21456):** *«Los precios que debe de tener son los que tenemos en el Booking en línea. Y todo debe ser homogéneo.»*
 
@@ -28,6 +188,20 @@ Primero le dije a Cris que el `$849` del 30 yd contradecía la tabla que cobra. 
 ### Pendientes
 - 🔴 **NO commiteado y NO desplegado** — espera GO de Cris. Ojo: el árbol trae además un cambio ajeno sin commitear (`src/app/api/webhook/route.ts`, el arreglo de `invoice.total`) que **no toqué** y que hay que apartar antes de compilar, porque el deploy de TP sube el árbol de trabajo.
 - 🟡 Respaldo previo: `.respaldos/precios-20260912T231246Z.tgz`.
+
+
+### ✅ Desplegado y verificado — 23:28 UTC
+**GO de Cris (msg 21459):** *«Si, dale, despliega»*. Commit **`0c2e73c`** → push a `origin/main`.
+
+Camino usado (el que de verdad embarca, per [[ref_tpdumpsters_deploy]]): build **local** (Hostinger truena con `EAGAIN`) → `rsync` de `.next/` a Hostinger → matar `next-server` para que respawne → despertar el sitio.
+- `.env.local` comprobado **ANTES** de compilar: `NEXT_PUBLIC_GOOGLE_MAPS_KEY` presente (si falta, el build la inlinea vacía y revienta el autocompletado de /booking **en silencio**).
+- `npm run build` → código 0 · BUILD_ID **`htndOdrlwToK3rvZm_Bp5`** (antes: `NQpi00HIbpEtC2P3GUhnF`, de Asaí, 11-sep).
+- rsync: 7,523 archivos, 209.9 MB. BUILD_ID en el servidor **coincide** con el local.
+- **Verificado EN VIVO** contra la foto del antes, en las mismas 5 páginas (union-city, newark, el-cerrito, castro-valley, livermore): las 5 pasaron de `30yd=$749` (o `$849` mezclado) a **`10yd=$599` / `30yd=$799`**, y el JSON-LD de **`599/699/749` → `599/699/799`**. Cero rastros del `$749`.
+
+**El cambio ajeno se devolvió intacto:** `src/app/api/webhook/route.ts` (fix `invoice.total`) se apartó antes de compilar y se reaplicó al terminar; el **md5 del diff coincide** con el del parche guardado en `.respaldos/AJENO-webhook-invoice-total.patch`. Sigue **sin commitear**, como estaba.
+
+⚠️ **Queda suelto:** `.respaldos/` está sin rastrear en el repo (tiene el tgz de 582 KB y el parche). Si alguien hace `git add -A` se va al repo — convendría meterlo al `.gitignore`.
 
 ## 2026-09-11 · 15:40 UTC · instancia `asai` · 💲 TODO Mixed Materials a $949 lista / $899 online — EN PRODUCCIÓN
 
