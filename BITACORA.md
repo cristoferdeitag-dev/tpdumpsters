@@ -1,3 +1,37 @@
+## 2026-09-17 21:56–22:05Z — asai «Web HTM» (Opus 5) — 📧 Fuera la promesa de "2 emails on the way": el recibo y la factura se bajan de la pantalla
+
+**Pedido de Asaí** (msg 3320): *"En el booking cuando lo terminan les dice que van a recibir un email de confirmación y otro de no sé qué. Quitemos eso. No reciben email. Más bien poner que ahí pueden descargar su recibo o su invoice como stripe lo maneja. No vayan a pensar que aparte"*.
+
+La pantalla de éxito prometía **DOS correos** (recibo de Stripe + PDF de factura) y encima decía *"¿No los ves? Revisa tu spam"* — o sea que al cliente se le mandaba a buscar algo que no le llegaba.
+
+### Lo que se midió ANTES de tocar (y cambió el diagnóstico)
+El problema **no** es que falten los documentos. `invoice_creation` está activo en el checkout y `receipt_email` se manda poblado. Las **4 últimas sesiones pagadas** consultadas en Stripe traen `invoice` con **`hosted_invoice_url` Y `invoice_pdf`, las dos presentes**. Los papeles existen siempre; lo que falla es el **envío por correo**.
+
+⚠️ **Lo que NO se pudo verificar y por tanto no se afirma:** si Stripe realmente despacha o no esos correos depende del interruptor "Successful payments" en Settings → Emails de la cuenta, y **eso no se lee por API**. Se implementó lo que pidió Asaí — que además es la opción segura pase lo que pase — sin declarar como hecho comprobado que los correos no salen. Si quiere cerrarlo del todo, ese interruptor se revisa en el dashboard.
+
+### Qué quedó
+`src/app/booking/success/SuccessContent.tsx` — el bloque azul ya no promete envíos. Se llama **"Your receipt & invoice"** y lleva a lo que Stripe ya generó:
+- `hosted_invoice_url` → **"View receipt & invoice"** (esa página de Stripe trae su propio botón de descarga e impresión).
+- `invoice_pdf` → **"Download PDF"**. **Este campo ya lo devolvía `/api/checkout/session` y no se usaba en ningún lado** — estaba en el tipo `SessionInfo` y muerto.
+- Si la factura aún no está emitida (Stripe tarda un instante), dice que refresque o que llame. Nunca se deja la frase colgando — misma lección que el 28-jul, cuando sin `hostedInvoiceUrl` el texto terminaba en *"…or"*.
+- Más abajo, *"Receipt and invoice arrive by email"* → *"Your receipt and invoice are ready above"*.
+- Se quitó el import de `FaEnvelope`, que ya no se usa en esa pantalla.
+
+`src/app/booking/components/BookingWizard.tsx` — la nota de reanudación de una reserva ya pagada decía *"check your email for the confirmation"*; ahora ofrece el teléfono para pedir copia del recibo.
+
+### Verificación ✅✅
+`tsc --noEmit` limpio · `BUILD_ID VjGMKcNQK5wmeNHqqoLsA` · llave de Maps en 11 chunks · y el chunk `f193369cf782c34e.js` **bajado del sitio** (HTTP 200) trae "Your receipt", "View receipt", "Download PDF" y "still being generated", y **cero** rastros de "emails on the way", "arrive by email" y "spam folder".
+
+### 🚨 Error propio de esta sesión, y cómo no repetirlo
+El respaldo del cambio **ajeno** (`src/app/api/webhook/route.ts`, el fix de `invoice.total` de la instancia `cris`) se hace con `git diff <archivo> > patch` antes de compilar. En el despliegue anterior (área de servicio) **olvidé devolverlo al árbol al terminar**; en éste, el mismo comando corrió con el árbol ya limpio y **sobrescribió el patch con un archivo de 0 bytes**. Es decir: el paso que protege el trabajo ajeno lo borró.
+
+Se recuperó del respaldo del **12-sep** (`.respaldos/AJENO-webhook-invoice-total.patch`, 1112 bytes), que sí sobrevivió porque tiene otro nombre y nadie lo pisa. Restaurado y comprobado: 9 inserciones, 1 borrado, el mismo texto. **Sigue sin publicar.**
+
+**Regla para el siguiente que despliegue TP:** el respaldo del ajeno **nunca se escribe con el nombre de siempre**; o se comprueba que el diff no venga vacío antes de guardarlo, o se usa un nombre con fecha y hora. Y devolverlo al árbol es parte del despliegue, no un paso opcional del final.
+
+### Deploy
+Commit `9ebfa28` → push `origin/main` → build local → `rsync` de `.next/` → `kill next-server`. `/booking/success` en 200.
+
 ## 2026-09-17 21:44–22:10Z — asai «Web HTM» (Opus 5) — 🚧 Área de servicio: de lista NEGRA a lista BLANCA (67 ciudades / 274 ZIPs) + tope de 14 días extra
 
 **Disparador** (Asaí, msgs 3309–3312): *"asegúrate que no se estén reservando dumpsters en áreas que no hacemos… ayer reservaron en redwood valley lo cual está lejísimos a 2 horas casi, y solo hacemos en redwood city"*.
