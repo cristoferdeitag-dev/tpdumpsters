@@ -3,6 +3,13 @@ import { createCalendarEvent, findNextPickupSlot } from "@/lib/calendar";
 // sendSMS import removed — customer SMS disabled by Cris 2026-08-04 (msg
 // 4487); re-add the import from "@/lib/twilio" when SMS comes back.
 import { notifyAdminsTelegram } from "@/lib/telegram";
+import { isMailConfigured, sendEmail } from "@/lib/mailer";
+import {
+  buildBookingConfirmationHtml,
+  buildBookingConfirmationSubject,
+  buildBookingConfirmationText,
+} from "@/lib/emails/booking-confirmation";
+import { getStripe } from "@/lib/stripe";
 import * as mysql from "mysql2/promise";
 import * as fs from "fs";
 import * as crypto from "crypto";
@@ -313,7 +320,15 @@ export async function POST(req: NextRequest) {
             radar = null;
           }
           if (radar?.offline_conv_secret && radar?.endpoint_url) {
-            const valueUsd = inv.amount_paid ? inv.amount_paid / 100 : 0;
+            // Use invoice.total (post-discount SALE value), NOT amount_paid:
+            // Asaí's "paid out of band" invoices (cash/Zelle) settle with
+            // amount_paid=0 but carry a real total — using amount_paid uploaded
+            // those phone jobs to Google as $0. Same rule as the official TP
+            // sales report (ref_tp_sales_report_method → sum invoice.total).
+            const valueUsd =
+              typeof inv.total === "number"
+                ? inv.total / 100
+                : (inv.amount_paid || 0) / 100;
             const now = new Date();
             const pad = (n: number) => String(n).padStart(2, "0");
             const dt =
@@ -513,6 +528,81 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Branded booking confirmation email (Cris GO 2026-09-17, msg 6728: "sea
+    // lo que sea tenemos que entregar correo de confirmación"). Stripe's own
+    // receipt and invoice DO go out — verified 17-sep by receipt_number on the
+    // charges plus 100 invoice.sent events — but they wear Stripe's face, with
+    // no logo, no phone and nothing about delivery day. Non-blocking, and
+    // skipped outright when SMTP creds aren't on the server yet (same contract
+    // as the abandoned-cart watcher).
+    let emailSent = false;
+    if (customerEmail && isMailConfigured()) {
+      try {
+        const EMAIL_WINDOWS: Record<string, string> = {
+          morning: "7:00 AM – 12:00 PM",
+          midday: "11:00 AM – 3:00 PM",
+          afternoon: "1:00 PM – 6:00 PM",
+        };
+        const longDay = (d: string) =>
+          new Date(d + "T12:00:00").toLocaleDateString("en-US", {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+          });
+
+        // Same hosted invoice page the success screen links to. Stripe may not
+        // have finalized it the instant this fires; if it isn't there yet the
+        // email just ships without the button rather than not shipping.
+        let invoiceUrl: string | undefined;
+        try {
+          const invoiceId =
+            typeof session.invoice === "string" ? session.invoice : session.invoice?.id;
+          if (invoiceId) {
+            const inv = await getStripe().invoices.retrieve(invoiceId);
+            invoiceUrl = inv.hosted_invoice_url || undefined;
+          }
+        } catch (invErr) {
+          console.warn(
+            "✉️ Invoice link unavailable for confirmation email:",
+            (invErr as Error).message
+          );
+        }
+
+        const emailData = {
+          customerName,
+          bookingId,
+          serviceType,
+          dumpsterSize,
+          deliveryDateLabel: deliveryDate ? longDay(deliveryDate) : "To be scheduled",
+          deliveryWindowLabel: EMAIL_WINDOWS[deliveryWindow] || "7:00 AM – 5:00 PM",
+          pickupDateLabel: pickupDate ? longDay(pickupDate) : undefined,
+          fullAddress,
+          totalPaid: totalPaid !== "N/A" ? totalPaid : undefined,
+          invoiceUrl,
+          notes: customerNotes || undefined,
+        };
+
+        const mailResult = await sendEmail(
+          customerEmail,
+          buildBookingConfirmationSubject(emailData),
+          buildBookingConfirmationHtml(emailData),
+          buildBookingConfirmationText(emailData)
+        );
+        emailSent = mailResult.success;
+        console.log(
+          emailSent
+            ? `✉️ Confirmation email sent to ${customerEmail}`
+            : `✉️ Confirmation email FAILED: ${mailResult.error}`
+        );
+      } catch (mailErr) {
+        console.error("✉️ Confirmation email error (non-blocking):", mailErr);
+      }
+    } else {
+      console.log(
+        `✉️ Confirmation email skipped (${!customerEmail ? "no customer email" : "SMTP not configured"})`
+      );
+    }
+
     // Admin Telegram notification (Cristofer + Asaí). Migrated 2026-04-28
     // in the legacy tp-dumpsters repo but never landed on this live repo —
     // ported here on 2026-05-04 after Asaí flagged she wasn't being paged.
@@ -710,6 +800,7 @@ export async function POST(req: NextRequest) {
         pickup: pickupResult,
       },
       smsSent,
+      emailSent,
       adminNotified,
       dumpsterinSynced,
     });

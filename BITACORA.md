@@ -1,3 +1,37 @@
+## 2026-09-17 22:10–22:30Z — cris2 «Laso» (Opus 5) — ✉️ Correo de confirmación DE MARCA: plantilla + enganche al webhook (NO desplegado, falta contraseña SMTP)
+
+**Pedido de Cris** (msgs 6728 y 6729): *"Si, creo el buzón y sea lo que sea tenemos que entregar correo de confirmación"* y *"Usemos el que ya está hecho es este : contact@tpdumpsters.com"*.
+
+Complementa lo que hizo Asaí una hora antes (entrada de arriba): ella quitó de la pantalla de éxito la promesa de correos y dejó los enlaces de Stripe. Esto es la otra mitad: **el correo propio de TP**, que hasta hoy no existía.
+
+### Qué se midió antes de escribir código (regla 14)
+- ✅✅ **Stripe SÍ manda sus dos correos** (recibo + factura): `receipt_number` poblado en los charges — Stripe documenta que es `null` hasta que el recibo se envía — **y** 100 eventos `invoice.sent` (topó el límite de la consulta). Esto cierra lo que quedó abierto en la entrada de Asaí: el interruptor no se lee por API, pero el **envío** sí deja huella. Método: memoria `ref_verificar_si_stripe_manda_correos`.
+- ⚠️ Eso NO es un correo de marca: los de Stripe traen cara de Stripe, sin logo, sin teléfono, sin qué tener listo el día de la entrega.
+- ✅✅ **Por qué TP nunca ha mandado correo propio:** en el servidor sólo existe `/home/u781187371/pavers-mail-creds.json`. **`mail-creds.json` (el de TP) NO existe.** `isMailConfigured()` devuelve false y `sendEmail` degrada en silencio — por eso `abandoned-watch` también lleva tiempo saltándose el correo sin avisar. No falta programa, falta el archivo de credenciales.
+
+### Qué quedó
+**`src/lib/emails/booking-confirmation.ts` (NUEVO, 217 líneas).** `buildBookingConfirmationSubject/Html/Text`. Reglas de correo que no son opcionales: layout con `<table>`, estilos inline, **cero webfonts** (Oswald/Poppins no cargan en cliente de correo — Arial es lo que renderiza), URLs absolutas para imágenes. Identidad TP (`ref_tp_vs_wise_identidad_visual`): rojo `#E02B20` **sólo** en el botón primario y el teléfono, dorado `#e7ac3c` de personalidad, casi-negro `#1d2329`. Contenido: logo → "Rental confirmed" → caja de detalles (Booking ID, servicio, entrega con ventana, recolección, dirección, total, notas) → botón a `hosted_invoice_url` (**el mismo enlace que muestra la pantalla de éxito de Asaí**, para que pantalla y correo digan lo mismo) → "Before we arrive" (3 puntos) → teléfono + "reply to this email" → pie con `contact@tpdumpsters.com`.
+
+**`src/app/api/webhook/route.ts` (MODIFICADO).** Bloque nuevo tras `checkout.session.completed`, antes de la notificación a admins: recupera `hosted_invoice_url` de la factura, arma etiquetas de fecha/ventana y llama `sendEmail`. **Nunca bloquea el cobro** — todo en try/catch, y si no hay SMTP o no hay correo del cliente sólo deja línea de log. Se añadió `emailSent` a la respuesta JSON junto a `smsSent`/`adminNotified`.
+
+### Verificación
+- `npx tsc --noEmit` → **EXIT 0** ✅
+- Renders headless a 700px y 390px (`shot.py`) **revisados con los ojos**: logo carga, dorado presente, rojo sólo donde debe, 7 filas legibles, sin desbordes en móvil.
+- ❌ **Envío real: NO probado.** Imposible hasta tener la contraseña.
+
+### 🔴 Pendientes (bloquean el deploy)
+1. **Contraseña SMTP de `contact@tpdumpsters.com`** — pedida a Cris (msg 6730). Al llegar: crear `/home/u781187371/mail-creds.json` (`host smtp.hostinger.com`, `port 465`, `user contact@tpdumpsters.com`, `fromName "TP Dumpsters"`) con `chmod 600`, registrar en `ref_llaves_index.md` **sólo dónde vive, nunca el valor**, y **mandar un correo de prueba real antes de decir que funciona**.
+2. **⚠️ CAMBIO AJENO SIN PUBLICAR en `webhook/route.ts`** desde el 12-sep (conversiones offline a Google Ads, `inv.total` en vez de `amount_paid`). Asaí dejó el aviso "OJO AL SIGUIENTE QUE DESPLIEGUE TP" en GLOBAL_EVENTS. **Respaldado** en el scratchpad de esta sesión (`ajeno_webhook_20260917.patch`, 1112 B verificados). Preguntado a Cris si sube junto o se aparta. **No commitear por cuenta propia, no perderlo.**
+3. Nada commiteado, nada desplegado en esta sesión.
+
+### Entregabilidad ✅✅ (consultado por API de Hostinger, 22:35Z)
+La zona de `tpdumpsters.com` ya está lista para mandar desde ese buzón — **no hay que tocar DNS**: SPF `v=spf1 include:_spf.mail.hostinger.com ~all`, las **3 DKIM** de Hostinger (`hostingermail-a/b/c._domainkey`), DMARC `p=none` y MX a `mx1/mx2.hostinger.com`. Saliendo por `smtp.hostinger.com` el correo queda alineado en SPF y firmado en DKIM. (El MCP de Hostinger sólo maneja DNS y VPS — **no** gestiona buzones ni contraseñas, por eso la contraseña sólo puede salir de hPanel.)
+
+### Arnés de prueba listo
+`scratchpad/send-test-email.ts` — manda el correo real **por el mismo camino que producción** (`sendEmail` de la app, no un SMTP improvisado), con datos de muestra como los que arma el webhook. Lee las credenciales de `/root/.env.tp-mail` por el fallback `MAIL_USER`/`MAIL_PASS` que ya soporta `mailer.ts`. **Falla ruidosamente** si no hay credenciales (sale con código 1 y lo dice) — probado; nada de arneses que pasan en verde sin haber enviado. GO de Cris (msg 6733): prueba real a `cristoferdeitag@gmail.com` y `asai.lopez98@gmail.com`.
+
+**Archivos clave:** `src/lib/emails/booking-confirmation.ts` · `src/app/api/webhook/route.ts` · `src/lib/mailer.ts` (leído, sin tocar)
+
 ## 2026-09-17 21:56–22:05Z — asai «Web HTM» (Opus 5) — 📧 Fuera la promesa de "2 emails on the way": el recibo y la factura se bajan de la pantalla
 
 **Pedido de Asaí** (msg 3320): *"En el booking cuando lo terminan les dice que van a recibir un email de confirmación y otro de no sé qué. Quitemos eso. No reciben email. Más bien poner que ahí pueden descargar su recibo o su invoice como stripe lo maneja. No vayan a pensar que aparte"*.

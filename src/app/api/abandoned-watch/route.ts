@@ -105,21 +105,21 @@ function recoveryEmail(name: string, sizeNum: string, serviceType: string, deliv
     `— TP Dumpsters\nhttps://tpdumpsters.com`;
   const html = `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <h2 style="color:#C62828;margin-bottom:4px">Your dumpster is still reserved</h2>
+    <h2 style="color:#E02B20;margin-bottom:4px">Your dumpster is still reserved</h2>
     <p>Hi ${escapeHtml(firstName(name))},</p>
     <p>Your <strong>${escapeHtml(sizeNum)}-yard dumpster</strong> for ${escapeHtml(serviceType.toLowerCase())}
     (delivery <strong>${escapeHtml(deliveryDate)}</strong>) is still saved — your info is already filled in.</p>
     <p style="text-align:center;margin:28px 0">
-      <a href="${resumeUrl}" style="background:#C62828;color:#fff;text-decoration:none;
+      <a href="${resumeUrl}" style="background:#E02B20;color:#fff;text-decoration:none;
          padding:14px 28px;border-radius:8px;font-weight:bold;display:inline-block">
         Finish my booking — $${total.toFixed(2)}
       </a>
     </p>
     <p style="font-size:13px;color:#777">Takes less than a minute. Online discount included.</p>
     <p style="font-size:13px;color:#777">Questions, or prefer to book by phone?
-      Call or text <a href="tel:+15106502083" style="color:#C62828">(510) 650-2083</a>.</p>
+      Call or text <a href="tel:+15106502083" style="color:#E02B20">(510) 650-2083</a>.</p>
     <p style="margin-top:24px">— TP Dumpsters<br>
-      <a href="https://tpdumpsters.com" style="color:#C62828">tpdumpsters.com</a></p>
+      <a href="https://tpdumpsters.com" style="color:#E02B20">tpdumpsters.com</a></p>
   </div>`;
   return { subject, text, html };
 }
