@@ -27,12 +27,13 @@ const ONLINE_PRICES: Record<string, Record<string, number>> = {
   "Clean Soil":          { "10": 599 },
   "Clean Concrete":      { "10": 599 },
   "Mixed Materials":     { "10": 899 },
-  // 11-sep-2026 (Asaí, msg 3189): TODO lo de Mixed Materials cuesta lo mismo,
-  // $949 lista / $899 online — da igual si es tierra+concreto, asfalto o
-  // ladrillo. Antes Bricks iba aparte en $899 y los otros dos en $749.
-  // Esta tabla es la que COBRA: si se queda atrás, la pantalla dice $899 y
-  // Stripe cobra $749 sin que nadie lo note.
-  "Bricks":              { "10": 899 },
+  // 11-sep-2026 (Asaí, msg 3189): TODO lo de Mixed Materials costaba lo mismo,
+  // $949 lista / $899 online — daba igual si era tierra+concreto, asfalto o
+  // ladrillo. 17-sep-2026 (Asaí, msg 3307): BRICKS SE VUELVE A SEPARAR, a
+  // $1,150 lista / $1,100 online. Tierra+concreto y asfalto se quedan en $899.
+  // Esta tabla es la que COBRA: si se queda atrás, la pantalla dice $1,100 y
+  // Stripe cobra $899 sin que nadie lo note.
+  "Bricks":              { "10": 1100 },
   "Clean Asphalt":       { "10": 899 },
 };
 const EXTRA_DAY_FEE = 49;

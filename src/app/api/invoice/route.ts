@@ -53,7 +53,7 @@ const SERVICES: Record<string, Record<string, { price: number; dims: string; wei
     "10 Yard": { price: 899, dims: getDims("10"), weight: "No weight limit", days: 3 },
   },
   "Bricks": {
-    "10 Yard": { price: 899, dims: getDims("10"), weight: "No weight limit", days: 3 },
+    "10 Yard": { price: 1100, dims: getDims("10"), weight: "No weight limit", days: 3 },
   },
   "Clean Asphalt": {
     "10 Yard": { price: 899, dims: getDims("10"), weight: "No weight limit", days: 3 },
