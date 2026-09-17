@@ -11,7 +11,6 @@ import {
   FaCreditCard,
   FaFileInvoice,
   FaMapLocationDot,
-  FaEnvelope,
 } from "react-icons/fa6";
 import { trackBookingCompleted } from "@/lib/tracking";
 
@@ -182,37 +181,57 @@ export default function SuccessContent() {
             </div>
           )}
 
-          {/* Emails coming */}
+          {/* Recibo y factura, PARA DESCARGAR AQUÍ.
+              Asaí, 17-sep-2026: antes esto prometía "2 emails on the way" y los
+              clientes no los recibían, así que quedaban esperando un correo que
+              no llegaba. Ahora el recibo y la factura se toman de esta misma
+              pantalla — que es donde Stripe los deja — y no se promete ningún
+              envío. La página de Stripe (hosted_invoice_url) ya trae su propio
+              botón de descarga e impresión. */}
           <div className="text-left bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
             <h3 className="font-[var(--font-poppins)] font-bold text-[#333] mb-3 text-sm flex items-center gap-2">
-              <FaEnvelope className="text-blue-600" /> 2 emails on the way (1-2 min)
+              <FaFileInvoice className="text-blue-600" /> Your receipt &amp; invoice
             </h3>
-            <ul className="space-y-2 text-sm text-[#444]">
-              <li>
-                📧 <strong>Payment receipt</strong> from Stripe — confirms your charge with date and amount.
-              </li>
-              <li>
-                📄 <strong>Invoice PDF</strong> — full rental terms, dates, and your booking ID for your records.
-              </li>
-            </ul>
-            <p className="text-xs text-[#666] mt-3">
-              {/* The sentence must close on its own: with no invoice URL the
-                  old wording dangled at "…or" (Asaí's test, 28-jul). */}
-              Don&apos;t see them? Check your spam folder, or call us at{" "}
-              <a href="tel:+15106502083" className="font-semibold text-blue-700">
-                (510) 650-2083
-              </a>
-              .
-            </p>
-            {info?.hostedInvoiceUrl && (
-              <a
-                href={info.hostedInvoiceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-white border border-blue-300 rounded-lg text-blue-700 text-sm font-semibold hover:bg-blue-100 transition-colors"
-              >
-                <FaFileInvoice /> View Invoice
-              </a>
+            {info?.hostedInvoiceUrl || info?.invoicePdf ? (
+              <>
+                <p className="text-sm text-[#444]">
+                  Download or print them here — they include the charge, the rental
+                  dates and your booking ID. Save them now for your records.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {info?.hostedInvoiceUrl && (
+                    <a
+                      href={info.hostedInvoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-300 rounded-lg text-blue-700 text-sm font-semibold hover:bg-blue-100 transition-colors"
+                    >
+                      <FaFileInvoice /> View receipt &amp; invoice
+                    </a>
+                  )}
+                  {info?.invoicePdf && (
+                    <a
+                      href={info.invoicePdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-300 rounded-lg text-blue-700 text-sm font-semibold hover:bg-blue-100 transition-colors"
+                    >
+                      <FaFileInvoice /> Download PDF
+                    </a>
+                  )}
+                </div>
+              </>
+            ) : (
+              /* Stripe tarda un instante en emitir la factura. Nunca dejar la
+                 frase colgando ni prometer un correo: se dice qué hacer. */
+              <p className="text-sm text-[#444]">
+                Your invoice is still being generated. Refresh this page in a
+                moment, or call us at{" "}
+                <a href="tel:+15106502083" className="font-semibold text-blue-700">
+                  (510) 650-2083
+                </a>{" "}
+                and we&apos;ll get you a copy.
+              </p>
             )}
           </div>
 
@@ -227,7 +246,7 @@ export default function SuccessContent() {
                 <div>
                   <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">Payment confirmed</p>
                   <p className="font-[var(--font-poppins)] text-xs text-[#888]">
-                    Your card has been charged successfully. Receipt and invoice arrive by email.
+                    Your card has been charged successfully. Your receipt and invoice are ready above.
                   </p>
                 </div>
               </li>

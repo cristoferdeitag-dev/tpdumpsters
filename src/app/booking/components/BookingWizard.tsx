@@ -252,7 +252,7 @@ export default function BookingWizard() {
         setBooking(initialBooking);
         setStep(1);
         setRestoringPayment(false);
-        setResumeNote("Looks like that booking was already paid — check your email for the confirmation. Need another dumpster? Book below, or call us at (510) 650-2083.");
+        setResumeNote("Looks like that booking was already paid. Need another dumpster? Book below, or call us at (510) 650-2083 if you need a copy of your receipt.");
       } else {
         // expired (or any terminal state): drop the payment, keep the data
         pendingPaymentRef.current = null;
