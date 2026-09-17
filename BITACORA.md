@@ -1,3 +1,23 @@
+## 2026-09-17 23:15–23:25Z — cris2 «Laso» (Fable 5.1, activado por Cris en el TTY) — ✉️ Correo de carritos abandonados emparejado al de confirmación · corrección sobre "6 carritos esperando"
+
+**GO de Cris** (TTY + msg 6745 *"si, arregla eso de la fecha"*) a lo ofrecido en msg 6744.
+
+### Qué quedó — commit **2683439** · **BUILD_ID `bVLy7YItVXSGRG2ZXHd7a`** (igual en local y en Hostinger)
+- **`src/lib/emails/layout.ts` (NUEVO):** cascarón compartido de todos los correos al cliente — tokens de marca, `esc`, `firstName`, **`formatLongDay`** (`"2026-09-19"` → `"Saturday, September 19"`, mediodía para esquivar el corrimiento UTC, devuelve el texto tal cual si no parsea), `primaryButton`, `helpBox`, `wrapBrandedEmail` (logo + franja dorada + pie con teléfono/buzón/sitio).
+- `booking-confirmation.ts` pasa a usarlo: **217 → 148 líneas, render idéntico** (comparado a ojo contra el que vio Cris).
+- `abandoned-watch/route.ts`: el correo de rescate ahora sale del mismo cascarón, con eyebrow "Still reserved", fecha larga y botón rojo. Se quitaron sus `escapeHtml`/`firstName` locales.
+- `webhook/route.ts`: usa `formatLongDay` en vez de su copia inline.
+- `tsc` limpio. Lint: un `prefer-const` en `smsSent` que **no es mío** (bloque de SMS apagado desde agosto) — no tocado.
+- **Verificado por el camino de producción:** `POST /api/abandoned-watch {"test":...}` contra el sitio vivo → `success:true` a Cris y a Asaí, ya con el build nuevo. Llave de Maps en 11 chunks.
+
+### ⚠️ CORRECCIÓN a lo reportado a Cris en msg 6744
+Dije *"hay 6 carritos reales esperando, el cron les escribe en el siguiente ciclo"*. **Falso.** El cron de las 23:00Z corrió con `mail=True` y **los 6 se saltaron**: 3 `skip:already_claimed` y 3 `skip:superseded`. Lo que pasó: el **`dry` run no pasa por la fase de claim**, por eso los reportó como `WOULD claim+send` — leí el modo seco como si fuera el real. Diagnóstico **✅ una vía** (log del cron + lectura del código; la consulta directa a `recovery_notices` la bloqueó el classifier): los `already_claimed` se reclamaron hoy más temprano **cuando el correo aún no existía**, el reintento es cada 45 min hasta **3 intentos**, y tras horas de cron ya los agotaron → **a esos 3 no les va a llegar correo nunca**. Los `superseded` son clientes que hicieron una reserva posterior: saltarlos es correcto. **A partir de ahora** cada carrito nuevo sí recibe el correo en su primer claim. Lección: [[feedback_procedencia_de_cifras_y_regla_del_cero]] — un "WOULD" de un modo seco no es un "va a".
+
+### 📝 Detalle menor sin impacto
+Los correos de prueba de la sesión anterior decían "Friday, September 19" — etiqueta que **yo escribí a mano** en los datos de muestra; el 19-sep-2026 es **sábado**. El webhook real calcula la fecha, no la teclea. Ahora los datos de muestra pasan por `formatLongDay`.
+
+**Archivos clave:** `src/lib/emails/layout.ts` · `src/lib/emails/booking-confirmation.ts` · `src/app/api/abandoned-watch/route.ts` · `src/app/api/webhook/route.ts`
+
 ## 2026-09-17 22:10–22:30Z — cris2 «Laso» (Opus 5) — ✉️ Correo de confirmación DE MARCA: plantilla + enganche al webhook (NO desplegado, falta contraseña SMTP)
 
 **Pedido de Cris** (msgs 6728 y 6729): *"Si, creo el buzón y sea lo que sea tenemos que entregar correo de confirmación"* y *"Usemos el que ya está hecho es este : contact@tpdumpsters.com"*.
