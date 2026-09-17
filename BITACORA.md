@@ -1,3 +1,67 @@
+## 2026-09-17 21:44–22:10Z — asai «Web HTM» (Opus 5) — 🚧 Área de servicio: de lista NEGRA a lista BLANCA (67 ciudades / 274 ZIPs) + tope de 14 días extra
+
+**Disparador** (Asaí, msgs 3309–3312): *"asegúrate que no se estén reservando dumpsters en áreas que no hacemos… ayer reservaron en redwood valley lo cual está lejísimos a 2 horas casi, y solo hacemos en redwood city"*.
+
+### El bug, que no era el que parecía
+No es que Redwood Valley "se colara": **nunca hubo nada que la detuviera**. `isOutsideServiceArea` era una **lista negra** — sólo rechazaba las 20 localidades del condado de Santa Clara y Sebastopol. Cualquier otra dirección **del planeta** pasaba, en el wizard y en `/api/checkout`.
+
+**Medido en Stripe, últimas 100 sesiones** (93 traían ciudad). 5 fuera del área anunciada:
+
+| Fecha | Ciudad / ZIP | |
+|---|---|---|
+| 16-sep | Redwood Valley 95470 (Mendocino) | **$749 pagado** ← el que reportó Asaí |
+| 15-sep | Napa 94558 | $799 pagado |
+| 20-ago | "Alamo" 94954 | $599 pagado — ese ZIP es de **Petaluma**, no de Alamo |
+| 3-sep | ciudad literal **"P"** 94954 | $799 pagado |
+| 17-sep | Guadalajara 44667 | sin pagar |
+
+La de ciudad `"P"` es rastro vivo del bug del campo City que se trababa con un solo carácter (`ref_tp_build_sin_llave_maps_rompe_autocompletado`). **Lección de diseño que salió de ahí:** en esos dos casos el **ZIP vino correcto y la ciudad vino basura** — por eso el guard nuevo decide por ZIP y deja la ciudad de rescate, no al revés.
+
+### Decisiones de Asaí (msg 3315)
+Napa, Petaluma y **Palo Alto SÍ** (Palo Alto estaba bloqueada por ser del condado de Santa Clara). **Milpitas NO**, **Santa Clara NO**, **Redwood Valley NO**. *"Todo lo demás más lejos de los que sí, no hacemos. Y no pueden bookear"*.
+
+→ **67 ciudades** = las 66 que el sitio anuncia − Milpitas − Santa Clara + Napa + Petaluma + Palo Alto.
+
+**El área anunciada se midió ✅✅:** `ServiceAreaMap.tsx` y las carpetas de página de ciudad dan **exactamente** las mismas 66, sin una sola diferencia en ninguna dirección.
+
+### Cómo se armaron los 274 ZIPs (y la Regla del Cero aplicada de verdad)
+Dos bases públicas **independientes** (`US-Zip-Codes-JSON` y `us-state-county-zip`), unidas. **Dos ciudades salieron con CERO ZIPs en ambas** — y eso no se tomó como "no tienen ZIP", se fue a buscar por qué:
+- **Tiburon** → USPS la llama **"Belvedere Tiburon"**, ZIP **94920**. Confirmado en las dos fuentes.
+- **Bay Point** → no existe como nombre postal; comparte el **94565** con Pittsburg (fuente 1 lo llama "Pittsburg", fuente 2 "Shore acres"). Ya estaba cubierto.
+
+### Lógica nueva (`src/lib/service-area.ts`, reescrito)
+1. Formulario vacío ⇒ **no** es "fuera de área", es "todavía no sabemos" (el wizard llama a esto en **cada tecla** y el botón depende del resultado).
+2. ZIP a medio escribir ⇒ no juzgar todavía.
+3. ZIP completo en la lista ⇒ dentro.
+4. Si no, **rescate por ciudad**: si la ciudad es una de las 67, dentro. Cubre el ZIP nuevo que aún no esté en la tabla — mejor dejar pasar una venta buena que rechazarla por un hueco de datos.
+5. Si no ⇒ fuera.
+
+**18/18 casos de prueba pasan**, incluidos los 5 reales de arriba.
+
+### Tope de renta (Asaí, msgs 3316–3318): *"2 semanas de extra days es lo máximo"*
+El campo de fecha de recolección **sólo tenía `min`** — se podía elegir cualquier día del futuro. El servidor sí topaba, **pero en 60 días y recortando el cobro EN SILENCIO**: reservar 30 días extra y pagar 14, con el cliente creyendo que tiene el contenedor un mes.
+
+Ahora `MAX_EXTRA_DAYS = 14` vive en **`src/lib/rental-limits.ts`** y **lo importan los dos lados**. Misma razón que en el 3/3 de aquaponicevents: si el número se duplica, la pantalla acaba ofreciendo algo que el servidor rechaza.
+- `DateStep.tsx`: el input estrena `max`; y como escribiendo la fecha a mano el navegador se la salta, el handler recorta **diciendo por qué** en un `<p>` visible (nada de mover la fecha en silencio — `feedback_boton_disabled_no_puede_explicarse`).
+- `api/checkout/route.ts`: **rechaza** con 400 en vez de recortar callado, y el cálculo de precio pasa de `Math.min(extraDays, 60)` a `MAX_EXTRA_DAYS`.
+
+### Verificación ✅✅
+1. **Build local**: `BUILD_ID f2sbxaHHIw5R2tuPzJ2At`, `tsc --noEmit` limpio, llave de Maps en **11 chunks** (la línea base sana).
+2. **Sitio en vivo**: el chunk `a4ba7ec9fa71fc3c.js` **bajado del servidor** (HTTP 200, 68 KB) trae los 6 ZIPs permitidos que se probaron (94920, 94565, 94954, 94558, 94301, 94063), **ninguno** de los 5 bloqueados (95470, 44667, 95035, 95051, 95472) y el texto del tope de 14 días.
+
+**🪤 Trampa en la que caí y que vale anotar:** el primer intento de bajar ese chunk usó `/static/chunks/…` en vez de `/_next/static/chunks/…` → **HTTP 404**, y mis `grep` sobre el cuerpo del 404 dieron "✅ ausente = bloqueado" para todo. Un archivo vacío hace que *cualquier* prueba de ausencia salga verde. Desde entonces el script aborta si el descargado pesa menos de 2 KB. Es la Regla del Cero aplicada a la verificación misma: **antes de creerle a un `grep` que no encuentra, hay que probar que el archivo existe.**
+
+### Deploy
+Commit `66e008c` → push `origin/main` → build local → `rsync` de `.next/` → `kill next-server` → `curl`. `/booking` en 200.
+
+El cambio **ajeno** de `src/app/api/webhook/route.ts` (fix de `invoice.total` de la instancia `cris`, parado desde el 12-sep) se apartó **otra vez** antes de compilar y se devolvió al árbol al terminar. Sigue sin publicar. Respaldos en `.respaldos/bricks-20260917/`.
+
+### Pendientes que deja
+- **Milpitas y Santa Clara siguen con página propia y en el mapa del sitio**, anunciando un servicio que el checkout ahora rechaza en firme. Asaí dijo NO a las dos; falta decidir si se les quita la página. **Sin GO, no se tocaron.**
+- **Palo Alto no tiene página** y ahora sí se sirve — oportunidad de SEO.
+- La reserva **pagada** de Redwood Valley del 16-sep (**$749**) sigue viva: entregar, reagendar o reembolsar. Preguntado, sin respuesta todavía.
+- El panel interno (`internal/quote/QuoteForm.tsx`) y el de Cobros de Booking **no** validan área: ahí se puede cotizar cualquier dirección.
+
 ## 2026-09-17 20:21–20:35Z — asai «Web HTM» (Opus 5) — 🧱 10 yd **Bricks Only** de $899 a **$1,100** (ya con descuento); Mixed y Asphalt intactos
 
 **GO de Asaí** (msg Telegram 3307): *"Tp dumpsters puedes cambiar el 10yd de bricks only a 1100 de precio por favor, eso ya es con descuento"*.
