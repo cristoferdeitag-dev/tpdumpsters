@@ -4,6 +4,7 @@ import { timingSafeEqual } from "crypto";
 import { getPool, dateToYMD } from "@/lib/db";
 import { buildResumeUrl, isResumeConfigured } from "@/lib/resume-token";
 import { sendEmail, isMailConfigured } from "@/lib/mailer";
+import { BODY, FONT, GOLD, INK, PHONE, esc, firstName, formatLongDay, helpBox, primaryButton, wrapBrandedEmail } from "@/lib/emails/layout";
 import { sendWhatsApp } from "@/lib/twilio";
 import { getStripe } from "@/lib/stripe";
 import type { RowDataPacket, ResultSetHeader } from "mysql2";
@@ -67,18 +68,6 @@ function normEmail(e: string | null | undefined): string {
   return (e || "").trim().toLowerCase();
 }
 
-function escapeHtml(s: string): string {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function firstName(full: string): string {
-  return (full || "").trim().split(/\s+/)[0] || "there";
-}
-
 function bearerAuthDenied(request: NextRequest): NextResponse | null {
   if (!isDashboardPasswordConfigured()) {
     return NextResponse.json({ error: "Server auth not configured" }, { status: 503 });
@@ -96,31 +85,34 @@ function bearerAuthDenied(request: NextRequest): NextResponse | null {
 
 function recoveryEmail(name: string, sizeNum: string, serviceType: string, deliveryDate: string, total: number, resumeUrl: string) {
   const subject = "Your dumpster is still reserved — finish your booking";
+  const deliveryLabel = formatLongDay(deliveryDate);
+  const totalLabel = `$${total.toFixed(2)}`;
   const text =
     `Hi ${firstName(name)},\n\n` +
-    `Your ${sizeNum}-yard dumpster for ${serviceType.toLowerCase()} (delivery ${deliveryDate}) is still saved.\n\n` +
+    `Your ${sizeNum}-yard dumpster for ${serviceType.toLowerCase()} (delivery ${deliveryLabel}) is still saved.\n\n` +
     `Finish your booking here — it takes less than a minute and your info is already filled in:\n${resumeUrl}\n\n` +
-    `Total: $${total.toFixed(2)} (online discount included)\n\n` +
-    `Questions, or prefer to book by phone? Call or text us at (510) 650-2083.\n\n` +
+    `Total: ${totalLabel} (online discount included)\n\n` +
+    `Questions, or prefer to book by phone? Call or text us at ${PHONE}.\n\n` +
     `— TP Dumpsters\nhttps://tpdumpsters.com`;
-  const html = `
-  <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <h2 style="color:#E02B20;margin-bottom:4px">Your dumpster is still reserved</h2>
-    <p>Hi ${escapeHtml(firstName(name))},</p>
-    <p>Your <strong>${escapeHtml(sizeNum)}-yard dumpster</strong> for ${escapeHtml(serviceType.toLowerCase())}
-    (delivery <strong>${escapeHtml(deliveryDate)}</strong>) is still saved — your info is already filled in.</p>
-    <p style="text-align:center;margin:28px 0">
-      <a href="${resumeUrl}" style="background:#E02B20;color:#fff;text-decoration:none;
-         padding:14px 28px;border-radius:8px;font-weight:bold;display:inline-block">
-        Finish my booking — $${total.toFixed(2)}
-      </a>
-    </p>
-    <p style="font-size:13px;color:#777">Takes less than a minute. Online discount included.</p>
-    <p style="font-size:13px;color:#777">Questions, or prefer to book by phone?
-      Call or text <a href="tel:+15106502083" style="color:#E02B20">(510) 650-2083</a>.</p>
-    <p style="margin-top:24px">— TP Dumpsters<br>
-      <a href="https://tpdumpsters.com" style="color:#E02B20">tpdumpsters.com</a></p>
-  </div>`;
+  // Same shell as the booking confirmation so both emails read as one company.
+  const html = wrapBrandedEmail({
+    title: subject,
+    preheader: `Your ${sizeNum}-yard dumpster for ${deliveryLabel} is still saved — finish in under a minute.`,
+    footerReason: "You're getting this because you started a dumpster booking with us.",
+    cardRows: [
+      `
+          <tr>
+            <td style="padding:32px 32px 0 32px;">
+              <p style="margin:0 0 6px 0;${FONT}font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:${GOLD};font-weight:bold;">Still reserved</p>
+              <h1 style="margin:0 0 16px 0;${FONT}font-size:26px;line-height:32px;color:${INK};">Your dumpster is waiting, ${esc(firstName(name))}.</h1>
+              <p style="margin:0 0 24px 0;${FONT}font-size:15px;line-height:23px;color:${BODY};">Your <strong style="color:${INK};">${esc(sizeNum)}-yard dumpster</strong> for ${esc(serviceType.toLowerCase())}, delivery <strong style="color:${INK};">${esc(deliveryLabel)}</strong>, is still saved — your info is already filled in. Finishing takes less than a minute.</p>
+              ${primaryButton(resumeUrl, `Finish my booking — ${totalLabel}`)}
+              <p style="margin:0;${FONT}font-size:13px;line-height:20px;color:${BODY};">Online discount included.</p>
+            </td>
+          </tr>`,
+      helpBox("Questions, or prefer to book by phone?"),
+    ],
+  });
   return { subject, text, html };
 }
 

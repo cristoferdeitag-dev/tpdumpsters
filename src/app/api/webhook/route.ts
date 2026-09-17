@@ -9,6 +9,7 @@ import {
   buildBookingConfirmationSubject,
   buildBookingConfirmationText,
 } from "@/lib/emails/booking-confirmation";
+import { formatLongDay } from "@/lib/emails/layout";
 import { getStripe } from "@/lib/stripe";
 import * as mysql from "mysql2/promise";
 import * as fs from "fs";
@@ -543,12 +544,6 @@ export async function POST(req: NextRequest) {
           midday: "11:00 AM – 3:00 PM",
           afternoon: "1:00 PM – 6:00 PM",
         };
-        const longDay = (d: string) =>
-          new Date(d + "T12:00:00").toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          });
 
         // Same hosted invoice page the success screen links to. Stripe may not
         // have finalized it the instant this fires; if it isn't there yet the
@@ -573,9 +568,9 @@ export async function POST(req: NextRequest) {
           bookingId,
           serviceType,
           dumpsterSize,
-          deliveryDateLabel: deliveryDate ? longDay(deliveryDate) : "To be scheduled",
+          deliveryDateLabel: deliveryDate ? formatLongDay(deliveryDate) : "To be scheduled",
           deliveryWindowLabel: EMAIL_WINDOWS[deliveryWindow] || "7:00 AM – 5:00 PM",
-          pickupDateLabel: pickupDate ? longDay(pickupDate) : undefined,
+          pickupDateLabel: pickupDate ? formatLongDay(pickupDate) : undefined,
           fullAddress,
           totalPaid: totalPaid !== "N/A" ? totalPaid : undefined,
           invoiceUrl,
