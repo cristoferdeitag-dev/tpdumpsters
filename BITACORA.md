@@ -1,3 +1,26 @@
+## 2026-09-18 03:16–03:35Z — cris «Web HTM» (Opus 5) — 🛡️ Arnés de caracterización del booking: 18/18 en producción (y dos falsos positivos MÍOS)
+
+Primer paso del plan acordado tras el fiasco del v2, y el que Hermes puso como condición previa a tocar UI: **congelar lo que el v1 ya hace bien antes de moverlo.** `tests/booking_caracterizacion.py`, commit `4a4f0a9`.
+
+### Qué vigila (cada check lleva su incidente anotado en el docstring)
+Los **20 SKUs** con su precio —incluido Bricks Only $1,100 con $1,150 tachado— · la cookie **`tp_gclid`** del clic de Google · los eventos **`booking_started`**, **`dumpster_selected`** y **`booking_step`** · la **persistencia** del avance y que sobreviva una recarga · y que **no reaparezca** ningún precio viejo ($849, $199/ton, $75/día). Corre emulando **iPhone 13**, que es donde está el 91% del tráfico.
+
+**Seguro por diseño:** sólo navega y lee; **nunca pulsa el botón que cobra**. Las 4 verificaciones que exigirían crear una reserva real salen marcadas **SALTADA** en la salida en vez de ensuciar producción: casilla de autorización, nota de colocación, bloqueo por zona y pago completo. Ésas piden un entorno de copia.
+
+### 🪤 Los dos falsos positivos, que son la lección del turno
+La primera corrida dio **6 fallos inexistentes** y estuve a punto de reportar que el sitio había perdido medio catálogo:
+1. **Buscar "Bricks Only", "Clean Asphalt" y los precios 899/1100 en el HTML de entrada.** No están ahí: viven **dentro de "Mixed Materials"** y sólo se renderizan al abrirlo. El arnés tiene que **hacer los clics del cliente**, no leer la primera pantalla.
+2. **Comprobar si avanzó de paso buscando la palabra `"delivery"`** en la página: **siempre da verdadero**, porque el hero dice *"Same-day delivery"*. Y de paso: **elegir el tamaño no avanza solo**, hay que pulsar continuar — por eso `booking_step` parecía no dispararse. Ahora el paso se lee del **estado guardado** (`localStorage.tp_wizard_v1.step`), no del texto.
+
+El primero es un arnés que grita sin razón; el segundo es peor, **un arnés que aprueba en falso** — la misma familia que [[feedback_arnes_de_prueba_que_falla_en_silencio]] y [[feedback_comprobar_que_el_bug_existe_antes_de_arreglarlo]]. Los dos quedaron documentados dentro del archivo.
+
+**Regla que queda:** verificar contra el **estado** de la aplicación, no contra su texto; y que el arnés recorra el camino del cliente clic por clic.
+
+### Estado del plan
+✅ Paso 1 (blindar) hecho. Siguiente: partir el paso 1 del v1 en **material → tamaños de ese material con precio**, detrás de interruptor, corriendo este arnés antes de cada deploy. Pendiente de Asaí: qué vio en pantalla cuando Barry no pudo pagar (relay `asai/2026-09-18T0320Z`).
+
+---
+
 ## 2026-09-18 02:20–03:05Z — cris «Web HTM» (Opus 5) — 🛠️ Booking v2 EN CÓDIGO (`/booking-v2`) + los precios a UNA sola fuente
 
 **GO de Cris** (msg 22052, sobre la maqueta v9). Rama **`feature/booking-v2-agente`** desde `origin/main` — la vieja `feature/booking-v2-stitch` está 215 archivos atrás y se descartó. Commit **`3b4ceb9`**. **NO desplegado**, espera GO.
