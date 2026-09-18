@@ -173,15 +173,23 @@ function Check({ className }: { className?: string }) {
 }
 
 export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
+  // 18-sep-2026 (Cris, msg 22063): «no puedes elegir el tamaño del dumpster
+  // antes de saber qué vas a tirar». Hasta hoy este paso arrancaba con
+  // "General Debris" YA seleccionado (índice 0), así que sus tres tamaños y
+  // sus precios estaban a la vista desde el primer segundo y el cliente podía
+  // reservar sin elegir material nunca. El que traía concreto o ladrillo
+  // pagaba $599 por lo que cuesta $899 o $1,100 — entre $300 y $501 de
+  // diferencia por reserva. Ahora arranca en -1: hay que elegir material, y
+  // los precios aparecen después. No añade un paso; sólo quita un default.
   const [activeServiceIdx, setActiveServiceIdx] = useState(() => {
     if (booking.service) {
       const idx = services.findIndex((s) => s.service === booking.service?.serviceType);
-      return idx >= 0 ? idx : 0;
+      return idx >= 0 ? idx : -1;
     }
-    return 0;
+    return -1;
   });
 
-  const activeService = services[activeServiceIdx];
+  const activeService = activeServiceIdx >= 0 ? services[activeServiceIdx] : null;
 
   // Asaí, 9-sep-2026: al elegir un tipo de material que está arriba en la
   // lista, la vista se quedaba donde estaba y el cliente no veía ni las
@@ -197,7 +205,9 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
     label?: string;
     sublabel?: string;
   };
-  const renderItems: RenderItem[] = activeService.variants
+  const renderItems: RenderItem[] = !activeService
+    ? []
+    : activeService.variants
     ? activeService.variants.map((v) => ({
         size: v.size,
         basePrice: v.basePrice,
@@ -216,7 +226,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
     : null;
 
   const handleSelect = (item: RenderItem) => {
-    const serviceType = item.serviceType ?? activeService.service;
+    const serviceType = item.serviceType ?? activeService?.service ?? "";
     const service: ServiceSelection = {
       serviceType,
       size: item.size,
@@ -265,27 +275,47 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         ))}
       </div>
 
-      {/* ── Service description banner ── */}
-      <div ref={detalleRef} className="scroll-mt-28 bg-[#fafafa] rounded-2xl px-6 py-4 mb-10 border border-[#eee]">
-        <p className="font-[var(--font-poppins)] text-[14px] text-[#555] leading-relaxed">
-          <span className="font-semibold text-[#333]">{activeService.icon} {activeService.service}:</span>{" "}
-          {activeService.description}
-        </p>
-      </div>
-
-      {/* Reglas del dumpster elegido, a la vista y ANTES de los precios: la del
-          material (si tiene) y la del overload, que aplica siempre. */}
-      <div className="-mt-6 mb-10 bg-amber-50 border border-amber-300 rounded-2xl px-6 py-4 space-y-2">
-        {activeService.note && (
-          <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
-            {activeService.note}
+      {/* Mientras no haya material elegido no se muestra ni descripción, ni
+          reglas, ni precios: no hay material del que hablar todavía. En su
+          lugar, una línea que dice qué falta — nunca un botón muerto
+          (feedback_boton_disabled_no_puede_explicarse). */}
+      {!activeService && (
+        <div
+          ref={detalleRef}
+          className="scroll-mt-28 bg-[#fafafa] rounded-2xl px-6 py-5 mb-10 border border-dashed border-[#ddd] text-center"
+        >
+          <p className="font-[var(--font-poppins)] text-[15px] text-[#555] leading-relaxed">
+            Pick what you&apos;re getting rid of and we&apos;ll show you the sizes and prices that
+            apply to it.
           </p>
-        )}
-        <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
-          ⚠️ Nothing above the top edge of the dumpster. Overloaded loads add a
-          <strong> $149 fee, charged at pickup</strong>.
-        </p>
-      </div>
+        </div>
+      )}
+
+      {activeService && (
+        <>
+          {/* ── Service description banner ── */}
+          <div ref={detalleRef} className="scroll-mt-28 bg-[#fafafa] rounded-2xl px-6 py-4 mb-10 border border-[#eee]">
+            <p className="font-[var(--font-poppins)] text-[14px] text-[#555] leading-relaxed">
+              <span className="font-semibold text-[#333]">{activeService.icon} {activeService.service}:</span>{" "}
+              {activeService.description}
+            </p>
+          </div>
+
+          {/* Reglas del dumpster elegido, a la vista y ANTES de los precios: la del
+              material (si tiene) y la del overload, que aplica siempre. */}
+          <div className="-mt-6 mb-10 bg-amber-50 border border-amber-300 rounded-2xl px-6 py-4 space-y-2">
+            {activeService.note && (
+              <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
+                {activeService.note}
+              </p>
+            )}
+            <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
+              ⚠️ Nothing above the top edge of the dumpster. Overloaded loads add a
+              <strong> $149 fee, charged at pickup</strong>.
+            </p>
+          </div>
+        </>
+      )}
 
       {/* ── Price cards ── */}
       <div
@@ -298,13 +328,13 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
         }`}
       >
         {renderItems.map((item, idx) => {
-          const cardServiceType = item.serviceType ?? activeService.service;
+          const cardServiceType = item.serviceType ?? activeService?.service ?? "";
           const key = `${cardServiceType}-${item.size}`;
           const isSelected = selectedKey === key;
           const isPopular = renderItems.length === 3 && idx === 0;
           const isFeatured = isPopular || renderItems.length === 1;
           const isDark = isFeatured || isSelected;
-          const subtext = item.sublabel || sizeSubtexts[item.size] || activeService.service;
+          const subtext = item.sublabel || sizeSubtexts[item.size] || activeService?.service || "";
           const heading = item.label || `${item.size} Dumpster`;
 
           return (

@@ -116,8 +116,27 @@ def main():
             plano = html.replace(",", "")
             return f"${n}" in plano
 
-        for precio in (599, 649, 749):
-            check(f"el precio ${precio} se ofrece al abrir", tiene_precio(texto, precio), "")
+        # 🚨 REGLA 1 (Cris, 18-sep msg 22063): «no puedes elegir el tamaño del
+        # dumpster antes de saber qué vas a tirar». Hasta ese día el paso 1
+        # arrancaba con "General Debris" preseleccionado y sus precios a la
+        # vista. Ahora NO debe haber ningún precio de tamaño antes de elegir
+        # material — si alguien vuelve a poner un valor por defecto, este
+        # check lo caza.
+        precios_al_abrir = [n for n in (599, 649, 699, 749, 799, 899, 1100)
+                            if tiene_precio(texto, n)]
+        check("NINGÚN precio de tamaño se ve antes de elegir material",
+              not precios_al_abrir, f"visibles: {precios_al_abrir}" if precios_al_abrir else "ninguno")
+        check("se pide elegir material con un mensaje, no con un botón muerto",
+              "Pick what you" in texto or "what you&#x27;re getting rid of" in texto, "")
+
+        # al elegir un material sólo deben aparecer SUS precios
+        pg.get_by_text("Clean Concrete", exact=False).first.click()
+        pg.wait_for_timeout(1100)
+        conc = pg.content()
+        check("Clean Concrete muestra $599 (y su lista $649)",
+              tiene_precio(conc, 599) and tiene_precio(conc, 649), "")
+        check("Clean Concrete NO muestra los precios del 20/30 yd",
+              not tiene_precio(conc, 699) and not tiene_precio(conc, 799), "")
 
         pg.get_by_text("Mixed Materials", exact=False).first.click()
         pg.wait_for_timeout(1200)
