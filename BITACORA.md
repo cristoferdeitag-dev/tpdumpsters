@@ -38,6 +38,19 @@ La tabla que cobra vivía **dentro** de `api/checkout/route.ts` y el resto del s
 
 ---
 
+### ✅ DESPLEGADO — 18-sep 02:32–02:40Z (GO Cris msg 22057)
+Merge `1e3ca7d` a `main` (no-ff), push, y el camino que de verdad embarca ([[ref_tpdumpsters_deploy]]): `.env.local` comprobado ANTES de compilar → `rm -rf .next && npm run build` → rsync del `.next` a Hostinger → matar el `next-server` remoto para que respawne.
+- **BUILD_ID `XvIfFxYKnsVY04PREFPWh`**, idéntico en local y en el servidor.
+- **La llave de Maps quedó en 11 chunks** — el mismo número del build sano del 9-sep. Si sale 0, el autocompletado de `/booking` muere en silencio.
+- 🔎 **Verificado que NO se rompió `/booking`**, que es la que cobra y cuyo hero se tocó al unificarlo: hero presente, foto presente, placas **599/649/749**, y su CTA original "Start below". `/booking-v2` con su propio CTA "Two ways to start".
+- Flujo completo **re-probado contra producción** con navegador: 6 pasos, fuera de zona avisa y bloquea, dentro confirma, precio invisible en el paso de datos, total $649, consola limpia.
+- ⚠️ **El pago con tarjeta sigue sin probarse por nadie.** No lo hice desde aquí para no crear una reserva falsa en la MySQL y una sesión real en Stripe. Ofrecido a Cris: que lo pruebe él con tarjeta de prueba, o que yo lo haga y borre el registro.
+
+**Prueba pedida a Hermes** (`hermes/2026-09-18T0240Z-cris-PRUEBA-booking-v2-tp.json`), con el encargo de **romperlo**: intentar ver precio antes de dar datos, colarse con direcciones de fuera (Sacramento 95814, Fremont 94536, Stockton 95202) y confirmar que las del condado pasan (Antioch, Richmond, Brentwood, Oakley), pedir más de 14 días extra, cazar cifras distintas de 599/649/749 · 179/ton · 49/día, y lograr que el agente recomiende tamaño para tierra o concreto en vez de mandar a llamada. Se le pidió el reporte en el formato que se está estandarizando: **qué probé / qué está bien / qué está mal con pasos para reproducir / qué no pude probar y por qué**.
+
+---
+
+
 ## 2026-09-18 00:32–00:50Z — cris «Web HTM» (Opus 5) — 🎨 Booking v2 **v9**: hero real + los dos caminos, y el bug de la clase de una letra
 
 **GO de Cris** (msgs 22038→22042): aprobó el v8 (*"me gusta"*), pidió los **dos botones** que recomendó el Consejo (*"ya sé exactamente lo que quiero"* / *"ayúdame a elegir"*), aclaró que **el hero del /booking actual se queda** (yo había propuesto copiar la estructura del de BookingDumpsters — se descartó: TP es rojo, Booking es azul, [[feedback_nunca_booking_en_material_de_tp]]), y pidió ver el flujo completo antes de programar.
