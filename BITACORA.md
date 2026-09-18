@@ -1,3 +1,97 @@
+## 2026-09-18 02:20–03:05Z — cris «Web HTM» (Opus 5) — 🛠️ Booking v2 EN CÓDIGO (`/booking-v2`) + los precios a UNA sola fuente
+
+**GO de Cris** (msg 22052, sobre la maqueta v9). Rama **`feature/booking-v2-agente`** desde `origin/main` — la vieja `feature/booking-v2-stitch` está 215 archivos atrás y se descartó. Commit **`3b4ceb9`**. **NO desplegado**, espera GO.
+
+### 🎯 Lo que de verdad importa de este commit: `src/lib/pricing.ts`
+La tabla que cobra vivía **dentro** de `api/checkout/route.ts` y el resto del sitio la repetía a mano. Esa duplicación es la causa raíz de los dos bugs de precio que ya costaron dinero (doble descuento de junio; y el ladrillo de ayer: sitio $899 vs checkout $1,100). Ahora:
+- `pricing.ts` tiene `ONLINE_PRICES`, `LIST_PREMIUM` (50), `EXTRA_DAY_FEE` (49), `OVERWEIGHT_PER_TON` (179) y `SIZE_SPECS` (el 10 yd con sus **3 días**), más `onlinePriceFor()` / `listPriceFor()`.
+- `api/checkout/route.ts` la **importa** — los valores no cambiaron al mudarse, sólo dejaron de estar duplicados.
+- **`src/components/BookingHero.tsx`** (extraído de `booking/page.tsx`, ahora compartido por `/booking` y `/booking-v2`) **lee sus tres precios de ahí** en vez de tenerlos escritos a mano. Eran 6 números hardcodeados; ya no existen.
+
+### El flujo (`src/app/booking-v2/`)
+`start` (dos caminos) → `fast` (3 tamaños **con** precio) **o** `agent` (recomendación **sin** precio) → **`zone`** → `contact` → `price` → `dates` → `pay`. Los dos caminos convergen en `zone`, así que de ahí en adelante hay **un solo camino de código**. `DateStep` y `EmbeddedPayment` se reutilizan tal cual (ya probados); el contrato `BookingData` es el mismo, y por eso encajaron sin tocarlos.
+
+**`recommendSize()` es código, no un modelo** (Consejo IA 14-sep: el LLM redacta, las reglas deciden). Tierra/concreto/ladrillo/asfalto → **llamada**, porque ahí un error de tamaño es un sobrepeso de cientos de dólares.
+
+### Verificación — sobre el BUILD DE PRODUCCIÓN servido en local, con navegador
+| Qué | Resultado |
+|---|---|
+| Los 6 pasos de punta a punta | ✅ llega a la pantalla de pago |
+| Fuera de zona (Sacramento 95814) | ✅ avisa **y** deshabilita el botón |
+| Dentro de zona (Antioch 94509) | ✅ "We deliver there" y continúa |
+| **Precio oculto en el paso de datos** (regla de Cris) | ✅ buscado por cifra en el DOM: no aparece |
+| Reglas del agente (5 casos) | ✅ cocina→20 · techo→20 · garage→10 · demolición→30 · tierra+concreto→llamada |
+| Consola | ✅ limpia, 0 `pageerror` |
+| `tsc --noEmit` y `npm run build` | ✅ 0 |
+
+**Lo que NO se probó y hay que decirlo:** el pago de punta a punta. Hacerlo desde local con las llaves live crearía una reserva real en la MySQL y una sesión real en Stripe. Se prueba desplegado, con tarjeta de prueba.
+
+### Pendientes anotados dentro del archivo
+1. Guardar el **lead** en cuanto se escriben nombre y teléfono (hoy el contacto sólo se guarda al llegar a `/api/checkout`) — necesita endpoint y fila con estado `lead`.
+2. El **LLM encima** de `recommendSize()`: que redacte y pregunte máx. 2 cosas; el tamaño lo sigue decidiendo el código.
+3. **Autocompletado de dirección** en el paso de zona (reutilizar el de `AddressStep`).
+4. **A/B medido con Stripe** antes de reemplazar `/booking`. Se le dijo a Cris por escrito que pedir datos antes del precio es donde más gente se cae y que eso lo decide la venta, no la opinión.
+
+### 🪤 Dos trampas del turno
+- **`pkill -f "next start -p 3111"` se llevó mi propio shell** (el patrón coincide con la línea de comando del bash que lo ejecuta, exit 144) y el commit se perdió a medias. Matar por **PID** de `ss -ltnp`, no por patrón. Y había un **segundo** `next-server` corriendo: un `pkill` amplio se lo habría llevado también.
+- El tipo `ServiceSelection` exige `dimensions`; lo había silenciado con un `as` — se corrigió pasando el dato real de `SIZE_SPECS` en vez de callar al compilador.
+
+---
+
+## 2026-09-18 00:32–00:50Z — cris «Web HTM» (Opus 5) — 🎨 Booking v2 **v9**: hero real + los dos caminos, y el bug de la clase de una letra
+
+**GO de Cris** (msgs 22038→22042): aprobó el v8 (*"me gusta"*), pidió los **dos botones** que recomendó el Consejo (*"ya sé exactamente lo que quiero"* / *"ayúdame a elegir"*), aclaró que **el hero del /booking actual se queda** (yo había propuesto copiar la estructura del de BookingDumpsters — se descartó: TP es rojo, Booking es azul, [[feedback_nunca_booking_en_material_de_tp]]), y pidió ver el flujo completo antes de programar.
+
+### El flujo que quedó (6 pantallas, `/root/scratch-tp/v9.tpl.html` → `v9.html`, tira en `v9-flujo.png`)
+Hero actual (foto `worker-action.jpg`, placas 599/649/749 con sus tachados, $50 off) → tarjeta blanca montada encima con los **dos caminos**:
+- **Camino rápido:** los 3 tamaños **con precio** (legítimo: ya eligió tamaño) + avisos de $179/ton y $49/día hasta 14.
+- **Camino agente:** chat → recomendación **sin precio**, con el render real y la silueta de 6 pies.
+- **Los dos convergen** en: dirección → datos → precio → fechas → pago. De la pantalla 4 en adelante el código es uno solo.
+
+**Dos correcciones de flujo que propuse y Cris aceptó** (las dos salen del Consejo del 14-sep):
+1. La **dirección sube a la pantalla 4**, antes de los datos: la zona se valida ahí (*"We deliver in Antioch"* en verde) en vez de que el cliente llene media reserva para enterarse al final. Con la lista blanca de 67 ciudades que entró ayer, esto deja de ser teórico.
+2. **Salida rápida para el que ya sabe**: antes TODOS pasaban por el chat. Un contratista que renta cada semana quiere 30 yardas y ya.
+Le dije además, por escrito, que **pedir datos antes del precio es el punto donde más gente se cae** y que hay que medirlo contra el booking actual con ventas de Stripe, no con opiniones. Quedó anotado.
+
+### 🐛 La trampa del día: una clase de UNA LETRA tumbó el layout
+La maqueta cambia de pantalla poniendo una letra en `<body>` (`a`…`f`). La pantalla del precio es la **`f`** — **la misma clase que uso para cada campo del formulario** (`.f{display:flex}`). Resultado: `body.f` heredaba `display:flex`, `main` se encogía a **284 px** y el hero se aplastaba a una columna. Se veía como un desastre de CSS sin causa aparente.
+**Cómo se encontró:** midiendo en el navegador el `getBoundingClientRect()` de cada elemento y comparando la pantalla sana (`a`: main 430 px) contra la rota (`f`: main 284 px) — no leyendo el CSS. **Regla para llevarse:** nunca usar clases de una letra como estado global; los estados quedaron `v-a`…`v-f`.
+Antes de eso perdí un intento culpando al `overflow-x` y blindando anchos: **no era desbordamiento, era herencia**.
+
+**Nada del repo tocado: 0 archivos.** Todo en `/root/scratch-tp/`. Pendiente: OK de Cris al v9 → de ahí al código, sobre rama nueva desde `main` (la vieja `feature/booking-v2-stitch` está 215 archivos atrás).
+
+---
+
+## 2026-09-17 23:26–23:40Z — cris «Web HTM» (Opus 5) — 🎨 Booking v2: dictamen de Prisma sobre el v7 y maqueta **v8** (nada tocado en el repo)
+
+**Pedido de Cris** (msgs 22023→22028): ver el último diseño, mostrárselo a Prisma (*"dile qué es lo que falta quitar o sumar"*), y su propia lectura: *"siento que tiene elementos viejos, que no se ven muy acorde a lo limpio de lo demás"*. GO en msg 22028.
+
+### Cómo se consultó a Prisma (importa el método)
+Se le mandó **la imagen** de las 3 pantallas, no una descripción: Gemini 3.1 Pro por Vertex (credencial de Wise) con `types.Part.from_bytes`, porque `rebote_vertex_wise.sh` sólo manda texto. Brief, imagen y dictamen crudo en `/root/reports/consejo/2026-09-17-tp-booking-v7-diseno/`.
+
+**Su diagnóstico:** *"choque entre un concepto moderno (chat IA) y componentes visuales heredados de la era Web 2.0… no parece software del futuro, parece un parche sobre un software de ayer."*
+
+**QUITAR (los 5):** emojis de los chips · ilustración plana del contenedor · caja amarilla del aviso · píldora verde "TP Assistant online now" · líneas grises apiladas del formulario.
+**SUMAR:** escala visual humana junto al contenedor · icono de ubicación en el campo de dirección.
+**NO TOCAR:** el textarea grande **con micrófono** (91% móvil, contratistas con las manos ocupadas) · la barra de chat fija para corregir a la IA · el rojo de los CTA · la fila de beneficios.
+
+### 🚨 Dos propuestas suyas RECHAZADAS por el convocante
+Sugirió *"3 disponibles para entrega mañana"* y *"elegido para 1,200+ remodelaciones en la Bahía"*. **Ninguno de los dos dato existe** — no hay inventario en tiempo real y ese número no sale de ninguna fuente. Sería escasez y prueba social fabricadas. Se le dijo a Cris al entregar el dictamen. Ver [[feedback_procedencia_de_cifras_y_regla_del_cero]].
+
+### El v8 (`/root/scratch-tp/v8.tpl.html` → `v8.html`, capturas `v8-a..d.png` y `v8-4pantallas.png`)
+Aplicados los 5 "quitar" y los 2 "sumar". Además, **3 correcciones que no eran de diseño sino de verdad**:
+1. **Precio actualizado**: el v7 mostraba 20 yd `$749→$699`; hoy es **`$699→$649`**.
+2. **El precio ya no se ve antes de los datos** — la regla de Cris del 14-sep que el v7 rompía. Ahora son **4 pantallas**: la 3 pide nombre/teléfono/dirección con un candado donde iba el precio (*"Price on the next step"*), y la 4 lo revela desglosado. El correo quedó **opcional**.
+3. **Avisos fijos** que pedía el Consejo del 14-sep: **$179/ton** de sobrepeso y **$49/día extra, hasta 14** (el tope que entró hoy).
+
+En vez del "render 3D" que pedía Prisma se usó **la foto/render que ya existe en el repo** (`public/images/sizes/20-yard.png`), recortada — cumple lo mismo y no inventa una imagen. La silueta de 6 pies es un SVG propio.
+
+⚠️ **Trampa al renderizar:** la maqueta cambia de pantalla con `document.body.className` leído del hash **al cargar**; navegar a `#b` sin recargar deja la clase anterior y las 4 capturas salen idénticas (me pasó). Hay que fijar la clase por `page.evaluate`. Y al recortar el render, el crop se comió la cota `4' H` — se detectó **leyendo la imagen**, no el código.
+
+**Nada del repo tocado: 0 archivos.** Todo vive en `/root/scratch-tp/`. Pendiente: el OK de Cris a la cara del v8 antes de programar nada.
+
+---
+
 ## 2026-09-17 23:30Z — cris2 «Laso» (Fable 5.1) — 🔴 CORRECCIÓN: subí el fix `invoice.total` con una justificación que YO MISMA había desmentido el 10-sep
 
 **Qué pasó.** En msg 6743 le dije a Cris que el cambio ajeno del webhook *"arreglaba"* que las ventas en efectivo/Zelle subieran a Google Ads como $0, y que *"cada día que seguía sin publicarse, Google aprendía con datos falsos"*. **Eso es falso, y lo medí yo el 10-sep** (entrada de las 05:45Z, más abajo): **619 facturas pagadas de 180 días, 99 eventos reales y las 43 de efectivo/Zelle releídas con la versión de API del webhook — cero casos con `amount_paid ≠ total`.** El bug no existe en esta cuenta. Repetí el comentario del código sin medir, con la memoria `feedback_comprobar_que_el_bug_existe_antes_de_arreglarlo` escrita por mí para exactamente esto. El portero de evidencia lo cachó: edité el repo sin releer la bitácora completa (regla 10).
