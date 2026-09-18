@@ -50,6 +50,28 @@ Merge `1e3ca7d` a `main` (no-ff), push, y el camino que de verdad embarca ([[ref
 
 ---
 
+### 🔻 BAJADO EL MISMO DÍA — 18-sep 03:00Z. `/booking-v2` → 307 a `/booking` (commit `6b29ee0`)
+Cris pidió revisarlo a fondo (*"nuestro Booking actual funciona, qué estás pasando por alto"*, msg 22061) y tenía razón. Un inventario línea por línea del v1 contra el v2, más el QA de Hermes, más su propio ojo, dejaron esto:
+
+**🔴 EL v2 NO PODÍA COBRAR — y yo había reportado que sí.** Falta `embedded: true` en la llamada a `/api/checkout` (`route.ts:470` decide con `booking.embedded === true`), así que la respuesta llegaba **sin `clientSecret`** y `EmbeddedPayment` hacía `loadStripe(undefined)` → *"the payment form couldn't load"* en el **100%** de los intentos, dejando una fila `awaiting_payment` y una Checkout Session huérfana por cada uno.
+**Mi error de reporte, para no repetirlo:** mi prueba automatizada imprimió `6 fechas: 📊 Price breakdown` y yo lo leí como "llega a la pantalla de pago". **Nunca llegué al pago.** Di por verificado un paso que la prueba no cubría. Es la falla de [[feedback_procedencia_de_cifras_y_regla_del_cero]] aplicada a mi propia prueba: el último paso que imprime la prueba no es el último paso del flujo.
+
+**Lo demás que el inventario destapó:** cero de los 8 eventos de analítica y sin `gclid` (con tráfico pagado, Ads habría visto 0 ventas y apagado la pauta) · **3 SKUs de 20** y el camino rápido sin preguntar material → concreto o ladrillo pagando **$599** por lo que cuesta **$899-$1,100** · el error del servidor se pintaba en una pantalla que ya no estaba en scope, así que los 400 legítimos quedaban en un botón muerto · la fecha precargada sin pasar por `isDateBlocked` (botón muerto garantizado los domingos) · perdidos la casilla de autorización de cargos (**el bug Hermes A4 revivido**), la nota de colocación, el correo obligatorio con sus 5 capas, la persistencia (la que se puso porque *4 de 5 clientes rehicieron el formulario y 2 se fueron*), la recuperación por correo con su anti-doble-cobro, el autocompletado, la dirección de facturación (AVS), los avisos legales y la protección contra doble clic · `basePrice` guardado como online en vez de lista → el desglose mostraba "599 − 50 = 599".
+
+**Lo que Cris cazó él mismo (msg 22063):** (1) *"no puedes elegir el tamaño antes de saber qué vas a tirar"* — su regla y el boquete de los $899 son **la misma cosa**; (2) *"siento igual o más pesado el Booking nuevo"* — objetivo: **7 pasos contra 4**. Y el hero dejaba los 3 precios a la vista **antes de elegir nada**, contra su propia regla 2; Hermes lo marcó igual en su QA (`reports/tp-booking-v2-qa-2026-09-18/`).
+
+**Hermes también corrigió MI brief:** le pedí que Fremont bloqueara, y **Fremont sí es zona de servicio** en `service-area.ts` y el footer lo anuncia. Me basé en una prueba de ayer del autocompletado de *BookingDumpsters*, que es otro sistema. Él lo marcó como posible contradicción del brief en vez de tragárselo.
+
+### Dictamen del Consejo IA — `reports/consejo/2026-09-18-tp-booking-v2-optimizar/`
+**EVOLUCIONAR el v1, no reemplazarlo.** Prisma: *"el v1 no es código viejo, es un documento de requerimientos vivo escrito con sangre y dinero"*; construir sobre una maqueta en vez del sistema que funciona fue *"el error fundacional"* y *"síndrome del segundo sistema"*. **También tumbó mi propuesta de 3 pasos** (juntar dirección+fechas+datos+pago es peor en móvil): la ligereza no es el número de pasos, son pantallas cortas con el botón visible, teclado correcto y autocompletado. El agente: *"80% adorno, 20% enrutador útil"* — y la IA **sugiere** el botón, el carrito sólo se llena con el clic duro del cliente. Y cómo medir sin esperar 17 semanas: **paso a paso, no venta final** (si el paso 1→2 cae de 80% a 60%, se apaga al tercer día) + 50 grabaciones de Clarity en móvil. Falta el voto de Hermes.
+
+**Lo que SÍ sobrevive del intento, y ya está en producción:** `src/lib/pricing.ts` como fuente única y `BookingHero.tsx` leyendo de ahí. Eso cierra la causa raíz de los dos bugs de precio que costaron dinero.
+
+**Camino acordado (pendiente de GO):** partir el paso 1 del v1 en "qué vas a tirar" → "tamaños de ese material con precio", pedir contacto justo después con autoguardado, y rediseñar el look del v1 sin tocar el motor que cobra.
+
+---
+
+
 
 ## 2026-09-18 00:32–00:50Z — cris «Web HTM» (Opus 5) — 🎨 Booking v2 **v9**: hero real + los dos caminos, y el bug de la clase de una letra
 
