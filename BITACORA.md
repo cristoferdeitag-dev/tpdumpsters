@@ -1,3 +1,31 @@
+## 2026-09-18 04:30–04:42Z — cris «Web HTM» (Opus 5) — 💳 El paso de pago: de 8 pantallas a 2.8 (EN VIVO)
+
+**GO de Cris** (msgs 22108-22118). Commit `afb6611`, **BUILD_ID `ztUDcvQJkERViOBH2IOZh`**. El benchmark de Prisma lo marcó como EL cambio de mayor impacto: *"no toquen nada más hasta arreglar donde la gente mete la tarjeta"*.
+
+### Medido, antes y después
+**9,216 px → 1,873 px** en iPhone 13. De ~14 pantallas de scroll a **2.8**, en la pantalla donde el cliente decide pagar $599 o más.
+
+### Qué cambió (patrón Airbnb/Uber + U-Haul, del benchmark)
+- **Total arriba y grande**, con el de lista tachado; el desglose detrás de `See price breakdown`.
+- **Los tres bloques de resumen en UNO** colapsado que muestra *"20 Yard · Mon, Sep 21"* y se abre con *Review*, con enlace para volver a corregir dentro.
+- **Cargos como lo que INCLUYE:** *"Your rental includes 2 tons and 7 days. Need more? Extra weight is $179/ton and each extra day $49"*. Mismo dato, otra cara.
+- **UN consentimiento** en vez de tres cajas de colores (ámbar de cancelación + azul de "qué sigue" + gris de autorización). El texto legal **completo** queda a un toque en *Read the rental terms*.
+- **Total y botón anclados abajo**: nunca hay que buscar cuánto se paga ni dónde.
+
+**Intacto a propósito:** la casilla de autorización sigue **obligatoria** y sigue viajando a la metadata de Stripe como evidencia de disputa (bug Hermes A4), y el botón sigue explicando qué falta en vez de quedarse muerto.
+
+### 🪤 Dos cosas que sólo aparecieron midiendo
+1. **La barra anclada tapaba el texto del consentimiento.** Se detectó comparando en el navegador el `getBoundingClientRect()` del label contra el de la barra — no a ojo. Arreglado subiendo el padding inferior a `pb-40`.
+2. **Playwright no podía hacer clic en el botón de pagar** y parecía un bug: *"element is not enabled"*. No lo era — el botón tiene `aria-disabled` (a propósito, para poder explicar qué falta) y Playwright lo respeta. **La prueba estaba mal, no el botón.** Para navegar hasta el paso 4 conviene inyectar el estado en `localStorage` en vez de recorrer los 4 pasos: más rápido y no depende de la validación de cada campo.
+
+### Verificación ✅✅ en producción
+Paso 4 en **2.8 pantallas** · consentimiento **visible**, sin quedar tapado · el botón pasa a rojo `#E02B20` al marcar la casilla · **arnés 19/19** · llave de Maps en sus 11 chunks.
+
+### Lo que pidió Cris después (pendiente de GO)
+**Quiere un A/B con otra versión** — y ahora sí se puede hacer bien. Se le explicó la diferencia con el fiasco de la mañana: aquello era **un flujo entero en paralelo** (otra página, otro código, otro cobro); un A/B de verdad cambia **una sola pieza dentro de la misma página**, con el mismo checkout y la misma medición. Falta montar tres cosas que no existen: (1) el **repartidor** que asigne variante y la deje fija —si cambia entre pasos el dato se arruina—, (2) la **etiqueta** de variante en el evento de GA4 **y** en la metadata de Stripe para cruzarla con ventas reales, y (3) el **interruptor de emergencia**. Lectura: por **paso a paso**, no por venta final (287 inicios/mes ⇒ meses para significancia; el paso 1→2 se ve en 3 días).
+
+---
+
 ## 2026-09-18 04:22–04:32Z — cris «Web HTM» (Opus 5) — 💳 Apple Pay y Google Pay ACTIVOS en tpdumpsters.com
 
 **GO de Cris** (msg 22106) después de que el benchmark de Prisma señalara el pago en móvil como el cambio de mayor impacto — y de que al ir a verificarlo resultara que **ya estaba medido desde el 9-sep esperando permiso** ([[ref_tp_booking_wallets_apple_google_pay]]).
