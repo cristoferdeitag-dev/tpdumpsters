@@ -51,148 +51,139 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
   };
   const baseDays = booking.service?.baseDays || 7;
 
+  const extra = booking.extraDays > 0 ? booking.extraDays * booking.extraDayFee : 0;
+
   return (
-    <div>
-      <h2 className="font-[var(--font-poppins)] text-2xl font-bold text-[#333] mb-2">
-        Review your booking
+    /* ── Paso 4 reconstruido el 18-sep-2026 ──────────────────────────────
+       Medido antes: esta pantalla ocupaba 9,216 px en móvil — casi 8 pantallas
+       de scroll justo donde el cliente decide pagar $599 o más. El benchmark
+       de Prisma (reports/consejo/bench_booking_prisma.md) dio el patrón que
+       usan los que lo hacen bien (Airbnb, Uber, renta de autos):
+         · el total arriba y el botón anclado abajo, nunca hay que buscarlos
+         · el desglose y el detalle de la reserva detrás de un "ver", no
+           desplegados en la pantalla
+         · UN solo consentimiento, con el texto completo a un toque
+         · y los cargos redactados como lo que INCLUYE, no como amenaza
+       Lo que NO cambió: la casilla de autorización sigue siendo obligatoria y
+       sigue viajando a la metadata de Stripe como evidencia de disputa, y el
+       botón sigue explicando qué falta en vez de quedarse muerto. */
+    <div className="pb-40">
+      <h2 className="font-[var(--font-oswald)] uppercase text-[24px] font-semibold text-[#1d2329] mb-1">
+        Review &amp; pay
       </h2>
-      <p className="text-sm text-[#888] mb-6 font-[var(--font-poppins)]">
-        Please confirm all details are correct before submitting.
+      <p className="text-[13.5px] text-[#4b5156] mb-5 font-[var(--font-poppins)]">
+        Delivery, pickup and disposal are included in the price.
       </p>
 
-      {/* Service summary */}
-      <div className="bg-gray-50 rounded-xl p-5 mb-4">
-        <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm uppercase tracking-wider">
-          <IconReceipt size={17} className="text-[#4b5156]" /> Service
-        </h3>
-        <div className="grid grid-cols-2 gap-2 text-sm font-[var(--font-poppins)]">
-          <span className="text-[#888]">Type:</span>
-          <span className="font-semibold">{booking.service?.serviceType}</span>
-          <span className="text-[#888]">Size:</span>
-          <span className="font-semibold">{booking.service?.size}</span>
-          <span className="text-[#888]">Dimensions:</span>
-          <span>{booking.service?.dimensions}</span>
-          <span className="text-[#888]">Weight limit:</span>
-          <span>{booking.service?.weightLimit}</span>
-        </div>
-      </div>
-
-      {/* Dates summary */}
-      <div className="bg-gray-50 rounded-xl p-5 mb-4">
-        <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm uppercase tracking-wider">
-          <IconCalendar size={17} className="text-[#4b5156]" /> Dates
-        </h3>
-        <div className="grid grid-cols-2 gap-2 text-sm font-[var(--font-poppins)]">
-          <span className="text-[#888]">Delivery:</span>
-          <span className="font-semibold">
-            {formatDate(booking.deliveryDate)}
-            {booking.deliveryWindow && (
-              <span className="text-tp-red ml-1">— {WINDOW_LABELS[booking.deliveryWindow] || booking.deliveryWindow}</span>
-            )}
+      {/* ── Total, arriba y a la vista ── */}
+      <div className="rounded-xl border border-[#d7dadd] bg-white p-4 mb-3">
+        <div className="flex items-baseline justify-between">
+          <span className="font-[var(--font-poppins)] text-[13px] font-medium text-[#4b5156]">
+            Total today
           </span>
-          <span className="text-[#888]">Pickup:</span>
-          <span className="font-semibold">{formatDate(booking.pickupDate)}</span>
-          <span className="text-[#888]">Included days:</span>
-          <span>{baseDays} days</span>
-          {booking.extraDays > 0 && (
-            <>
-              <span className="text-amber-600">Extra days:</span>
-              <span className="text-amber-600 font-semibold">{booking.extraDays} days</span>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Address summary */}
-      <div className="bg-gray-50 rounded-xl p-5 mb-4">
-        <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm uppercase tracking-wider">
-          <IconPin size={17} className="text-[#4b5156]" /> Delivery address
-        </h3>
-        <div className="text-sm font-[var(--font-poppins)]">
-          <p className="font-semibold">{booking.customerName}</p>
-          <p>{booking.address}</p>
-          <p>{booking.city}, CA {booking.zipCode}</p>
-          <p className="text-[#888] mt-1">{booking.customerPhone}</p>
-          {booking.customerEmail && (
-            <p className="text-[#888]">{booking.customerEmail}</p>
-          )}
-          {booking.notes && (
-            <p className="text-[#888] mt-2 italic">Notes: {booking.notes}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Price summary */}
-      <div className="bg-black rounded-xl p-5 mb-6 text-white">
-        <h3 className="font-[var(--font-poppins)] font-semibold mb-3 text-sm uppercase tracking-wider">
-          <IconReceipt size={17} className="text-[#4b5156]" /> Price summary
-        </h3>
-        <div className="space-y-2 text-sm font-[var(--font-poppins)]">
-          <div className="flex justify-between">
-            <span className="text-white/70">
-              {booking.service?.serviceType} — {booking.service?.size}
+          <span className="text-right">
+            {booking.onlineDiscount > 0 && (
+              <s className="text-[13px] text-[#9aa0a6] mr-2">${booking.subtotal}</s>
+            )}
+            <span className="font-[var(--font-oswald)] text-[30px] font-semibold text-[#1d2329]">
+              ${booking.totalPrice.toFixed(2)}
             </span>
-            <span>${booking.service?.basePrice}</span>
-          </div>
-          <div className="flex justify-between text-white/50">
-            <span>{baseDays} days included</span>
-            <span>Included</span>
-          </div>
-          {booking.extraDays > 0 && (
-            <div className="flex justify-between text-amber-400">
-              <span>{booking.extraDays} extra days × ${booking.extraDayFee}/day</span>
-              <span>+${booking.extraDays * booking.extraDayFee}</span>
-            </div>
-          )}
-          {booking.onlineDiscount > 0 && (
-            <div className="flex justify-between text-green-400">
-              <span>Online booking discount ($50 OFF)</span>
-              <span>-${booking.onlineDiscount.toFixed(2)}</span>
-            </div>
-          )}
-          <div className="border-t border-white/20 pt-3 mt-3 flex justify-between items-baseline">
-            <span className="font-bold text-lg">Total</span>
-            <div className="text-right">
-              {booking.onlineDiscount > 0 && (
-                <span className="text-sm text-white/40 line-through mr-2">${booking.subtotal}</span>
-              )}
-              <span className="font-[var(--font-oswald)] text-3xl font-bold">
-                ${booking.totalPrice.toFixed(2)}
-              </span>
-            </div>
-          </div>
+          </span>
         </div>
-        <p className="text-[10px] text-white/40 mt-3">
-          Delivery, pickup & disposal included. Extra weight: $179/ton (prorated).
+
+        <details className="mt-3 group">
+          <summary className="cursor-pointer list-none font-[var(--font-poppins)] text-[13px] font-medium text-[#4b5156] underline decoration-[#c9ccd0]">
+            See price breakdown
+          </summary>
+          <div className="mt-3 space-y-1.5 font-[var(--font-poppins)] text-[13.5px]">
+            <div className="flex justify-between">
+              <span className="text-[#4b5156]">
+                {booking.service?.size} · {booking.service?.serviceType}
+              </span>
+              <span className="text-[#1d2329]">${booking.service?.basePrice}</span>
+            </div>
+            {extra > 0 && (
+              <div className="flex justify-between">
+                <span className="text-[#4b5156]">
+                  {booking.extraDays} extra day{booking.extraDays > 1 ? "s" : ""} × ${booking.extraDayFee}
+                </span>
+                <span className="text-[#1d2329]">+${extra}</span>
+              </div>
+            )}
+            {booking.onlineDiscount > 0 && (
+              <div className="flex justify-between">
+                <span className="text-[#4b5156]">Online booking discount</span>
+                <span className="text-[#1a7f37] font-medium">−${booking.onlineDiscount.toFixed(2)}</span>
+              </div>
+            )}
+          </div>
+        </details>
+      </div>
+
+      {/* ── Lo que incluye: mismo dato que antes, en positivo ── */}
+      <div className="rounded-xl border-l-[3px] border-tp-gold bg-[#fffdf5] px-4 py-3 mb-3">
+        <p className="font-[var(--font-poppins)] text-[13px] text-[#1d2329] leading-relaxed">
+          <strong className="font-semibold">Your rental includes</strong>{" "}
+          {booking.service?.weightLimit || "the weight allowance"} and {baseDays} days.
+          Need more? Extra weight is <strong className="font-semibold">$179</strong>/ton and each
+          extra day <strong className="font-semibold">${booking.extraDayFee}</strong>.
         </p>
       </div>
 
-      {/* Terms */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-        <p className="text-xs text-amber-800 font-[var(--font-poppins)]">
-          <strong>Cancellation policy:</strong> 24-hour notice required. $150 cancellation fee applies.
-          Mattresses, appliances, electronics & tires incur extra fees ($20–$60 each).
-        </p>
-      </div>
+      {/* ── El detalle de la reserva, a un toque ── */}
+      <details className="rounded-xl border border-[#d7dadd] bg-white mb-3">
+        <summary className="cursor-pointer list-none px-4 py-3 font-[var(--font-poppins)] text-[13.5px] font-medium text-[#1d2329] flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <IconReceipt size={16} className="text-[#4b5156]" />
+            {booking.service?.size} · {formatDate(booking.deliveryDate)}
+          </span>
+          <span className="text-[#4b5156] underline decoration-[#c9ccd0]">Review</span>
+        </summary>
+        <div className="px-4 pb-4 pt-1 font-[var(--font-poppins)] text-[13.5px] space-y-3">
+          <div>
+            <p className="text-[11.5px] uppercase tracking-wider text-[#8a8f94] font-semibold mb-1">Dumpster</p>
+            <p className="text-[#1d2329]">
+              {booking.service?.serviceType} · {booking.service?.size} · {booking.service?.dimensions}
+            </p>
+            <p className="text-[#4b5156]">{booking.service?.weightLimit} included</p>
+          </div>
+          <div>
+            <p className="text-[11.5px] uppercase tracking-wider text-[#8a8f94] font-semibold mb-1 flex items-center gap-1.5">
+              <IconCalendar size={14} /> Dates
+            </p>
+            <p className="text-[#1d2329]">
+              Drop-off {formatDate(booking.deliveryDate)}
+              {booking.deliveryWindow && (
+                <span className="text-[#4b5156]"> · {WINDOW_LABELS[booking.deliveryWindow] || booking.deliveryWindow}</span>
+              )}
+            </p>
+            <p className="text-[#1d2329]">Pick-up {formatDate(booking.pickupDate)}</p>
+          </div>
+          <div>
+            <p className="text-[11.5px] uppercase tracking-wider text-[#8a8f94] font-semibold mb-1 flex items-center gap-1.5">
+              <IconPin size={14} /> Delivery to
+            </p>
+            <p className="text-[#1d2329] font-medium">{booking.customerName}</p>
+            <p className="text-[#4b5156]">{booking.address}, {booking.city} {booking.zipCode}</p>
+            <p className="text-[#4b5156]">{booking.customerPhone}</p>
+            {booking.customerEmail && <p className="text-[#4b5156]">{booking.customerEmail}</p>}
+            {booking.notes && <p className="text-[#4b5156] italic mt-1">“{booking.notes}”</p>}
+          </div>
+          <button
+            onClick={onBack}
+            className="font-[var(--font-poppins)] text-[13px] font-medium text-[#4b5156] underline decoration-[#c9ccd0]"
+          >
+            Something to fix? Go back
+          </button>
+        </div>
+      </details>
 
-      {/* Next steps notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <p className="text-xs text-blue-800 font-[var(--font-poppins)] leading-relaxed">
-          <strong>What happens next?</strong> Once your booking is confirmed, a member of our team will contact you within 24 hours to confirm delivery details, placement location, and any special requirements for your project.
-        </p>
-      </div>
-
-      {/* Authorization checkbox */}
+      {/* ── Un solo consentimiento, con el texto completo a un toque ── */}
       <div
-        className={`rounded-xl p-4 mb-6 border-2 transition-colors ${
-          attempted && !authorizedCharges
-            ? "border-red-400 bg-red-50"
-            : "border-gray-200 bg-gray-50"
+        className={`rounded-xl p-4 border transition-colors ${
+          attempted && !authorizedCharges ? "border-tp-red bg-[#fdecea]" : "border-[#d7dadd] bg-white"
         }`}
       >
-        <p className="text-xs font-semibold text-[#333] mb-2 font-[var(--font-poppins)]">
-          Required<span className="text-tp-red font-bold"> *</span> — check the box to continue
-        </p>
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -202,40 +193,72 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
               updateBooking({ authorizedCharges: e.target.checked });
             }}
             aria-required="true"
-            className="mt-1 w-4 h-4 accent-tp-red flex-shrink-0"
+            className="mt-0.5 w-[18px] h-[18px] accent-tp-red flex-shrink-0"
           />
-          <span className="text-xs text-[#555] font-[var(--font-poppins)] leading-relaxed">
-            I authorize TP Dumpsters to charge my card for any additional fees incurred during the rental period, including but not limited to: extra weight ($179/ton prorated), additional rental days ($49/day), and prohibited/hazardous items found in the dumpster ($20–$60 per item). I understand these charges may be processed after the dumpster is picked up.
+          <span className="text-[13px] text-[#1d2329] font-[var(--font-poppins)] leading-relaxed">
+            I agree to pay today’s total and authorize charges for extra weight, extra days or
+            prohibited items, per the{" "}
+            <span className="underline decoration-[#c9ccd0]">rental terms</span>.
           </span>
         </label>
+
+        <details className="mt-2 ml-[30px]">
+          <summary className="cursor-pointer list-none font-[var(--font-poppins)] text-[12px] text-[#4b5156] underline decoration-[#c9ccd0]">
+            Read the rental terms
+          </summary>
+          <div className="mt-2 font-[var(--font-poppins)] text-[12px] text-[#4b5156] leading-relaxed space-y-2">
+            <p>
+              I authorize TP Dumpsters to charge my card for any additional fees incurred during the
+              rental period, including but not limited to: extra weight ($179/ton prorated),
+              additional rental days (${booking.extraDayFee}/day), and prohibited or hazardous items
+              found in the dumpster ($20–$60 per item). I understand these charges may be processed
+              after the dumpster is picked up.
+            </p>
+            <p>
+              <strong className="font-semibold text-[#1d2329]">Cancellation:</strong> 24-hour notice
+              required; a $150 cancellation fee applies. Overloaded loads (above the top edge) add a
+              $149 fee, charged at pickup.
+            </p>
+            <p>
+              <strong className="font-semibold text-[#1d2329]">What happens next:</strong> once the
+              booking is confirmed, someone from our team contacts you within 24 hours to confirm
+              delivery details and placement.
+            </p>
+          </div>
+        </details>
+
         {attempted && !authorizedCharges && (
-          <p role="alert" aria-live="polite" className="text-xs text-red-600 font-semibold mt-2 font-[var(--font-poppins)]">
-            Please check this box to authorize the charges — we can&apos;t take
-            the payment without it.
+          <p role="alert" aria-live="polite" className="text-[12.5px] text-[#8a1c14] font-semibold mt-2 ml-[30px] font-[var(--font-poppins)]">
+            Check the box to authorize the charges — we can’t take the payment without it.
           </p>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
-        <button
-          onClick={onBack}
-          className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm text-[#666] bg-gray-100 hover:bg-gray-200 transition-colors"
-        >
-          ← Back
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          aria-disabled={!authorizedCharges}
-          className={`flex items-center justify-center gap-2 px-8 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-base shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-            authorizedCharges
-              ? "bg-tp-red text-white hover:bg-tp-red-dark"
-              : "bg-gray-200 text-gray-500 hover:bg-gray-300"
-          }`}
-        >
-          <FaCreditCard />
-          {isSubmitting ? "Preparing secure payment..." : "Pay & confirm booking"}
-        </button>
+      {/* ── Total y pago anclados abajo: nunca hay que buscarlos ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#e2e4e7] bg-white/95 backdrop-blur px-4 py-3">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <div className="flex-none">
+            <p className="font-[var(--font-poppins)] text-[11px] text-[#8a8f94] leading-none mb-0.5">
+              Total today
+            </p>
+            <p className="font-[var(--font-oswald)] text-[22px] font-semibold text-[#1d2329] leading-none">
+              ${booking.totalPrice.toFixed(2)}
+            </p>
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            aria-disabled={!authorizedCharges}
+            className={`flex-1 flex items-center justify-center gap-2 h-[52px] rounded-xl font-[var(--font-poppins)] font-semibold text-[15px] transition-colors ${
+              authorizedCharges
+                ? "bg-tp-red text-white"
+                : "bg-[#e4e4e8] text-[#8a8f94]"
+            }`}
+          >
+            <FaCreditCard />
+            {isSubmitting ? "Preparing payment…" : "Pay & confirm"}
+          </button>
+        </div>
       </div>
     </div>
   );
