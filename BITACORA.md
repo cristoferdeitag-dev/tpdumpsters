@@ -1,3 +1,26 @@
+## 2026-09-18 04:22–04:32Z — cris «Web HTM» (Opus 5) — 💳 Apple Pay y Google Pay ACTIVOS en tpdumpsters.com
+
+**GO de Cris** (msg 22106) después de que el benchmark de Prisma señalara el pago en móvil como el cambio de mayor impacto — y de que al ir a verificarlo resultara que **ya estaba medido desde el 9-sep esperando permiso** ([[ref_tp_booking_wallets_apple_google_pay]]).
+
+### Lo que estaba pasando
+- Booking embebido: **0 de 73 pagos** con Apple Pay. Flujo viejo (redirect a Stripe): **10 de 68 = 15%**.
+- `tpdumpsters.com` **no estaba** en `payment_method_domains` — sólo `checkout.stripe.com`.
+- 🔎 **El trabajo estaba a medias desde antes:** el archivo de verificación de Apple **ya estaba en el repo** (commit `1ebe131`, "Apple Pay: archivo de verificación de dominio") pero **el dominio nunca se registró en Stripe**. Poner el archivo sin registrar el dominio no sirve de nada. Y con `output:"standalone"` el archivo tampoco viajaba al servidor: el deploy sube `.next/`, no `public/` — hubo que rsync aparte.
+- **Corrección a la nota del 9-sep:** Google Pay **ya no estaba apagado**; las 3 `payment_method_configurations` tienen `apple:on google:on link:on`. La única causa viva era el dominio.
+
+### Lo hecho
+`POST /v1/payment_method_domains` con `domain_name=tpdumpsters.com` (header `Stripe-Account`) → **`pmd_1UGtL9IRhgZxSFKHdNLJgZgV`**, `enabled: true`, y **apple_pay / google_pay / link / paypal todos `active`** ✅✅. Antes se comprobó que el archivo responde **200 con 9,094 bytes** en `https://tpdumpsters.com/.well-known/…`.
+
+⚠️ **Lo que NO está verificado:** que el botón **se vea** en pantalla. Exige llegar al paso de pago, y eso crea reserva real + sesión de Stripe. Se confirma con el primer pago real (`payment_method_details.card.wallet` del charge) o con una reserva de prueba que se cancele. **`active` en la API ≠ visible para el cliente.** Ofrecido a Cris.
+
+### 🔍 Contradicción encontrada de paso: PALO ALTO
+El ZIP **94301 está DENTRO** de la lista blanca de `service-area.ts` que Asaí autorizó ayer → el checkout acepta reservas de Palo Alto. Pero `palo-alto` está en **`RETIRED_CITIES`** de `next.config.ts` y su página **redirige 301 al home** desde el 24-jun. Vendemos ahí y no tenemos página; quien busque "dumpster rental palo alto" aterriza en el inicio. Decisión de Asaí: o se le crea página (sería la excepción de Santa Clara), o se le sacan los ZIPs de la lista blanca. Relay: `asai/2026-09-18T0430Z`.
+
+### Del benchmark de Prisma (`reports/consejo/bench_booking_prisma.md`)
+Corrigió la analogía del dueño: **más U-Haul que Marriott** — base fija + penalizaciones por mal uso + logística hiperlocal. Lo accionable: **precio visible y botón anclado abajo** · **ZIP y fechas primero** (hoy el cliente se enamora del producto y en el paso 3 se entera de que no hay cobertura; la regla material→tamaño se queda, la respaldó) · **cargos como "lo que incluye"** y no como amenaza · **el agente como buscador, no como chatbot** (dato suyo: ningún sistema transaccional serio obliga a chatear) · y **no tocar**: el precio oculto antes del material, la persistencia de 20 h y la nota de colocación (*"oro operativo"*).
+
+---
+
 ## 2026-09-18 03:58–04:20Z — cris «Web HTM» (Opus 5) — 🎨 Pasos 2, 3 y 4 sin emojis: el flujo completo parejo (EN VIVO)
 
 **Cris** (msg 22094): *"visualmente siento que el paso tres no se ve tan limpio y los iconos creo que tampoco ayudan tanto"*. Tenía razón y la causa era mía: el paso 1 ya estaba rediseñado y **el resto seguía con emojis**, así que el flujo se veía mitad nuevo y mitad viejo. GO en msg 22096 para hacer los tres de una vez y subirlos juntos. Commit **`5867a7a`**, **BUILD_ID `IXIxznS7em0YA2Pee4MF1`**.
