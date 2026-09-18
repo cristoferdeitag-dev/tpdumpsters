@@ -108,6 +108,56 @@ export const IconMixed = (p: Props) => (
   </Svg>
 );
 
+
+/* ── Iconos de sección de los pasos 2, 3 y 4 ──
+   18-sep-2026: sustituyen a los emojis de encabezado (👤 📍 💳 📅 💰 📊 📋).
+   Cris: *"visualmente siento que el paso tres no se ve tan limpio y los
+   iconos creo que tampoco ayudan tanto"* (msg 22094). El paso 1 ya estaba
+   limpio y el resto seguía con emojis, así que el flujo se veía desparejo. */
+
+export const IconUser = (p: Props) => (
+  <Svg {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21a8 8 0 0 1 16 0" />
+  </Svg>
+);
+
+export const IconPin = (p: Props) => (
+  <Svg {...p}>
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </Svg>
+);
+
+export const IconCard = (p: Props) => (
+  <Svg {...p}>
+    <rect width="19" height="13" x="2.5" y="5.5" rx="2" />
+    <path d="M2.5 10h19" />
+    <path d="M6.5 14.5h3" />
+  </Svg>
+);
+
+export const IconCalendar = (p: Props) => (
+  <Svg {...p}>
+    <rect width="17" height="16" x="3.5" y="4.5" rx="2" />
+    <path d="M3.5 9.5h17M8.5 4.5v-2M15.5 4.5v-2" />
+  </Svg>
+);
+
+export const IconReceipt = (p: Props) => (
+  <Svg {...p}>
+    <path d="M5.5 3.5h13v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-1 .7V3.5Z" />
+    <path d="M9 8h6M9 12h6" />
+  </Svg>
+);
+
+export const IconAlert = (p: Props) => (
+  <Svg {...p}>
+    <path d="M12 4 2.5 20.5h19L12 4Z" />
+    <path d="M12 10v4.5M12 17.6v.1" />
+  </Svg>
+);
+
 export const IconCheck = ({ size = 12 }: { size?: number }) => (
   <svg
     width={size}

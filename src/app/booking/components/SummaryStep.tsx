@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FaCreditCard } from "react-icons/fa6";
 import type { BookingData } from "./BookingWizard";
+import { IconCalendar, IconReceipt, IconAlert, IconPin } from "@/components/MaterialIcons";
 
 interface Props {
   booking: BookingData;
@@ -62,7 +63,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       {/* Service summary */}
       <div className="bg-gray-50 rounded-xl p-5 mb-4">
         <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm uppercase tracking-wider">
-          🗑️ Service
+          <IconReceipt size={17} className="text-[#4b5156]" /> Service
         </h3>
         <div className="grid grid-cols-2 gap-2 text-sm font-[var(--font-poppins)]">
           <span className="text-[#888]">Type:</span>
@@ -79,7 +80,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       {/* Dates summary */}
       <div className="bg-gray-50 rounded-xl p-5 mb-4">
         <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm uppercase tracking-wider">
-          📅 Dates
+          <IconCalendar size={17} className="text-[#4b5156]" /> Dates
         </h3>
         <div className="grid grid-cols-2 gap-2 text-sm font-[var(--font-poppins)]">
           <span className="text-[#888]">Delivery:</span>
@@ -105,7 +106,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       {/* Address summary */}
       <div className="bg-gray-50 rounded-xl p-5 mb-4">
         <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm uppercase tracking-wider">
-          📍 Delivery address
+          <IconPin size={17} className="text-[#4b5156]" /> Delivery address
         </h3>
         <div className="text-sm font-[var(--font-poppins)]">
           <p className="font-semibold">{booking.customerName}</p>
@@ -124,7 +125,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       {/* Price summary */}
       <div className="bg-black rounded-xl p-5 mb-6 text-white">
         <h3 className="font-[var(--font-poppins)] font-semibold mb-3 text-sm uppercase tracking-wider">
-          💰 Price summary
+          <IconReceipt size={17} className="text-[#4b5156]" /> Price summary
         </h3>
         <div className="space-y-2 text-sm font-[var(--font-poppins)]">
           <div className="flex justify-between">
@@ -145,7 +146,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
           )}
           {booking.onlineDiscount > 0 && (
             <div className="flex justify-between text-green-400">
-              <span>💰 Online booking discount ($50 OFF)</span>
+              <span>Online booking discount ($50 OFF)</span>
               <span>-${booking.onlineDiscount.toFixed(2)}</span>
             </div>
           )}
@@ -169,7 +170,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       {/* Terms */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
         <p className="text-xs text-amber-800 font-[var(--font-poppins)]">
-          📋 <strong>Cancellation policy:</strong> 24-hour notice required. $150 cancellation fee applies.
+          <strong>Cancellation policy:</strong> 24-hour notice required. $150 cancellation fee applies.
           Mattresses, appliances, electronics & tires incur extra fees ($20–$60 each).
         </p>
       </div>
@@ -177,7 +178,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       {/* Next steps notice */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
         <p className="text-xs text-blue-800 font-[var(--font-poppins)] leading-relaxed">
-          📞 <strong>What happens next?</strong> Once your booking is confirmed, a member of our team will contact you within 24 hours to confirm delivery details, placement location, and any special requirements for your project.
+          <strong>What happens next?</strong> Once your booking is confirmed, a member of our team will contact you within 24 hours to confirm delivery details, placement location, and any special requirements for your project.
         </p>
       </div>
 
@@ -209,7 +210,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
         </label>
         {attempted && !authorizedCharges && (
           <p role="alert" aria-live="polite" className="text-xs text-red-600 font-semibold mt-2 font-[var(--font-poppins)]">
-            ⚠️ Please check this box to authorize the charges — we can&apos;t take
+            Please check this box to authorize the charges — we can&apos;t take
             the payment without it.
           </p>
         )}
@@ -233,7 +234,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
           }`}
         >
           <FaCreditCard />
-          {isSubmitting ? "Preparing secure payment..." : "💳 Pay & confirm booking"}
+          {isSubmitting ? "Preparing secure payment..." : "Pay & confirm booking"}
         </button>
       </div>
     </div>

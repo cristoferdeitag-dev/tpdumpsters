@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { BookingData } from "./BookingWizard";
 import { isOutsideServiceArea } from "@/lib/service-area";
+import { IconUser, IconPin, IconCard, IconAlert } from "@/components/MaterialIcons";
 
 interface Props {
   booking: BookingData;
@@ -405,8 +406,8 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
 
       {/* Contact info */}
       <div className="mb-6">
-        <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3 text-sm">
-          👤 Your information
+        <h3 className="flex items-center gap-2 font-[var(--font-poppins)] font-semibold text-[#1d2329] mb-3 text-sm">
+          <IconUser size={18} className="text-[#4b5156]" /> Your information
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -424,7 +425,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {touched.customerName && errors.customerName && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                ⚠️ {errors.customerName}
+                {errors.customerName}
               </p>
             )}
           </div>
@@ -444,7 +445,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {touched.customerPhone && errors.customerPhone && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                ⚠️ {errors.customerPhone}
+                {errors.customerPhone}
               </p>
             )}
           </div>
@@ -463,7 +464,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {touched.customerEmail && errors.customerEmail && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                ⚠️ {errors.customerEmail}
+                {errors.customerEmail}
               </p>
             )}
           </div>
@@ -472,16 +473,19 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
 
       {/* Address */}
       <div className="mb-6">
-        <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-1 text-sm">
-          📍 Delivery address
+        <h3 className="flex items-center gap-2 font-[var(--font-poppins)] font-semibold text-[#1d2329] mb-1 text-sm">
+          <IconPin size={18} className="text-[#4b5156]" /> Delivery address
           {GOOGLE_MAPS_KEY && (
             <span className="text-xs text-[#aaa] font-normal ml-2">
               — Start typing to search
             </span>
           )}
         </h3>
-        <p className="text-xs text-[#999] mb-3 font-[var(--font-poppins)]">
-          We deliver to the San Francisco Bay Area — Contra Costa, Alameda, San Francisco, San Mateo, Marin, Solano, and surrounding counties.
+        {/* 18-sep: era la lista completa de 6 condados en un párrafo. La
+            zona ya se valida sola al escribir la dirección, así que aquí basta
+            una línea (Cris msg 22094: "el paso tres no se ve tan limpio"). */}
+        <p className="text-xs text-[#4b5156] mb-3 font-[var(--font-poppins)]">
+          We serve the San Francisco Bay Area.
         </p>
         <div className="space-y-4">
           <div>
@@ -500,7 +504,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {attempted && booking.address.trim() === "" && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                ⚠️ Street address is required
+                Street address is required
               </p>
             )}
           </div>
@@ -525,7 +529,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               />
               {attempted && booking.city.trim() === "" && (
                 <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                  ⚠️ City is required
+                  City is required
                 </p>
               )}
             </div>
@@ -545,7 +549,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               />
               {touched.zipCode && errors.zipCode && (
                 <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                  ⚠️ {errors.zipCode}
+                  {errors.zipCode}
                 </p>
               )}
             </div>
@@ -567,14 +571,14 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
       {/* Billing address (optional) */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] text-sm">
-            💳 Billing address
+          <h3 className="flex items-center gap-2 font-[var(--font-poppins)] font-semibold text-[#1d2329] text-sm">
+            <IconCard size={18} className="text-[#4b5156]" /> Billing address
             <span className="text-xs text-[#aaa] font-normal ml-2">(optional)</span>
           </h3>
           {!showBilling && (
             <button
               onClick={() => setShowBilling(true)}
-              className="text-xs text-tp-red font-semibold font-[var(--font-poppins)] hover:underline"
+              className="text-xs text-[#4b5156] font-medium font-[var(--font-poppins)] underline decoration-[#c9ccd0] hover:text-[#1d2329]"
             >
               + Add different billing address
             </button>
@@ -601,7 +605,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
                 <div>{booking.billingAddress.line1}</div>
                 <div>{booking.billingAddress.city}, {booking.billingAddress.state} {booking.billingAddress.zip}</div>
                 {(!booking.billingAddress.line1 || !booking.billingAddress.city || !booking.billingAddress.state || !booking.billingAddress.zip) && (
-                  <div className="text-red-500 mt-1">⚠ Some fields missing — pick a more specific address from the dropdown.</div>
+                  <div className="text-red-500 mt-1">Some fields missing — pick a more specific address from the dropdown.</div>
                 )}
               </div>
             ) : (
@@ -617,7 +621,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               }}
               className="text-xs text-[#999] font-[var(--font-poppins)] hover:text-tp-red"
             >
-              ✕ Use delivery address instead
+              Use delivery address instead
             </button>
           </div>
         )}
@@ -628,11 +632,10 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           cualquier cosa o nada; el driver llegaba sin saber dónde dejarlo. */}
       <div className="mb-6">
         <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-          📍 Where exactly should we place the dumpster?<Req />
+          <IconPin size={18} className="text-[#4b5156]" /> Where exactly should we place the dumpster?<Req />
         </label>
         <p className="text-xs text-[#999] mb-2 font-[var(--font-poppins)]">
-          Tell us the exact spot — driveway, street in front of the house, side
-          of the garage — and add a gate code or access note if we need one.
+          The exact spot, plus a gate code if we need one.
         </p>
         <textarea
           ref={notesRef}
@@ -650,7 +653,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         />
         {(touched.notes || attempted) && !notesValid && (
           <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-            ⚠️ Please tell us where to place the dumpster
+            Please tell us where to place the dumpster
           </p>
         )}
       </div>
@@ -662,13 +665,13 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         <div role="alert" aria-live="polite" className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
           {outsideArea ? (
             <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
-              ⚠️ We don&apos;t currently service {booking.city.trim() || "that area"} —
+              We don&apos;t currently service {booking.city.trim() || "that area"} —
               call us at (510) 650-2083 and we&apos;ll see what we can do.
             </p>
           ) : (
             <>
               <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
-                ⚠️ Before you continue, we still need: {missing.join(", ")}.
+                Before you continue, we still need: {missing.join(", ")}.
               </p>
               {!notesValid && (
                 <p className="text-xs text-amber-700 mt-1 font-[var(--font-poppins)]">

@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import type { BookingData } from "./BookingWizard";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
 import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
+import { IconCalendar, IconReceipt } from "@/components/MaterialIcons";
 
 const DELIVERY_WINDOWS = [
-  { id: "morning", emoji: "🌅", label: "Morning", time: "7:00 AM - 12:00 PM" },
-  { id: "afternoon", emoji: "🌆", label: "Afternoon", time: "1:00 PM - 6:00 PM" },
+  { id: "morning", label: "Morning", time: "7:00 AM - 12:00 PM" },
+  { id: "afternoon", label: "Afternoon", time: "1:00 PM - 6:00 PM" },
 ] as const;
 
 function getWindowLabel(windowId: string): string {
@@ -164,7 +165,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {/* Info banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
         <p className="text-sm text-blue-800 font-[var(--font-poppins)]">
-          ℹ️ <strong>Pickup date is set automatically</strong> based on your rental period ({baseDays} days).
+          ℹ <strong>Pickup date is set automatically</strong> based on your rental period ({baseDays} days).
           Done early? You can pick an <strong>earlier pickup date</strong> — same price, the {baseDays} days are always included.
           Need more time? Pick a later date — extra days are <strong>$49/day</strong>.
         </p>
@@ -174,7 +175,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         {/* Delivery date */}
         <div>
           <label className="block text-sm font-semibold text-[#333] mb-2 font-[var(--font-poppins)]">
-            📅 Delivery date<Req />
+            <IconCalendar size={17} className="text-[#4b5156]" /> Delivery date<Req />
           </label>
           <input
             type="date"
@@ -190,7 +191,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
           />
           {attempted && !booking.deliveryDate && (
             <p className="text-xs text-red-500 mt-1.5 font-[var(--font-poppins)]">
-              ⚠️ Pick the day you want the dumpster delivered
+              Pick the day you want the dumpster delivered
             </p>
           )}
           {booking.deliveryDate && (
@@ -212,7 +213,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
               driver no puede esperar; si el lugar está obstruido, $149. */}
           <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <p className="text-xs text-amber-800 leading-relaxed font-[var(--font-poppins)]">
-              ⚠️ We deliver <strong>any time during the day</strong>. Have the spot
+              We deliver <strong>any time during the day</strong>. Have the spot
               clear and accessible — our driver can&apos;t wait. Blocked spot:
               <strong> $149 fee</strong>.
             </p>
@@ -222,8 +223,8 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         {/* Pickup date */}
         <div>
           <label className="block text-sm font-semibold text-[#333] mb-2 font-[var(--font-poppins)]">
-            📅 Pickup date
-            <span className="text-xs text-green-600 font-normal ml-2">✓ Auto-set</span>
+            <IconCalendar size={17} className="text-[#4b5156]" /> Pickup date
+            <span className="text-xs text-green-600 font-normal ml-2">Auto-set</span>
           </label>
           <input
             type="date"
@@ -257,7 +258,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
               debe estar libre ($149 si no), y los días extra se avisan 24h antes. */}
           <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <p className="text-xs text-amber-800 leading-relaxed font-[var(--font-poppins)]">
-              ⚠️ We pick up <strong>any time during the day</strong>. Keep the area
+              We pick up <strong>any time during the day</strong>. Keep the area
               clear or a <strong>$149 fee</strong> applies. Need more days? Tell us
               <strong> 24 hours ahead</strong>.
             </p>
@@ -269,7 +270,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {booking.deliveryDate && (
         <div className="mb-8">
           <label className="block text-sm font-semibold text-[#333] mb-1 font-[var(--font-poppins)]">
-            🕐 Choose a delivery time window<Req />
+            <IconCalendar size={17} className="text-[#4b5156]" /> Choose a delivery time window<Req />
           </label>
           <p className="text-xs text-[#888] mb-3 font-[var(--font-poppins)]">
             Time windows are a guide, not a guaranteed hour — the exact time can
@@ -295,7 +296,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
                       : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
                   }`}
                 >
-                  <span className="text-2xl mb-1">{w.emoji}</span>
+                  <span className="text-2xl mb-1"></span>
                   <span className={`font-semibold text-sm ${isSelected ? "text-tp-red" : "text-[#333]"}`}>
                     {w.label}
                   </span>
@@ -308,7 +309,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
           </div>
           {attempted && !booking.deliveryWindow && (
             <p className="text-xs text-red-500 mt-1.5 font-[var(--font-poppins)]">
-              ⚠️ Pick a time window — morning or afternoon
+              Pick a time window — morning or afternoon
             </p>
           )}
         </div>
@@ -318,7 +319,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {booking.deliveryDate && booking.pickupDate && (
         <div className="bg-gray-50 rounded-xl p-5 mb-8">
           <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3">
-            📊 Price breakdown
+            <IconReceipt size={17} className="text-[#4b5156]" /> Price breakdown
           </h3>
           <div className="space-y-2 text-sm font-[var(--font-poppins)]">
             <div className="flex justify-between">
@@ -343,7 +344,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
             )}
             {booking.onlineDiscount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>💰 Online booking discount ($50 OFF)</span>
+                <span>Online booking discount ($50 OFF)</span>
                 <span className="font-semibold">-${booking.onlineDiscount.toFixed(2)}</span>
               </div>
             )}
@@ -368,7 +369,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {!canProceed && attempted && (
         <div role="alert" aria-live="polite" className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
           <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
-            ⚠️ Before you continue, please choose: {missing.join(" and ")}.
+            Before you continue, please choose: {missing.join(" and ")}.
           </p>
         </div>
       )}

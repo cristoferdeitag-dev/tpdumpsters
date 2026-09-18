@@ -72,11 +72,13 @@ const initialBooking: BookingData = {
   authorizedCharges: false,
 };
 
+// 18-sep-2026: los emojis (🗑️ 📅 📍 📋) se fueron con el rediseño — el
+// indicador usa los números 1-4. Dejarlos aquí sólo los mantenía en el bundle.
 const STEPS = [
-  { id: 1, label: "Service", icon: "🗑️" },
-  { id: 2, label: "Dates", icon: "📅" },
-  { id: 3, label: "Address", icon: "📍" },
-  { id: 4, label: "Summary", icon: "📋" },
+  { id: 1, label: "Service" },
+  { id: 2, label: "Dates" },
+  { id: 3, label: "Address" },
+  { id: 4, label: "Summary" },
 ];
 
 // Wizard progress survives a page reload. The failure this kills (Aug-2026

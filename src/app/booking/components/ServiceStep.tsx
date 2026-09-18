@@ -42,7 +42,6 @@ const ONLINE_DISCOUNT = 50;
 
 interface ServiceCategory {
   service: string;
-  icon: string;
   description: string;
   note?: string;
   sizes?: SizeOption[];
@@ -61,51 +60,44 @@ const GENERAL_SIZES: SizeOption[] = [
 const services: ServiceCategory[] = [
   {
     service: "General Debris",
-    icon: "🏗️",
     description: "Home remodels, furniture, junk, light demolition",
-    note: "⚠️ Mattresses/appliances/electronics/tires: $20–$60 each (size dependent, special disposal)",
+    note: "Mattresses/appliances/electronics/tires: $20–$60 each (size dependent, special disposal)",
     sizes: GENERAL_SIZES,
   },
   {
     service: "Household Clean Out",
-    icon: "🏠",
     description: "House & garage cleanouts, furniture removal, decluttering",
-    note: "⚠️ Mattresses/appliances/electronics/tires: $20–$60 each (size dependent, special disposal)",
+    note: "Mattresses/appliances/electronics/tires: $20–$60 each (size dependent, special disposal)",
     sizes: GENERAL_SIZES,
   },
   {
     service: "Construction Debris",
-    icon: "🔨",
     description: "Demolition, remodeling, construction waste",
     sizes: GENERAL_SIZES,
   },
   {
     service: "Roofing",
-    icon: "🏚️",
     description: "Shingles, roofing tear-offs, heavy debris",
     sizes: GENERAL_SIZES,
   },
   {
     service: "Clean Soil",
-    icon: "🟫",
     description: "Must be 95% pure. No rocks, grass, gravel, mesh, wood, or garbage.",
-    note: "⚠️ Extra fee: $150 if prohibited items are added",
+    note: "Extra fee: $150 if prohibited items are added",
     sizes: [
       { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
   {
     service: "Clean Concrete",
-    icon: "🪨",
     description: "Must be 95% pure. No rebar, no garbage.",
-    note: "⚠️ Extra fee: $150 if prohibited items are added",
+    note: "Extra fee: $150 if prohibited items are added",
     sizes: [
       { size: "10 Yard", basePrice: 649, price: 599, dimensions: "12' L × 8' W × 2.5' H", weightLimit: "No weight limit", rentalDays: 3 },
     ],
   },
   {
     service: "Green Waste",
-    icon: "♻️",
     description: "Landscaping, branches, leaves, yard cleanup, organic debris",
     sizes: GENERAL_SIZES,
   },
@@ -114,9 +106,8 @@ const services: ServiceCategory[] = [
     // variant maps to its own internal serviceType so the invoice/quote
     // backend tracks them separately.
     service: "Mixed Materials",
-    icon: "🔀",
     description: "Pick the type of clean load — different rules apply.",
-    note: "⚠️ Extra fee: $150 if prohibited items are added",
+    note: "Extra fee: $150 if prohibited items are added",
     variants: [
       {
         serviceType: "Mixed Materials",
@@ -290,7 +281,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                   <IconCheck />
                 </span>
               )}
-              {Icon ? <Icon /> : <span className="text-base">{svc.icon}</span>}
+              <Icon />
               <span className="whitespace-normal">{svc.service}</span>
             </button>
           );
@@ -318,7 +309,13 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           {/* ── Service description banner ── */}
           <div ref={detalleRef} className="scroll-mt-28 bg-[#fafafa] rounded-2xl px-6 py-4 mb-10 border border-[#eee]">
             <p className="font-[var(--font-poppins)] text-[14px] text-[#555] leading-relaxed">
-              <span className="font-semibold text-[#333]">{activeService.icon} {activeService.service}:</span>{" "}
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[#1d2329]">
+                {(() => {
+                  const I = MATERIAL_ICONS[activeService.service];
+                  return I ? <I size={16} /> : null;
+                })()}
+                {activeService.service}:
+              </span>{" "}
               {activeService.description}
             </p>
           </div>
