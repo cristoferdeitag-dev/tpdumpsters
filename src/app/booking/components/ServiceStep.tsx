@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { FaCalendarDays } from "react-icons/fa6";
 import type { BookingData, ServiceSelection } from "./BookingWizard";
 import { trackDumpsterSelected } from "@/lib/tracking";
+import { MATERIAL_ICONS, IconCheck } from "@/components/MaterialIcons";
 
 interface Props {
   booking: BookingData;
@@ -242,37 +243,58 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
   return (
     <div>
       {/* ── Header ── */}
-      <h4 className="font-[var(--font-red-hat)] text-sm font-bold text-tp-gold uppercase tracking-[2px] mb-2">
-        STEP 1
+      {/* Hermes, 18-sep: el "STEP 1" dorado y espaciado dominaba la pantalla
+          antes de la primera decisión. Es un dato de navegación, no un
+          adorno — el dorado se reserva para acentos de marca y precio. */}
+      <h4 className="font-[var(--font-poppins)] text-[10.5px] font-semibold text-[#8a8f94] uppercase tracking-[0.12em] mb-1.5">
+        Step 1 of 4
       </h4>
-      <h2 className="font-[var(--font-poppins)] text-[26px] md:text-[32px] font-bold text-[#222] mb-2">
+      <h2 className="font-[var(--font-oswald)] uppercase tracking-[0.01em] text-[26px] md:text-[34px] font-semibold text-[#1d2329] mb-2">
         Choose your dumpster
       </h2>
-      <p className="font-[var(--font-poppins)] text-[15px] text-[#999] mb-10">
+      {/* 18-sep: el subtítulo estaba en #999 y con 91% de tráfico móvil mucha
+          gente lo lee AL SOL, donde ese gris desaparece (Consejo IA). */}
+      <p className="font-[var(--font-poppins)] text-[14.5px] leading-relaxed text-[#4b5156] mb-8">
         Select what you&apos;re disposing of, then choose the size you need.
       </p>
 
-      {/* ── Service type pills ── */}
-      <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 mb-10">
-        {services.map((svc, idx) => (
-          <button
-            key={svc.service}
-            onClick={() => {
-              setActiveServiceIdx(idx);
-              requestAnimationFrame(() =>
-                detalleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-              );
-            }}
-            className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl md:rounded-full text-sm font-semibold font-[var(--font-poppins)] transition-all duration-200 ${
-              activeServiceIdx === idx
-                ? "bg-tp-red text-white shadow-md"
-                : "bg-[#f5f5f5] text-[#555] border border-[#e5e5e5] hover:border-tp-red hover:text-tp-red"
-            }`}
-          >
-            <span className="text-base">{svc.icon}</span>
-            <span className="whitespace-normal leading-tight text-center">{svc.service}</span>
-          </button>
-        ))}
+      {/* ── Materiales ──
+          18-sep-2026: eran pastillas redondeadas con emoji. Ahora son
+          rectángulos con icono de un solo trazo, alineados a la izquierda
+          (Consejo IA: los emojis eran la señal infantil, y las cápsulas
+          acumuladas "hacen que parezca una app escolar").
+          El elegido NO se llena de rojo — borde rojo, tinte apenas y un check:
+          llenar la tarjeta de color la vuelve promocional. */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-10">
+        {services.map((svc, idx) => {
+          const Icon = MATERIAL_ICONS[svc.service];
+          const elegido = activeServiceIdx === idx;
+          return (
+            <button
+              key={svc.service}
+              onClick={() => {
+                setActiveServiceIdx(idx);
+                requestAnimationFrame(() =>
+                  detalleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                );
+              }}
+              aria-pressed={elegido}
+              className={`relative flex items-center gap-2.5 text-left px-3 py-3.5 rounded-[9px] text-[14.5px] font-semibold font-[var(--font-poppins)] leading-tight transition-colors duration-150 ${
+                elegido
+                  ? "border-[1.5px] border-tp-red bg-[#fef6f5] text-[#1d2329]"
+                  : "border border-[#d7dadd] bg-white text-[#1d2329] hover:border-tp-red hover:text-tp-red"
+              }`}
+            >
+              {elegido && (
+                <span className="absolute -top-[7px] -right-[7px] w-5 h-5 rounded-full bg-tp-red text-white grid place-items-center">
+                  <IconCheck />
+                </span>
+              )}
+              {Icon ? <Icon /> : <span className="text-base">{svc.icon}</span>}
+              <span className="whitespace-normal">{svc.service}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Mientras no haya material elegido no se muestra ni descripción, ni
@@ -303,15 +325,15 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
 
           {/* Reglas del dumpster elegido, a la vista y ANTES de los precios: la del
               material (si tiene) y la del overload, que aplica siempre. */}
-          <div className="-mt-6 mb-10 bg-amber-50 border border-amber-300 rounded-2xl px-6 py-4 space-y-2">
+          <div className="-mt-6 mb-10 bg-[#fffdf5] border-l-[3px] border-tp-gold rounded-r-lg px-5 py-4 space-y-2">
             {activeService.note && (
-              <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
+              <p className="font-[var(--font-poppins)] text-[13px] text-[#1d2329] leading-relaxed">
                 {activeService.note}
               </p>
             )}
-            <p className="font-[var(--font-poppins)] text-sm text-amber-800 leading-relaxed">
-              ⚠️ Nothing above the top edge of the dumpster. Overloaded loads add a
-              <strong> $149 fee, charged at pickup</strong>.
+            <p className="font-[var(--font-poppins)] text-[13px] text-[#1d2329] leading-relaxed">
+              Nothing above the top edge of the dumpster. Overloaded loads add a
+              <strong className="font-semibold"> $149 fee, charged at pickup</strong>.
             </p>
           </div>
         </>

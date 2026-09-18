@@ -8,6 +8,7 @@ import SummaryStep from "./SummaryStep";
 import ConfirmationStep from "./ConfirmationStep";
 import EmbeddedPayment from "./EmbeddedPayment";
 import { trackBookingStarted, trackBookingStep, trackBookingPayment, getGclid } from "@/lib/tracking";
+import { IconCheck } from "@/components/MaterialIcons";
 
 /* ───────── Types ───────── */
 export interface BillingAddress {
@@ -483,22 +484,35 @@ export default function BookingWizard() {
   return (
     <div ref={wizardTopRef} className="w-[92%] sm:w-[85%] max-w-[900px] mx-auto py-10 scroll-mt-24">
       {/* Progress bar */}
-      <div className="flex items-center justify-between mb-10 px-2">
+      {/* ── Indicador de pasos ──
+          18-sep-2026: eran círculos grandes con emoji (🗑️ 📅 📍 📋) y el
+          calendario hasta mostraba "July 17". El Consejo IA los señaló como
+          parte del tono infantil: "parecen iconos de mensajería y le quitan
+          peso a una transacción seria". Ahora son números 1-4, de menor
+          diámetro: el activo en rojo, los completados en casi-negro con check
+          y los futuros en gris. */}
+      <div className="flex items-start justify-between mb-9 px-1">
         {STEPS.map((s, i) => (
-          <div key={s.id} className="flex items-center flex-1">
-            <div className="flex flex-col items-center">
+          <div key={s.id} className="flex items-start flex-1">
+            <div className="flex flex-col items-center flex-1">
               <div
-                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-lg sm:text-xl font-bold transition-all duration-300 ${
-                  step >= s.id
-                    ? "bg-tp-red text-white shadow-lg"
-                    : "bg-gray-200 text-gray-400"
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold font-[var(--font-poppins)] transition-colors duration-200 ${
+                  step === s.id
+                    ? "bg-tp-red text-white"
+                    : step > s.id
+                    ? "bg-[#1d2329] text-white"
+                    : "bg-white text-[#9aa0a6] border-[1.5px] border-[#d7dadd]"
                 }`}
               >
-                {step > s.id ? "✓" : s.icon}
+                {step > s.id ? <IconCheck size={13} /> : s.id}
               </div>
               <span
-                className={`text-[10px] sm:text-xs mt-1.5 font-[var(--font-poppins)] font-semibold ${
-                  step >= s.id ? "text-tp-red" : "text-gray-400"
+                className={`text-[11.5px] mt-1.5 font-[var(--font-poppins)] text-center leading-tight ${
+                  step === s.id
+                    ? "text-[#1d2329] font-semibold"
+                    : step > s.id
+                    ? "text-[#4b5156] font-medium"
+                    : "text-[#9aa0a6] font-medium"
                 }`}
               >
                 {s.label}
@@ -506,8 +520,8 @@ export default function BookingWizard() {
             </div>
             {i < STEPS.length - 1 && (
               <div
-                className={`flex-1 h-1 mx-2 rounded-full transition-all duration-300 ${
-                  step > s.id ? "bg-tp-red" : "bg-gray-200"
+                className={`h-[1.5px] mt-[13px] -mx-1 flex-none w-6 sm:w-10 ${
+                  step > s.id ? "bg-[#1d2329]" : "bg-[#d7dadd]"
                 }`}
               />
             )}
@@ -522,7 +536,7 @@ export default function BookingWizard() {
       )}
 
       {/* Step content */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 min-h-[400px]">
+      <div className="bg-white rounded-xl border border-[#e8eaec] shadow-sm p-5 sm:p-8 min-h-[400px]">
         {(!restored || restoringPayment) && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <div className="animate-spin w-10 h-10 border-4 border-tp-red border-t-transparent rounded-full" />
