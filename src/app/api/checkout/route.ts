@@ -7,6 +7,7 @@ import { isDateBlocked, blockedReason } from "@/lib/availability";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { isOutsideServiceArea } from "@/lib/service-area";
 import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
+import { ONLINE_PRICES, EXTRA_DAY_FEE } from "@/lib/pricing";
 
 let dbInitialized = false;
 
@@ -17,27 +18,13 @@ let dbInitialized = false;
 // 2026-06-08) or a tampered POST could under/over-charge. The server
 // recomputes the real price from this ONE table — the ONLINE price the
 // customer is shown (sticker − $50 online discount) per service + size —
-// and charges THAT. Keep in sync with the booking flow (ServiceStep
-// GENERAL_SIZES) and /api/invoice.
-const ONLINE_PRICES: Record<string, Record<string, number>> = {
-  "General Debris":      { "10": 599, "20": 649, "30": 749 },
-  "Household Clean Out": { "10": 599, "20": 649, "30": 749 },
-  "Construction Debris": { "10": 599, "20": 649, "30": 749 },
-  "Roofing":             { "10": 599, "20": 649, "30": 749 },
-  "Green Waste":         { "10": 599, "20": 649, "30": 749 },
-  "Clean Soil":          { "10": 599 },
-  "Clean Concrete":      { "10": 599 },
-  "Mixed Materials":     { "10": 899 },
-  // 11-sep-2026 (Asaí, msg 3189): TODO lo de Mixed Materials costaba lo mismo,
-  // $949 lista / $899 online — daba igual si era tierra+concreto, asfalto o
-  // ladrillo. 17-sep-2026 (Asaí, msg 3307): BRICKS SE VUELVE A SEPARAR, a
-  // $1,150 lista / $1,100 online. Tierra+concreto y asfalto se quedan en $899.
-  // Esta tabla es la que COBRA: si se queda atrás, la pantalla dice $1,100 y
-  // Stripe cobra $899 sin que nadie lo note.
-  "Bricks":              { "10": 1100 },
-  "Clean Asphalt":       { "10": 899 },
-};
-const EXTRA_DAY_FEE = 49;
+// and charges THAT.
+//
+// 18-sep-2026: la tabla se movió a `src/lib/pricing.ts` para que sea UNA sola
+// fuente — el Booking v2 (/booking-v2) importa de ahí también, así la pantalla
+// no puede decir un precio distinto del que aquí se cobra. Los valores no
+// cambiaron al mudarse (10/20/30 = 599/649/749, Mixed y Asphalt 899, Bricks
+// 1100, día extra 49). Cualquier cambio de precio se hace en ese archivo.
 
 // Authoritative total for a booking, or null if the service/size isn't in
 // the catalog (caller then falls back to the client value, logged loudly).
