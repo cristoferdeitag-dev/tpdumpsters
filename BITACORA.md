@@ -1,3 +1,34 @@
+## 2026-09-18 03:58–04:20Z — cris «Web HTM» (Opus 5) — 🎨 Pasos 2, 3 y 4 sin emojis: el flujo completo parejo (EN VIVO)
+
+**Cris** (msg 22094): *"visualmente siento que el paso tres no se ve tan limpio y los iconos creo que tampoco ayudan tanto"*. Tenía razón y la causa era mía: el paso 1 ya estaba rediseñado y **el resto seguía con emojis**, así que el flujo se veía mitad nuevo y mitad viejo. GO en msg 22096 para hacer los tres de una vez y subirlos juntos. Commit **`5867a7a`**, **BUILD_ID `IXIxznS7em0YA2Pee4MF1`**.
+
+### Qué cambió
+`MaterialIcons.tsx` suma los iconos de sección (`IconUser`, `IconPin`, `IconCard`, `IconCalendar`, `IconReceipt`, `IconAlert`), mismo trazo que los de material.
+- **Paso 3**: fuera 👤 📍 💳 · los 4 encabezados con icono alineado · **la lista de 6 condados → "We serve the San Francisco Bay Area"** (la zona ya se valida sola al escribir la dirección, el párrafo era relleno) · la nota de colocación de 3 renglones a 1 · y **el enlace de facturación deja de ser ROJO**: competía con el botón de avanzar.
+- **Paso 2**: fuera 📅 📊 💰 🕐 y los **amaneceres de las franjas horarias** (🌅 🌆).
+- **Paso 4**: fuera 🗑️ 📍 📅 💰 📋 📞 y el 💳 del botón de pagar.
+- **Basura eliminada:** los 8 campos `icon` del catálogo y los 4 de `STEPS` seguían viajando en el bundle sin que nadie los usara (hubo que sacar `icon` del tipo `ServiceCategory` y poner el SVG en el banner de descripción), más **3 selectores de variación U+FE0F huérfanos** que quedaron al quitar emojis.
+
+### 🪤 La lección: buscar en el código NO basta, hay que contar en la pantalla
+Mi primera pasada usó `grep` con los emojis que se me ocurrieron y dio "0 emojis" en los tres archivos. **Falso.** Al contar los emojis *visibles en el DOM* paso por paso aparecieron los que el grep no cubrió: las franjas horarias venían de un array con campo `emoji`, y cuatro encabezados del resumen usaban 🗑️ 📞 que no estaban en mi lista.
+También comprobé que **"emoji en el bundle" ≠ "emoji en pantalla"**: tras limpiar los 4 pasos seguían apareciendo en los chunks, y era porque los usan `PricingTable`, `SizesSection`, `ChatWidget` y `/services` — otras piezas del sitio.
+**Regla:** para verificar algo visual, recorrer el flujo y leer el texto renderizado (`innerText`), no el fuente ni el bundle.
+
+### Verificación ✅✅ en producción
+| Paso | Emojis visibles |
+|---|---|
+| 1 Service | ninguno |
+| 2 Dates (vacío y lleno) | ninguno |
+| 3 Address | ninguno |
+| 4 Summary | ninguno |
+Queda sólo el `✓` de las listas de características — símbolo funcional, no adorno. **Arnés: 19/19**, y la llave de Maps en los 11 chunks. Precios, autorización, nota de colocación, zona, medición y pago **intactos**.
+
+### ⚠️ Dos hallazgos que quedan abiertos
+1. **El mismo problema vive fuera del booking:** `PricingTable` (con 4 emojis) se renderiza en **67 páginas** y `SizesSection` en **74**. Las páginas de ciudad siguen con esa cara. Es un cambio de un archivo que se propaga solo — ofrecido a Cris, sin GO.
+2. **El paso 4 mide 9,216 px de alto en móvil** — casi 8 pantallas de scroll justo donde la gente decide pagar $599+. Telegram hasta rechazó la captura por la relación de aspecto. Candidato claro a compactar: agrupar, colapsar lo que no es decisión, y dejar precio y botón a la vista.
+
+---
+
 ## 2026-09-18 03:42–04:00Z — cris «Web HTM» (Opus 5) — 🎨 Paso 1 sin emojis, EN PRODUCCIÓN (deploy único con la regla del material)
 
 Cris pidió un solo deploy con las dos cosas (msg 22080) y dio el GO tras ver la maqueta (msg 22089). Commits `a96c30c` (material obligatorio) + `fa4f95c` (cara nueva). **BUILD_ID `ye06W8FuZ9khq5WduCchg`** en vivo.
