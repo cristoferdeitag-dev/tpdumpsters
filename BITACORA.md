@@ -1,3 +1,32 @@
+## 2026-09-18 03:42–04:00Z — cris «Web HTM» (Opus 5) — 🎨 Paso 1 sin emojis, EN PRODUCCIÓN (deploy único con la regla del material)
+
+Cris pidió un solo deploy con las dos cosas (msg 22080) y dio el GO tras ver la maqueta (msg 22089). Commits `a96c30c` (material obligatorio) + `fa4f95c` (cara nueva). **BUILD_ID `ye06W8FuZ9khq5WduCchg`** en vivo.
+
+### El encargo y los dos dictámenes
+Cris: *"siento que se ve medio infantil o no tan profesional"* (msg 22078). Se consultó a los dos **con la imagen real**, no descrita — Prisma por Vertex multimodal, Hermes con la ruta del PNG — y **coincidieron sin haberse leído**: los emojis eran EL lenguaje visual dominante en una compra de $599-$1,100 pagada por adelantado, y la acumulación de círculos y cápsulas suavizaba un servicio industrial. Espejo acordado: **renta B2B de equipo pesado** (Sunbelt, United Rentals). Dictámenes en `reports/consejo/2026-09-18-tp-paso1-look/`.
+
+**Los 5 aportes que Hermes sumó a Prisma:** indicador con **números** 1-4 en vez de iconos · **el elegido NO se llena de rojo** (borde + check + tinte, porque llenarlo lo vuelve promocional) — esto corrigió mi propia maqueta · fuera la **sombra del panel flotante** en móvil · el **"STEP 1"** como dato de navegación y no adorno dorado · tarjetas **alineadas a la izquierda**.
+
+### Qué cambió
+- **`src/components/MaterialIcons.tsx` (NUEVO)**: los 8 iconos como SVG en línea, trazo 1.75 en casi-negro, `currentColor`. **Cero peticiones y cero librerías.** Cris eligió los dibujados a mano para siete y el **muro de ladrillo de Lucide (ISC)** para Clean Concrete (msg 22085): mis tres intentos de ése no se leían — se veía como una bandera. Lección: cuando un set profesional resuelve mejor, insistir en el dibujo propio es orgullo, no criterio.
+- **ServiceStep**: rectángulos de 9px alineados a la izquierda · elegido con borde rojo, tinte `#fef6f5` y check · subtítulo de `#999` a `#4b5156` (91% móvil, se lee **al sol**) · avisos de cargos de caja ámbar fuerte a **aviso operativo** con franja dorada, mismo contenido y misma posición antes de los precios.
+- **BookingWizard**: stepper numerado (el calendario emoji hasta decía *"July 17"*) y el panel blanco sin la sombra flotante.
+
+### Verificación en producción ✅✅
+| Qué | Resultado |
+|---|---|
+| Emojis en el HTML servido | **0** en materiales, **0** en el stepper (contados) |
+| Arnés de caracterización contra producción | **19/19**, 0 fallos |
+| Llave de Maps en el bundle | **11 chunks** — el autocompletado no se rompió |
+| Consola en iPhone | limpia, 0 `pageerror` |
+
+**Nada de lo que cobra se tocó:** precios, autorización de cargos, nota de colocación, fechas, zona y pago intactos.
+
+### Siguiente en el plan
+Pasos 2 (fechas), 3 (dirección) y 4 (resumen) con el mismo tratamiento, una sección por vez; y el agente en el paso 1 **sólo como traductor** de lenguaje natural al material correcto, con la salvaguarda de los dos consejeros: el modelo sugiere y pinta el botón, **el carrito sólo se llena con el clic del cliente**.
+
+---
+
 ## 2026-09-18 03:16–03:35Z — cris «Web HTM» (Opus 5) — 🛡️ Arnés de caracterización del booking: 18/18 en producción (y dos falsos positivos MÍOS)
 
 Primer paso del plan acordado tras el fiasco del v2, y el que Hermes puso como condición previa a tocar UI: **congelar lo que el v1 ya hace bien antes de moverlo.** `tests/booking_caracterizacion.py`, commit `4a4f0a9`.
