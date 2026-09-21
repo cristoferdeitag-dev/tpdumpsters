@@ -22,7 +22,7 @@ export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
  * Prune past dates regularly, same as BLOCKED_DATES.
  */
 export const SIZE_BLOCKED_DATES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  ["2026-09-22", new Set(["10 Yard", "30 Yard"])], // Tuesday 9/22 — only 20 Yard available (Asaí, 2026-09-21)
+  ["2026-09-22", new Set(["30 Yard"])], // Tuesday 9/22 — only 30 Yard closed; 10/20 Yard both open (Asaí corrected 2026-09-21 23:52Z: "agrega que tambien se pueden 10yds")
 ]);
 
 // Standing rule: TP does not deliver on Sundays.
