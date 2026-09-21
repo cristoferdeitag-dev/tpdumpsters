@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BookingData } from "./BookingWizard";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
 import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
@@ -82,10 +82,24 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
   // Inline error for unavailable delivery dates (yard fully booked).
   const [deliveryError, setDeliveryError] = useState("");
 
+  // Re-validate a previously-picked delivery date if the customer goes back
+  // and changes the size (Step 1 runs before Step 2, so a date that was fine
+  // for the old size can become blocked for the new one). The checkout API
+  // rejects this too, but catching it here avoids a dead-end at payment.
+  useEffect(() => {
+    if (booking.deliveryDate && isDateBlocked(booking.deliveryDate, booking.service?.size)) {
+      setDeliveryError(blockedReason(booking.deliveryDate, booking.service?.size));
+      updateBooking({ deliveryDate: "", deliveryWindow: "", pickupDate: "" });
+    }
+    // Only re-check when the selected size changes — handleDeliveryChange
+    // already validates on every date pick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking.service?.size]);
+
   // When delivery date changes, auto-set pickup to minimum and reset window
   const handleDeliveryChange = (date: string) => {
-    if (date && isDateBlocked(date)) {
-      setDeliveryError(blockedReason(date));
+    if (date && isDateBlocked(date, booking.service?.size)) {
+      setDeliveryError(blockedReason(date, booking.service?.size));
       // Don't propagate the blocked date; force the user to pick again.
       updateBooking({ deliveryDate: "", deliveryWindow: "", pickupDate: "" });
       return;

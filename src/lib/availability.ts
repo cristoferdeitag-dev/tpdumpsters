@@ -14,6 +14,17 @@ export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
   "2026-09-05", // Saturday 9/5 — fully booked (Asaí, 2026-09-03)
 ]);
 
+/**
+ * Per-date size restrictions: some days a size is temporarily unavailable
+ * (yard/truck capacity) even though the day itself is open for other sizes.
+ * Key = ISO delivery date, value = set of `SizeOption.size` strings closed
+ * that day (must match ServiceStep exactly: "10 Yard" / "20 Yard" / "30 Yard").
+ * Prune past dates regularly, same as BLOCKED_DATES.
+ */
+export const SIZE_BLOCKED_DATES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ["2026-09-22", new Set(["10 Yard", "30 Yard"])], // Tuesday 9/22 — only 20 Yard available (Asaí, 2026-09-21)
+]);
+
 // Standing rule: TP does not deliver on Sundays.
 // Set per Asaí 2026-05-20. If this ever changes, flip ALLOW_SUNDAY_DELIVERY.
 const ALLOW_SUNDAY_DELIVERY = false;
@@ -46,20 +57,26 @@ function isSunday(iso: string): boolean {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay() === 0;
 }
 
-export function isDateBlocked(iso: string): boolean {
+export function isDateBlocked(iso: string, size?: string): boolean {
   if (isSameDayOrPast(iso)) return true;
   if (!ALLOW_SUNDAY_DELIVERY && isSunday(iso)) return true;
-  return BLOCKED_DATES.has(iso);
+  if (BLOCKED_DATES.has(iso)) return true;
+  if (size && SIZE_BLOCKED_DATES.get(iso)?.has(size)) return true;
+  return false;
 }
 
-export function blockedReason(iso: string): string {
+export function blockedReason(iso: string, size?: string): string {
   if (isSameDayOrPast(iso)) {
     return "Online bookings need at least one day's notice — please choose tomorrow or later. For same-day service, call us at (510) 650-2083.";
   }
   if (!ALLOW_SUNDAY_DELIVERY && isSunday(iso)) {
     return "We don't deliver on Sundays. Please pick another day.";
   }
-  return BLOCKED_DATES.has(iso)
-    ? "Sorry — we're fully booked on that day. Please pick another date."
-    : "";
+  if (BLOCKED_DATES.has(iso)) {
+    return "Sorry — we're fully booked on that day. Please pick another date.";
+  }
+  if (size && SIZE_BLOCKED_DATES.get(iso)?.has(size)) {
+    return `Sorry — the ${size} is fully booked for that delivery date. Please pick another date, or go back and choose a different size.`;
+  }
+  return "";
 }

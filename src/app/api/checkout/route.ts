@@ -131,9 +131,9 @@ export async function POST(request: Request) {
     // Reject delivery dates the yard can't service (fully booked).
     // Belt-and-suspenders: the DateStep client also blocks these, but a
     // savvy customer could POST directly to /api/checkout.
-    if (isDateBlocked(booking.deliveryDate)) {
+    if (isDateBlocked(booking.deliveryDate, booking.service.size)) {
       return NextResponse.json(
-        { error: blockedReason(booking.deliveryDate) },
+        { error: blockedReason(booking.deliveryDate, booking.service.size) },
         { status: 400 }
       );
     }
