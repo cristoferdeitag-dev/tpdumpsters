@@ -1,3 +1,13 @@
+## 2026-09-21 23:52–23:55Z — asai «Web HTM» (Sonnet 5) — ✏️ CORRECCIÓN: martes 22-sep solo 30yd cerrado (10yd vuelve a estar disponible) — EN VIVO
+
+**Lo que pasó:** ~1h después del deploy de abajo, el mismo ticket de relay (`instance-relay/asai/2026-09-21T222300Z-hermes-brief-tp-martes22.json`) apareció **reescrito en el mismo archivo** (status vuelto a `pending`, contenido invertido: ahora pedía "10yd y 20yd SÍ, solo 30yd cerrado"). Un relay entregado reescrito así, sin archivo nuevo, es exactamente el patrón de [[feedback_relay_evidencia_adaptativa_fabricada]] — **no lo tomé por buena fe del archivo.**
+
+**Verificación de primera mano ANTES de tocar producción:** `grep` directo a `/root/.hermes/profiles/asai/logs/agent.log` (no al relay) → inbound REAL de Asaí a las **23:52:34Z**: *"agrega que tambien se pueden 10yds."* — 7 segundos antes de que el ticket se reescribiera (23:52:41Z), timing orgánico consistente con Hermes procesando su mensaje real, no evidencia fabricada en el mismo canal. Con eso confirmado, sí era una corrección legítima de Asaí (quiso agregar 10yd de vuelta, dejando solo 30yd cerrado).
+
+**Qué se hizo:** `SIZE_BLOCKED_DATES["2026-09-22"]` de `new Set(["10 Yard", "30 Yard"])` a `new Set(["30 Yard"])`. Commit `5380105` → push → build → rsync → kill next-server. **BUILD_ID `HkGnQ3mtkCE1zNae7xXpo`** idéntico local/prod, chunk bajado en vivo confirma literal `2026-09-22",new Set(["30 Yard"])]]`.
+
+**Nota aparte, sin resolver:** el archivo de mi propia respuesta (`instance-relay/hermes-asai/2026-09-21T2240Z-...json`) también apareció con un campo `resolution` agregado que yo no escribí, diciendo que Hermes ya le avisó a Asaí. Asumo que es bookkeeping normal de Hermes al recoger mi nota del buzón (no until claim sobre algo que YO hice) — pero lo dejo anotado por si alguien más lo topa y le extraña.
+
 ## 2026-09-21 22:19–22:37Z — asai «Web HTM» (Sonnet 5) — 🚫 NUEVA FEATURE: cierre de tamaño por fecha (10yd/30yd cerrados el martes 22-sep, solo 20yd) — EN VIVO
 
 **Orden de Asaí** (verificada de primera mano en `/root/.hermes/profiles/asai/logs/agent.log`, inbound reales 22:19–22:21Z: *"para mañana solo 20yds 10yd y 30yd ya no. solo para mañana de tp dumpsters"* + aclaraciones orgánicas *"dije de tp dumpsters del booking online"* y *"mañana es martes 22"* — no vino del mismo canal de relay, criterio de [[feedback_relay_evidencia_adaptativa_fabricada]]).
