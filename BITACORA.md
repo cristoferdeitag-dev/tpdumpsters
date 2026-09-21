@@ -1,3 +1,212 @@
+## 2026-09-21 22:19–22:37Z — asai «Web HTM» (Sonnet 5) — 🚫 NUEVA FEATURE: cierre de tamaño por fecha (10yd/30yd cerrados el martes 22-sep, solo 20yd) — EN VIVO
+
+**Orden de Asaí** (verificada de primera mano en `/root/.hermes/profiles/asai/logs/agent.log`, inbound reales 22:19–22:21Z: *"para mañana solo 20yds 10yd y 30yd ya no. solo para mañana de tp dumpsters"* + aclaraciones orgánicas *"dije de tp dumpsters del booking online"* y *"mañana es martes 22"* — no vino del mismo canal de relay, criterio de [[feedback_relay_evidencia_adaptativa_fabricada]]).
+
+### El pedido llegó por relay duplicado (dos buzones, mismo brief)
+Llegó a mi buzón (`hermes-asai`) Y al de `cris` (relay `2026-09-21T222300Z`/`hermes-brief-tp-martes22`), quien tomó el lock antes que yo lo pidiera, revisó el código y se retiró sin tocar nada al ver que yo ya tenía el candado — dejó un relay informativo (`20260921T2228Z-cris-hallazgos-tecnicos-disponibilidad-por-tamano.json`) confirmando el mismo diagnóstico que yo había hecho por mi cuenta. Coordinación por candado funcionó como debía.
+
+### Por qué era una FEATURE nueva, no editar una lista
+`availability.ts` solo tenía `BLOCKED_DATES` (cierra el DÍA COMPLETO, los 5 precedentes históricos son así). No existía ningún mecanismo de "cerrar un tamaño dejando otros abiertos" — hubo que construirlo.
+
+### Qué se hizo
+- **`src/lib/availability.ts`**: nueva `SIZE_BLOCKED_DATES` (`Map<fecha, Set<tamaño>>`, mismo criterio de comparación en zona horaria Pacífico que ya usaba el archivo). `isDateBlocked(iso, size?)` y `blockedReason(iso, size?)` ahora aceptan tamaño opcional.
+- **`DateStep.tsx`**: valida al elegir fecha (pasa `booking.service?.size`) Y con un `useEffect` nuevo que re-valida si el usuario vuelve a Step 1 y cambia el tamaño después de ya tener una fecha válida para el tamaño anterior — caso borde que señaló Cris antes de que yo lo topara en producción.
+- **`checkout/route.ts`**: mismo patrón belt-and-suspenders que ya tenía `BLOCKED_DATES` — el server también rechaza, no solo la UI (un POST directo a `/api/checkout` no puede saltarse el cierre).
+- `tsc --noEmit` y `eslint` limpios en los 3 archivos.
+
+### Deploy y verificación ✅✅
+Commit `9010bbc` → push `origin/main` → `rm -rf .next && npm run build` → `rsync .next/` a Hostinger → kill `next-server` remoto → respawn. **BUILD_ID `0hHPn6iA-UGLoL0qXwXTz` idéntico local/prod**, `/booking` 200, y el chunk **bajado del sitio en vivo** (`29d310e9b56392c4.js`) trae literal `2026-09-22`.
+
+### Nota sobre el brief anterior (sábado 19-sep, ya vencido)
+Antes de esto atendí un relay pendiente casi idéntico pero de 3 días atrás (sábado 19-sep) que llegó al buzón sin cartero hasta hoy — la ventana ya había pasado (el propio brief decía "normal desde el lunes 21-sep" = hoy), así que **no se aplicó** nada de ese ticket, solo se cerró con nota explicando por qué.
+
+## 2026-09-18 05:20–05:30Z — cris «Web HTM» (Opus 5) — 🚨 CORRECCIÓN: lo que reporté como "Prisma" NO era Prisma
+
+Cris lo cachó (msg 22133): *"afirmas que está en vertex cuando eso es mentira, está vía api de la cuenta de Tp"*. **Tenía razón**, y el error es mayor que lo que él señaló.
+
+### Lo verificado
+- **Prisma es un PERFIL DE HERMES**: `hermes_cli.main --profile prisma gateway run`, servicio `hermes-gateway-prisma.service` (activo desde 14-sep), `HERMES_HOME=/root/.hermes/profiles/prisma`. Cuando Cris dijo *"al ser Hermes puede tener ventajas"* era **literalmente correcto** — y yo lo "corregí" diciendo que no eran el mismo. Corregí a Cris estando yo equivocado.
+- **Corre con la llave facturada a TP**, no con Vertex/Wise: `config.yaml` marca proveedor `gemini` y `base_url: https://generativelanguage.googleapis.com/v1beta` (API directa), y la huella sha256 de `GOOGLE_API_KEY` en `/root/.hermes/.env` **coincide exactamente** con `GEMINI_TP_API_KEY` de `/root/.env.gemini-tp` (`b23ee7bc…`). ✅✅ por dos vías (config + huella).
+- **Hoy NO consulté a Prisma.** Corrí `gemini-3.1-pro-preview` por **Vertex con la credencial de Wise** usando un script propio de Python, y presenté el resultado a Cris **como "Prisma"** — en el análisis de Google Ads y en el benchmark del booking. Le atribuí a un agente palabras que nunca dijo; mismo género que `feedback_relay_evidencia_adaptativa_fabricada`.
+
+### Consecuencias
+1. Las dos respuestas **no pasaron por Prisma** ni por su contexto residente (reglas, bitácoras, `GLOBAL_EVENTS`), que es justamente lo que le daría ventaja sobre una llamada cruda.
+2. El costo se fue al **crédito de Wise** en vez de la llave de TP.
+3. El contenido de esas respuestas **sigue siendo válido como opinión de Gemini 3.1 Pro** — lo que era falso es la firma. Y recuérdese que ese dictamen ("apágala de inmediato") salió mal de todas formas, por mi brief de 4 días.
+
+### Causa raíz (concreta y arreglada)
+La memoria `ref_prisma_agente_gemini` **no estaba indexada en `MEMORY.md`** → nunca se recuperó en la sesión. Ya se indexó. **Una memoria fuera del índice es una memoria que no existe.** Y encima Laso ya había escrito HOY la corrección de que Prisma no va por Vertex; estaba ahí y no la leí.
+
+### Arreglado
+- `MEMORY.md`: indexada `ref_prisma_agente_gemini` con el rótulo "PRISMA = perfil de Hermes, llave de TP, NO Vertex".
+- `ref_prisma_agente_gemini.md`: añadida la sección de **cómo se invoca (relay a Hermes) y cómo NO**, con el error de hoy documentado.
+- Re-etiquetados con una línea de aclaración arriba: `/root/reports/consejo/tp_ads_prisma_2026-09-18.md` y `bench_booking_prisma.md`.
+- **Corrección a Laso:** escribió que `/root/.gcp/wise-vertex.json` "ya no existe". **Sí existe** (2,390 bytes, 27-jul, chmod 600) y funcionó en vivo hoy. Lo que él verificó bien es la llave y el proveedor de Prisma. Son **dos vías distintas** y no hay que confundirlas:
+  - **Prisma** = perfil de Hermes · API directa · llave de **TP**
+  - **`consejo.sh` / rebote suelto** = `rebote_vertex_wise.sh` · **Vertex** · credencial de **Wise** (crédito vence 19-oct-2026)
+
+### Pendiente heredado (de Laso, msg 6809 — sigue abierto)
+Prisma es consejero interno de HTM **corriendo con facturación de un CLIENTE (TP)**, ~$0.07 USD por voto. Si Cris quiere moverlo a una llave de HTM: cambiar `GOOGLE_API_KEY` / `GEMINI_API_KEY` en `/root/.hermes/.env` y `/root/.hermes/profiles/prisma/.env`, y reiniciar el gateway.
+
+### Nada de esto toca la cuenta de Ads
+Las negativas de DSA aplicadas en la entrada anterior siguen igual y verificadas. Esta corrección es de **atribución y registro**, no de configuración.
+
+## 2026-09-18 05:10–05:25Z — cris «Web HTM» (Opus 5) — ✅ APLICADO: negativas de marcas en DSA
+
+**GO de Cris:** msg 22129 *"si, dale a las nehativas"*. Lo demás de la cuenta **sin tocar** (presupuestos, pujas, campañas).
+
+### Qué se hizo
+Lista compartida nueva **`12239943685` — "Negativas Marcas Competidores — sólo DSA (18-sep)"**, con **35 marcas en PHRASE**, vinculada **únicamente** a `DSA — Ciudades TP (91 pages)` (campaña `24190713728`).
+
+Script: **`/root/scripts/tp_gads_negativas_marcas_dsa_2026-09-18.py`** (modos `validate | apply | readback | rollback`). Validado con `validateOnly` antes de aplicar.
+
+Las marcas: `republic` · `waste management` · `waste managment` · `recology` · `allied waste` · `waste connections` · `advanced disposal` · `bfi waste` · `junk king` · `got junk` · `bagster` · `budget dumpster` · `marin sanitary` · `richmond sanitary` · `pleasanton garbage` · `mill valley refuse` · `zebra dumpster` · `ecobox` · `dw rolloffs` · `bertolotti` · `atlas disposal` · `gilton` · `bin there` · `triple h dumpster` · `all star rents` · `fairfield garbage` · `all american hauling` · `american debris` · `aci trash` · `adams trash` · `avas trash` · `big blue trash` · `redwood debris box` · `redwood debri box` · `peninsula debris box`
+
+### 🔑 La decisión de diseño que importa
+Fue a **lista compartida colgada sólo de DSA**, NO a nivel cuenta ni a las 3 listas que comparten las campañas activas (`12168899479`, `12210243024`, `12232857093`).
+
+**Razón:** `High Intent` compra nombres de competidores **a propósito** (conquista) y ahí **sí convierte** — tiene `republic service union city`, `allied waste`, `bin there`, `triple h dumpsters` entre sus términos, y 50 conversiones en 30 días. A nivel cuenta se habría matado ese tráfico. La diferencia real: en High Intent hay **anuncios escritos a mano**; en DSA el titular lo **genera Google** desde la página de ciudad, y ese mensaje pierde contra una marca que el usuario ya buscó.
+
+**Lo que NO se incluyó a propósito:** `debris box` suelto (término genérico de la industria en la Bahía, y High Intent lo usa), `redwood` suelto (Redwood City **es** zona de servicio), `rolloffs` suelto (genérico), y `cheap dumpster` (es intención de compra; el GO fue para marcas, no para intención).
+
+### Verificado por segunda vía ✅✅
+`campaign_shared_set` después del cambio:
+- **DSA:** 4 listas (Globales 16 · Venenosas 23 · free/gratis 2 · **Marcas 35**)
+- **High Intent:** 3 listas — **sin** la nueva ✓
+- **Marca TP:** 3 listas — **sin** la nueva ✓
+
+### ROLLBACK (una sola operación)
+```
+python3 /root/scripts/tp_gads_negativas_marcas_dsa_2026-09-18.py rollback
+```
+Borra el `campaignSharedSet` `24190713728~12239943685`. La lista queda en la cuenta sin efecto; `link` la vuelve a vincular.
+
+### Qué esperar y cuándo juzgarlo
+DSA debería **bajar su gasto** (le queda menos inventario) y dejar de pagar clics de $40-48. Si el gasto se va a **$0** como `Retargeting`, significa que sin marcas ni búsquedas de compra no le queda nada — y entonces sí se apaga, pero con evidencia.
+
+**Corte: 2-oct** (14 días). Mirar: gasto de DSA, si sigue apareciendo alguna marca en `search_term_view`, y si aparece long-tail nuevo aprovechable. Y NO juzgar con menos de 2 semanas → [[feedback_ventana_corta_no_concluye_en_cuenta_de_bajo_volumen]]
+
+### Sigue pendiente (no autorizado / no hecho)
+- **Tope de CPC en DSA** — lo propuse, el GO fue sólo para negativas. Sin él, Google puede volver a pujar alto en lo que quede.
+- **Retargeting Abandonos: $0 en 30 días** — revisar tamaño de lista en Audience Manager.
+- **Marca TP: 14 clics, 0 conversiones** en 30 días.
+- **12 campañas pausadas con presupuesto dormido**, una de $140/día.
+
+## 2026-09-18 05:05–05:20Z — cris «Web HTM» (Opus 5) — 🛑 CORRECCIÓN a la entrada de abajo: DSA NO era "la sangría"
+
+Cris preguntó **por qué** DSA no funciona (msg 22126). Al ir a medir el por qué, la conclusión de la entrada anterior **se cayó**. Corregido ante Cris en msgs 22127-22128.
+
+### Mi error
+Medí **4 días** (14-17 sep) y lo reporté como veredicto: *"DSA es la sangría, apágala"*. Prisma, con ese mismo brief, dijo *"apágala de inmediato"*. **A 30 días sale al revés:**
+
+| 19-ago a 17-sep | Gasto | Conv | Valor | ROAS |
+|---|---|---|---|---|
+| High Intent | $5,657.31 | 50 | $10,565 | **1.87x** |
+| DSA Ciudades | $1,188.50 | 11 | $2,903 | **2.44x** |
+| Marca TP | $48.85 | 0 | $0 | — |
+| Retargeting | **$0.00** | 0 | $0 | — |
+| **TOTAL** | **$6,894.66** | 61 | $13,468 | 1.95x |
+
+Con mi dato se habría apagado **la campaña de mejor ROAS del mes**. La ventana de 4 días fue un accidente de calendario: dejó fuera la única semana buena de DSA.
+
+### Pero DSA tampoco va bien — es errática (semana por semana ✅✅)
+· 27-ago a 2-sep: $284.95 → valor **$2**
+· 3-9 sep: $324.02 → valor **$2,899** ← el 99.9% del valor del mes está en esta semana
+· 10-16 sep: $495.52 → valor **$2**
+· 17 sep: $84.03 → **$0**
+
+El 2.44x del mes sale **entero de una semana**; las otras tres en cero. Volumen insuficiente para juzgarla en cualquier ventana corta. **Lección: en esta cuenta, con 11-50 conversiones/mes por campaña, ninguna ventana de 4 días concluye nada.** Ver [[feedback_procedencia_de_cifras_y_regla_del_cero]].
+
+### 🎯 LA CAUSA RAÍZ (esto sí es el hallazgo, y es nuestro)
+**Las 73 negativas de DSA son todas las búsquedas que compran.** Leídas de la cuenta: `dumpster rental` · `rent a dumpster` · `10/20/30 yard dumpster` · `dumpster rental oakland|berkeley|richmond|fremont|hayward|vallejo|concord|...` (20+ ciudades) · `dumpster rental cost|prices|rates|quote` · `same day dumpster` · `dumpster today` · `concrete dumpster rental` · `roofing dumpster` · `tp dumpsters`.
+
+**Y cero negativas de competidores.** Se le bloqueó lo que vende y se le dejó libre lo que no vende. La intención (que DSA no canibalice a High Intent) era correcta; el efecto es que a DSA sólo le queda la sobra.
+
+Lo que compra en consecuencia (términos 14-17 sep):
+- `redwood debris box` → **$95.49 / 2 clics = $47.74 el clic**
+- `republic waste service` → **$80.08 / 2 clics = $40.04 el clic**
+- `marin sanitary debris box`, `zebra dumpster`, `dw rolloffs`, `ecobox recycling` → marcas ajenas
+- `dumpster`, `dumpsters near me`, `cheap dumpster` → genéricos y buscadores de barato
+
+Esos dos primeros clics = **$175 de los $440** del periodo. Y está en **MAXIMIZE_CONVERSIONS sin tope de CPC**: en un inventario pobre, Google puja lo que sea por cazar una conversión. De ahí los clics de $48.
+
+⇒ **DSA no está fallando; está condenada por cómo la configuramos.** Por eso la receta NO es apagarla.
+
+### Receta propuesta (SIN ejecutar, esperando GO de Cris)
+1. Copiarle a DSA la lista de **negativas de marcas** que ya existe en las campañas pausadas (`Cobertura Regional` tiene 836, `Impresiones Contra CC #2` 779 — incluyen `republic`, `waste management`, `hauling`, `trash`…)
+2. **Tope de CPC** para que no repita los $48
+3. Presupuesto **sin tocar** y medir en 2 semanas
+
+Se descartó mover presupuestos: es donde está el riesgo y donde mis datos no alcanzan.
+
+### Panorama de 30 días cruzado con Stripe ✅✅
+· Gasto Ads **$6,894.66** · Ventas del booking web **55 cobros = $39,088** · con `gclid` **20 = $14,923**
+· **ROAS atribuido real 2.16x** (Stripe) contra 1.95x que reporta Google → **Google SUBREPORTA**, no infla. Primera vez comprobado así en esta cuenta.
+· **CPA por venta web atribuida: $344.73** — contra el techo de $100 de Cris, 3.4x arriba. Consistente con [[ref_tp_conversiones_offline_medido]] (el CPA ~$320 es real).
+· Pauta como % del ingreso web: **17.6%** — sano para servicio local. Las dos lecturas se le dieron a Cris por separado.
+· **Tendencia de ventas web: 10 → 9 → 14 → 16 cobros/semana.** Casi el doble en el mes.
+
+### Lo roto que quedó documentado
+- **Retargeting Abandonos: $0 en 30 días** (DISPLAY, Maximizar conversiones). No va mal: no entrega. Sospechosos: lista bajo el mínimo de Google o puja que asfixia.
+- **Marca TP: 14 clics, 0 conversiones** en 30 días ($3.49 CPC). Gente buscando la marca que no compra — merece revisión propia.
+- **12 campañas pausadas con presupuesto dormido**, una de **$140/día** (`Impresiones Contra CC #2`). No gastan, pero una la prende alguien por error y son $140 diarios.
+- **Concentración:** High Intent = 82% del gasto de la cuenta.
+
+### Lo que NO se puede contestar con datos
+Cuánto del orgánico/directo lo prende Google. Hay **35 ventas web sin `gclid` ($24,165)**; parte de esa gente pudo ver el anuncio sin hacer clic. Medirlo exige apagar la pauta una semana (incrementalidad) y eso cuesta ventas reales. Planteado a Cris, decisión suya.
+
+### Pendientes
+- **GO de Cris** para las negativas de competidores + tope de CPC en DSA.
+- Revisar por qué Retargeting no entrega (Audience Manager: tamaño de lista).
+- Revisar Marca TP (14 clics / 0 conv).
+- Corte del **2-oct** para juzgar High Intent y separar el efecto del booking nuevo del efecto de la pauta.
+
+## 2026-09-18 04:45–04:55Z — cris «Web HTM» (Opus 5) — 📊 Google Ads: la decisión del 14-sep NO funcionó (DSA)
+
+**Encargo de Cris** (msg 22123): *"aprovecha para revisar nuestra campaña de Tp en Google ads, pídele a prisma que lo haga también, pero analicen desde lo más reciente, vean bitácoras, diarios etc"*. **Análisis, no cambios: no se tocó un solo presupuesto.** Reportado en msg 22125, esperando GO.
+
+### Lo medido por API (cuenta 6835960996), 4 días antes vs 4 después del cambio del 14-sep
+| | ANTES 10-13 sep | DESPUÉS 14-17 sep |
+|---|---|---|
+| Gasto | $712.56 | $1,499.97 |
+| Clics | 106 | 136 |
+| Conversiones | 6 | 14 |
+| Valor | $1,602 | $3,099 |
+| CPA | $118.76 | $107.14 |
+| ROAS | 2.25x | **2.07x** |
+
+**Por campaña (después):** High Intent $1,046.30 → 13 conv / $3,098 / **31% IS perdida por presupuesto** · DSA Ciudades **$440.07 → 1 conv de valor $1** / 68% IS perdida por presupuesto · Marca $13.60 → 0 · Retargeting **$0**.
+
+### El cruce con Stripe (la vía que no miente)
+· ANTES: 7 reservas pagadas = $4,893, **2 con `gclid`** = $1,598
+· DESPUÉS: 14 reservas = $9,929, **4 con `gclid`** = $3,089
+El valor que reporta Google ($3,099) coincide casi al centavo con las 4 ventas reales ($3,089). **La medición está calibrada, no inflada** — vale registrarlo porque es la primera vez que lo comprobamos así en esta cuenta.
+
+### Hallazgos
+1. **DSA es la sangría.** Lleva **$579 en 8 días con 2 conversiones de valor $1** y cero ventas atribuidas en Stripe. Se le triplicó el presupuesto el 14-sep ($45→$75) y dio *exactamente* lo mismo que con $45. La conversión de $1 es de llamada, no de venta del sitio.
+2. **High Intent es la que paga** (ROAS 3x aislada) y es justo a la que se le quitaron $30/día el 14-sep. Pierde 31% de impresiones **por presupuesto**: hay demanda caliente sin capturar.
+3. **Retargeting Abandonos: $0 en 8 días.** No va mal, no entrega nada. Sospechosos: lista por debajo del mínimo de Google, o puja que asfixia la entrega.
+4. **Sobregasto:** los 4 presupuestos suman $280/día y se gastaron $375/día (34% arriba) — `✅ una vía`.
+
+### Prisma (respuesta íntegra en `/root/reports/consejo/tp_ads_prisma_2026-09-18.md`; brief en `brief_tp_ads_2026-09-18.md`)
+Se le pidió juzgar **su propia** recomendación del 14-sep sin defenderla. Lo hizo:
+- *"Funcionó a medias y por las razones equivocadas"*: las negativas `free`/`gratis` sí limpiaron el tráfico y bajaron el CPA; **quitarle presupuesto a High Intent para dárselo a DSA fue un error**. Textual: *"el convocante tenía razón en no querer recortar High Intent"*.
+- DSA: **apagar hoy** o $10/día máximo si se quiere para minar términos.
+- High Intent: devolverle los $30 + los $75 de DSA → **$245-250/día**.
+- El gasto al doble **sí** está justificado: bajar el CPA duplicando ingresos es eficiente; que el ROAS ceda de 2.25 a 2.07 es la ley de rendimientos decrecientes.
+- 4 días **no** bastan para juzgar High Intent (fija el corte al **2-oct**, 14 días tras los cambios de checkout de hoy), pero **sí** bastan para frenar DSA.
+- Para separar el mérito de la pauta del mérito del sitio: si CTR y CPC se mantienen y la CVR sube, **el mérito es del checkout nuevo**, no de Ads.
+
+### Propuesta puesta a Cris (SIN ejecutar, esperando GO)
+1. DSA a **$10/día** (no apagarla, para no perder el aprendizaje de términos)
+2. High Intent a **$235/día**
+3. Retargeting: revisar tamaño de la lista en Audience Manager; si ya pasó el mínimo, Maximizar clics 3 días para destaparla
+
+### Pendientes
+- **GO de Cris** para mover los presupuestos. Rollback del 14-sep sigue en `/root/scripts/tp_gads_free_presupuesto_2026-09-14.py`.
+- **Corte del 2-oct**: volver a medir ROAS cruzado con Stripe para juzgar High Intent y separar el efecto del booking nuevo.
+- Ojo al confundir efectos: **hoy 18-sep** se desplegaron material obligatorio, los 4 pasos rediseñados, el paso de pago (8→2.8 pantallas) y Apple/Google Pay. Cualquier salto de CVR desde hoy es candidato a ser del sitio, no de la pauta.
+
 ## 2026-09-18 04:30–04:42Z — cris «Web HTM» (Opus 5) — 💳 El paso de pago: de 8 pantallas a 2.8 (EN VIVO)
 
 **GO de Cris** (msgs 22108-22118). Commit `afb6611`, **BUILD_ID `ztUDcvQJkERViOBH2IOZh`**. El benchmark de Prisma lo marcó como EL cambio de mayor impacto: *"no toquen nada más hasta arreglar donde la gente mete la tarjeta"*.
