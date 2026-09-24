@@ -12,6 +12,15 @@ export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
   "2026-08-07", // Friday 8/7 — closed for online booking (Asaí, 2026-08-06)
   "2026-08-08", // Saturday 8/8 — closed for online booking (Asaí, 2026-08-06)
   "2026-09-05", // Saturday 9/5 — fully booked (Asaí, 2026-09-03)
+  "2026-09-24", // Thursday 9/24 — fully booked, all sizes (Asaí, 2026-09-24 00:06Z: "ya no pueden apartar ningún tamaño para ser delivered mañana")
+]);
+
+/**
+ * Optional custom customer-facing message for a specific BLOCKED_DATES entry
+ * (e.g. to point to the next open day). Falls back to the generic message.
+ */
+const BLOCKED_DATE_MESSAGES: ReadonlyMap<string, string> = new Map([
+  ["2026-09-24", "We're fully booked for deliveries on Thursday, September 24. The next available delivery date is Friday, September 25 — or call us at (510) 650-2083."],
 ]);
 
 /**
@@ -73,10 +82,12 @@ export function blockedReason(iso: string, size?: string): string {
     return "We don't deliver on Sundays. Please pick another day.";
   }
   if (BLOCKED_DATES.has(iso)) {
-    return "Sorry — we're fully booked on that day. Please pick another date.";
+    const custom = BLOCKED_DATE_MESSAGES.get(iso);
+    if (custom) return custom;
+    return "Sorry — we're fully booked on that day. Please choose the next available day, or call us at (510) 650-2083.";
   }
   if (size && SIZE_BLOCKED_DATES.get(iso)?.has(size)) {
-    return `Sorry — the ${size} is fully booked for that delivery date. Please pick another date, or go back and choose a different size.`;
+    return `Sorry — the ${size} dumpster is fully booked for that delivery date. Please choose the next available day, pick a different size, or call us at (510) 650-2083.`;
   }
   return "";
 }
