@@ -13,6 +13,7 @@ export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
   "2026-08-08", // Saturday 8/8 — closed for online booking (Asaí, 2026-08-06)
   "2026-09-05", // Saturday 9/5 — fully booked (Asaí, 2026-09-03)
   "2026-09-24", // Thursday 9/24 — fully booked, all sizes (Asaí, 2026-09-24 00:06Z: "ya no pueden apartar ningún tamaño para ser delivered mañana")
+  "2026-09-25", // Friday 9/25 — fully booked, all sizes (Asaí, 2026-09-24 msgs 3407/3412: "que mañana ya no puedan bookear para delivery mañana… solo el sábado")
 ]);
 
 /**
@@ -21,6 +22,7 @@ export const BLOCKED_DATES: ReadonlySet<string> = new Set<string>([
  */
 const BLOCKED_DATE_MESSAGES: ReadonlyMap<string, string> = new Map([
   ["2026-09-24", "We're fully booked for deliveries on Thursday, September 24. The next available delivery date is Friday, September 25 — or call us at (510) 650-2083."],
+  ["2026-09-25", "We're fully booked for deliveries on Friday, September 25. The next available delivery date is Saturday, September 26 — or call us at (510) 650-2083."],
 ]);
 
 /**
