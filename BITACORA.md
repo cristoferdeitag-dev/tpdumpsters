@@ -1,3 +1,12 @@
+## 2026-09-25 15:35–18:45Z — asai «Web HTM» (Opus 5.5) — 🚫 CIERRE TOTAL sábado 26-sep + 🔍 pickups perdidos en el calendario
+
+**1. Cierre sábado 26 (todos los tamaños) — EN VIVO.** Orden de Asaí msgs 3442/3446/3447 (*"Lunes en adelante"*). `"2026-09-26"` en `BLOCKED_DATES` + mensaje ("…next available delivery date is Monday, September 28…"). Commit `cec9108` → push → build local → rsync `.next` → kill next-server. **BUILD_ID `3Ub8INUuz7ruQdQFPOQAm`** idéntico local/Hostinger; chunk en vivo `d6029daeb16416de.js` trae el mensaje del sábado ✅✅. El POST de prueba a `/api/checkout` topó con el rate limit (429) — rechazo server-side NO probado, sólo el cliente. Ya había una reserva pagada para el sábado: Eduardo Magana 10yd (8:40am PT).
+
+**2. Caso Zara Younossi (TP-MUEN80ZJ, msg 3431):** Stripe dice entrega 24 / pickup 25. En el calendario hay 2 eventos, los dos "delivery", 1h 3-4pm (23-sep y 26-sep), color 4 = hash de su Booking ID → los creó el webhook y después alguien los editó (el webhook crea entrega 1-6pm + pickup 1h). Único escritor del calendario: `src/app/api/webhook/route.ts` (+ manual-booking/test); nada más en /root ni /opt. El historial de edición (created/updated) no se pudo leer: el classifier bloqueó la lectura por SSH con la SA.
+**Hueco real:** si un pickup falla o lo borran/renombran, nadie se entera (el webhook sólo lo loguea).
+**Vigía nuevo (NO activado aún, espera sí de Asaí):** `/root/scripts/tp_pickup_check.py` — lee el feed público `/api/calendar/events` en tramos de 7 días, empareja cada delivery con un pickup posterior (Booking ID o nombre+tamaño), alerta a Asaí por su bot. `--dry-run` 25-sep: 3 ONLINE sin pickup (Zara, **Ashkaan Daneshi TP-MU8SZV6L pickup lun 28**, Holland Landscape TP-MUEEH0Q4) + 4 manuales (GA 20yd, Carrie, Jonah 30, Luis). Asaí pidió sólo manuales ("en automático no puede pasar"); le mostré que sí pasa y recomendé incluir online.
+**Pendiente:** sí/no de Asaí para cron 7am PT (14:00Z); causa raíz de los pickups online perdidos; podar `2026-09-22/24/25/26`.
+
 ## 2026-09-24 20:55–21:00Z — asai «Web HTM» (Opus 5.5) — 🚫 CIERRE TOTAL viernes 25-sep (todos los tamaños) — EN VIVO
 
 **Orden:** Asaí por Telegram, msg 3407 (19:36Z): *"que mañana ya no puedan bookear para delivery mañana… Solo el sábado"*, y msg 3412: *"cuando te diga cierra ese día ya es definitivo"*.
