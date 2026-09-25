@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isDayFull, fullDayMessage } from "@/lib/day-capacity";
+import { countDeliveriesAndSwaps, DAILY_ONLINE_CAP, fullDayMessage } from "@/lib/day-capacity";
 
 // Public, PII-free: tells the booking wizard whether a delivery date already
 // reached the daily online cap (see src/lib/day-capacity.ts). Returns only a
@@ -10,9 +10,17 @@ export async function GET(req: NextRequest) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json({ error: "date must be yyyy-mm-dd" }, { status: 400 });
   }
-  const full = await isDayFull(date);
+  // `count` (just a number, no PII) lets us verify the calendar is really
+  // being read: a failed read answers full:false with count:null.
+  let count: number | null = null;
+  try {
+    count = await countDeliveriesAndSwaps(date);
+  } catch (err) {
+    console.error(`day-capacity: calendar read failed for ${date} (not blocking):`, err);
+  }
+  const full = count !== null && count >= DAILY_ONLINE_CAP;
   return NextResponse.json(
-    { date, full, message: full ? await fullDayMessage(date, size) : "" },
+    { date, full, count, cap: DAILY_ONLINE_CAP, message: full ? await fullDayMessage(date, size) : "" },
     { headers: { "Cache-Control": "no-store" } }
   );
 }
