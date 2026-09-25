@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import type { BookingData } from "./BookingWizard";
 import { isDateBlocked, blockedReason } from "@/lib/availability";
 import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
@@ -81,6 +81,9 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
 
   // Inline error for unavailable delivery dates (yard fully booked).
   const [deliveryError, setDeliveryError] = useState("");
+  // Last date the customer picked — a slow capacity answer for an older pick
+  // must not wipe a newer one.
+  const lastPickedRef = useRef("");
 
   // Re-validate a previously-picked delivery date if the customer goes back
   // and changes the size (Step 1 runs before Step 2, so a date that was fine
@@ -105,6 +108,21 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       return;
     }
     setDeliveryError("");
+    // Daily online cap (6 deliveries + swaps): ask the server, since only it
+    // can read the calendar. Fails open — the checkout API re-checks anyway.
+    if (date) {
+      const picked = date;
+      lastPickedRef.current = picked;
+      fetch(`/api/day-capacity?date=${picked}&size=${encodeURIComponent(booking.service?.size || "")}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((res) => {
+          if (res?.full && lastPickedRef.current === picked) {
+            setDeliveryError(res.message);
+            updateBooking({ deliveryDate: "", deliveryWindow: "", pickupDate: "" });
+          }
+        })
+        .catch(() => {});
+    }
     const autoPickup = addDays(date, baseDays);
     const totalDays = baseDays;
     const extra = Math.max(0, totalDays - baseDays);

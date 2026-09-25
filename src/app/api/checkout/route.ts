@@ -8,6 +8,7 @@ import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { isOutsideServiceArea } from "@/lib/service-area";
 import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
 import { ONLINE_PRICES, EXTRA_DAY_FEE } from "@/lib/pricing";
+import { isDayFull, fullDayMessage } from "@/lib/day-capacity";
 
 let dbInitialized = false;
 
@@ -134,6 +135,15 @@ export async function POST(request: Request) {
     if (isDateBlocked(booking.deliveryDate, booking.service.size)) {
       return NextResponse.json(
         { error: blockedReason(booking.deliveryDate, booking.service.size) },
+        { status: 400 }
+      );
+    }
+
+    // Daily online cap: 6 deliveries + swaps on the calendar closes the day
+    // for online bookings (Asaí, 2026-09-25). Fails open if Calendar is down.
+    if (await isDayFull(booking.deliveryDate)) {
+      return NextResponse.json(
+        { error: await fullDayMessage(booking.deliveryDate, booking.service.size) },
         { status: 400 }
       );
     }

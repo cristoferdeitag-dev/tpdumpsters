@@ -495,6 +495,25 @@ export async function POST(req: NextRequest) {
       `📅 Calendar events: delivery=${deliveryResult.success ? deliveryResult.eventId : "FAILED"}, pickup=${pickupResult.success ? pickupResult.eventId : "FAILED"}`
     );
 
+    // If either event could not be created (even after retries), page the
+    // admins right away so nobody finds out on pickup day (Asaí, 2026-09-25).
+    if (!deliveryResult.success || !pickupResult.success) {
+      const missing = [
+        !deliveryResult.success ? `delivery ${deliveryDate} (${deliveryResult.error || "error"})` : null,
+        !pickupResult.success ? `pickup ${pickupDate} (${pickupResult.error || "error"})` : null,
+      ].filter(Boolean).join("\n");
+      // notifyAdminsTelegram sends parse_mode Markdown: strip its special
+      // chars so an error string with "_" can't make Telegram reject the alert.
+      const plain = (t: string) => t.replace(/[_*`\[\]]/g, " ");
+      try {
+        await notifyAdminsTelegram(
+          plain(`🚨 Calendar event NOT created — add it by hand\n\n${customerName} · ${dumpsterSize} · ${bookingId}\n${missing}`)
+        );
+      } catch (alertErr) {
+        console.error("📨 Calendar-failure alert error:", alertErr);
+      }
+    }
+
     // Send booking confirmation SMS (non-blocking — failures don't affect response)
     let smsSent = false;
     if (customerPhone) {

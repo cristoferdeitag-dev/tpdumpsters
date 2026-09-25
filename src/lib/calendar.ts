@@ -118,24 +118,40 @@ export async function createCalendarEvent(params: {
 
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events`;
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + token,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(eventBody),
-    });
+    // Retry transient failures (network, 429, 5xx) up to 3 attempts total.
+    // A pickup that silently failed to be created went unnoticed for days
+    // (Zara Younossi TP-MUEN80ZJ, 2026-09-25) — a duplicate event is far
+    // cheaper than a missing one, so we retry even if the POST may have landed.
+    // 4xx errors (bad request / permissions) are not retried.
+    let lastError = "Calendar API error";
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(eventBody),
+        });
 
-    const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
-    if (!res.ok) {
-      console.error("Calendar API error:", data);
-      return { success: false, error: data.error?.message || "Calendar API error" };
+        if (res.ok && data.id) {
+          console.log(`📅 Calendar event created: ${params.summary} on ${params.date} (ID: ${data.id})${attempt > 1 ? ` after ${attempt} attempts` : ""}`);
+          return { success: true, eventId: data.id };
+        }
+
+        lastError = data.error?.message || `Calendar API HTTP ${res.status}`;
+        console.error(`Calendar API error (attempt ${attempt}):`, data);
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) break;
+      } catch (fetchErr) {
+        lastError = String(fetchErr);
+        console.error(`Calendar event creation error (attempt ${attempt}):`, fetchErr);
+      }
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1500));
     }
-
-    console.log(`📅 Calendar event created: ${params.summary} on ${params.date} (ID: ${data.id})`);
-    return { success: true, eventId: data.id };
+    return { success: false, error: lastError };
   } catch (err) {
     console.error("Calendar event creation error:", err);
     return { success: false, error: String(err) };
