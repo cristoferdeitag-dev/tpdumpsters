@@ -1,3 +1,16 @@
+## 2026-09-25 18:50–19:15Z — asai «Web HTM» (Opus 5.5) — 🧮 Tope diario online de 6 + reintento/alerta de eventos + vigía de pickups ACTIVO
+
+**Órdenes de Asaí:** msg 3449 (vigía online+manual; "si hay error de por qué las online no ponen el pickup, arreglarlo"), 3452/3458/3460 (con 6 deliveries+swaps en el calendario, cerrar el día SOLO para reservas online y ofrecer el siguiente).
+**Qué se hizo:**
+- `src/lib/day-capacity.ts` + `GET /api/day-capacity?date=` (público, sin PII: `full`, `count`, `cap`, `message`). Cuenta deliveries+swaps del calendario por día PT ("...swappickup" cuenta como pickup, no carga). Caché 60s. **Falla abierto** si Calendar no responde.
+- `/api/checkout` → 400 con "fully booked… next available X" si el día está lleno; `DateStep` pregunta al elegir fecha (con guardia de respuesta vieja).
+- `createCalendarEvent` reintenta 3 veces (red/429/5xx; 4xx no). El webhook avisa por Telegram a admins si no se pudo crear delivery o pickup.
+**Deploy:** commits `dedc61b` + `a9acd1d` → build local → rsync `.next` → kill next-server. **BUILD_ID `E_XRGPe8VzHC7arfLg4Sz`** idéntico local/Hostinger. `/api/day-capacity` en vivo: 26-sep count 5, 28-sep 2, 29-sep 1 = conteo independiente desde el feed ✅✅. **No probado en vivo:** el rechazo de un día lleno (ninguno llega a 6) ni la alerta de fallo (no hubo fallo).
+**Causa de los pickups online perdidos:** NO determinada. Desde 26-ago, de ~70 reservas online pagadas sólo 3 perdieron el pickup (Zara, Ashkaan, Holland, reservadas 19–23 sep; Asaí ya las rehízo); Carol Hamilton y ASAP SITE sin eventos = reembolsadas; 2ª reserva de Thomas Boyer se agendó como swap de la 1ª. Sin logs en Hostinger (`getNode_jsRuntimeLogs` vacío) y el historial de eventos bloqueado por el classifier → no se distingue fallo de API vs. borrado/renombrado humano. Lo que sí queda cubierto: fallo de API → reintento + alerta; borrado humano → vigía diario.
+**Vigía:** `/root/scripts/tp_pickup_check.py` en cron `0 14 * * *` (7am PDT / 6am PST), log `/root/logs/tp_pickup_check.log`. Corrida 25-sep tras los arreglos de Asaí: 0 faltantes.
+**Link de Luis Venegas:** el que recibe el cliente de TP es `quote.tpdumpsters.com/c/<id>` (config `provider_quote_config.quote_domain`), NO `bookingdumpsters.com/c/…` — le pasé primero el de Booking por error y Asaí lo cachó.
+**Pendiente:** podar fechas viejas de `BLOCKED_DATES`; si llega una alerta de "Calendar event NOT created", revisar el error que trae.
+
 ## 2026-09-25 15:35–18:45Z — asai «Web HTM» (Opus 5.5) — 🚫 CIERRE TOTAL sábado 26-sep + 🔍 pickups perdidos en el calendario
 
 **1. Cierre sábado 26 (todos los tamaños) — EN VIVO.** Orden de Asaí msgs 3442/3446/3447 (*"Lunes en adelante"*). `"2026-09-26"` en `BLOCKED_DATES` + mensaje ("…next available delivery date is Monday, September 28…"). Commit `cec9108` → push → build local → rsync `.next` → kill next-server. **BUILD_ID `3Ub8INUuz7ruQdQFPOQAm`** idéntico local/Hostinger; chunk en vivo `d6029daeb16416de.js` trae el mensaje del sábado ✅✅. El POST de prueba a `/api/checkout` topó con el rate limit (429) — rechazo server-side NO probado, sólo el cliente. Ya había una reserva pagada para el sábado: Eduardo Magana 10yd (8:40am PT).
