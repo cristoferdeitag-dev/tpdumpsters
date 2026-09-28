@@ -34,7 +34,13 @@ El texto largo del correo del 30908 lo refuerza: dice que la política «faltaba
 
 **Dónde queda.** Todo depende del ticket **#29754467** con Twilio Support. La pregunta que decide: *¿cambiar el `website_url` de un perfil aprobado manda la marca a re-vetting?* La respuesta llega por correo a **tppaver@gmail.com** (no tenemos acceso a ese buzón desde acá — Cris avisa cuando caiga). No hay SLA verificado de Twilio para compliance; no se inventa uno.
 
-**Pendiente ofrecido a Cris, sin GO todavía:** borrar el servicio de mensajería duplicado y vacío `MGdf3642a77b1c29cf23f05984791bce01`, que arrastra una campaña muerta de 2025 (`30908` + `30909`) colgada de la misma marca.
+**🧹 Limpieza ejecutada (GO Cris msg 7278, 22:58Z).** Se borró el servicio de mensajería duplicado `MGdf3642a77b1c29cf23f05984791bce01` y su campaña muerta de 2025 (`30908` + `30909`), que colgaba de la misma marca.
+
+- **Auditado antes de borrar:** `0` números, `0` alpha senders, `inbound_request_url = None`, `status_callback = None`. Vacío de verdad, nada vivo dependía de él.
+- Respaldo del payload: `/root/.tp-a2p-servicio-duplicado-backup-2026-09-28.json` (chmod 600).
+- `DELETE` campaña `204` + `DELETE` servicio `204`. **Verificado por dos vías** ✅✅: `GET` directo → `404` (`20404`) y la lista de servicios bajó de **4 a 3**.
+- **Nada de TP se tocó** (comprobado después del borrado): su campaña sigue en `MG471e21…`, el número `+15106501133` sigue en su servicio, la marca `BN40a61…` sigue `APPROVED / VERIFIED` (`tcr_id` `BZXKMUM`, sin `failure_reason`) y el saldo sigue en `$15.79561` — costo **$0**.
+- ⚠️ La trampa de siempre: los dos servicios reportaban **el mismo** `campaign sid` `QE2c6890…`. Son recursos distintos, direccionados por servicio. Por eso el `DELETE` se apuntó a `/Services/MGdf3642…/Compliance/Usa2p/QE2c6890…` y no tumbó la de TP.
 
 ---
 
