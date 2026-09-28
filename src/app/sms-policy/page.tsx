@@ -14,8 +14,9 @@ export default function SmsPolicyPage() {
     <LegalPage title="SMS Terms & Conditions" updated="September 28, 2026">
       <P>
         These SMS Terms &amp; Conditions govern the text messaging program operated by TP Dumpsters
-        (&ldquo;TP Dumpsters&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). By providing your mobile number and
-        opting in, you agree to the terms below.
+        (&ldquo;TP Dumpsters&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). <strong>TP Dumpsters is a brand
+        operated by Tp Pavers services Inc (EIN 99-2533265), a California corporation.</strong> By
+        providing your mobile number and opting in, you agree to the terms below.
       </P>
 
       <H2>1. Program description</H2>

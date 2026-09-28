@@ -14,8 +14,7 @@ export default function TermsPage() {
     <LegalPage title="Terms & Conditions" updated="September 28, 2026">
       <P>
         These Terms &amp; Conditions govern the rental of roll-off dumpsters and related services from
-        TP Dumpsters (&ldquo;TP Dumpsters&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). By booking online, by
-        phone or by email, you agree to them. The prices and fees shown to you at checkout are the ones
+        TP Dumpsters (&ldquo;TP Dumpsters&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;). <strong>TP Dumpsters is a brand operated by Tp Pavers services Inc (EIN 99-2533265), a California corporation.</strong> By booking online, by phone or by email, you agree to them. The prices and fees shown to you at checkout are the ones
         that govern your rental; the amounts quoted below are current as of the date above.
       </P>
 

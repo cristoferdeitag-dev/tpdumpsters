@@ -15,8 +15,8 @@ export default function PrivacyPage() {
       <P>
         TP Dumpsters (&ldquo;TP Dumpsters&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;) operates
         tpdumpsters.com and provides roll-off dumpster rental services in the San Francisco Bay Area.
-        This Privacy Policy explains what information we collect, why we collect it, and what we do
-        with it.
+        <strong>TP Dumpsters is a brand operated by Tp Pavers services Inc (EIN 99-2533265), a California corporation.</strong> This Privacy Policy explains what information we collect,
+        why we collect it, and what we do with it.
       </P>
 
       <H2>1. Information we collect</H2>
