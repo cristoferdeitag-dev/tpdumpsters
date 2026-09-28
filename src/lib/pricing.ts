@@ -62,3 +62,13 @@ export function listPriceFor(serviceType: string, size: string): number | null {
   const online = onlinePriceFor(serviceType, size);
   return online == null ? null : online + LIST_PREMIUM;
 }
+
+/**
+ * Bono "termina tu reserva" (Cris, 28-sep-2026, msg 23361): $15 extra sobre el
+ * precio online, SOLO cuando el cliente vuelve por el link FIRMADO del correo
+ * de rescate del vigía de carritos. El checkout lo verifica del lado del
+ * servidor; nunca sale del precio que manda el navegador.
+ */
+export const RESCUE_BONUS = 15;
+/** El bono se honra hasta 7 días después de que venza el link (evita cobrar un total distinto al que vio). */
+export const RESCUE_PROOF_GRACE_SECONDS = 7 * 24 * 60 * 60;

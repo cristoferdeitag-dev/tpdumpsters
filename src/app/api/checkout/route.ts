@@ -7,7 +7,10 @@ import { isDateBlocked, blockedReason } from "@/lib/availability";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { isOutsideServiceArea } from "@/lib/service-area";
 import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
-import { ONLINE_PRICES, EXTRA_DAY_FEE } from "@/lib/pricing";
+import { ONLINE_PRICES, EXTRA_DAY_FEE, RESCUE_BONUS, RESCUE_PROOF_GRACE_SECONDS } from "@/lib/pricing";
+import { verifyBookingTokenKind } from "@/lib/resume-token";
+import { isValidBookingId } from "@/lib/auth";
+import type { RowDataPacket } from "mysql2";
 import { isDayFull, fullDayMessage } from "@/lib/day-capacity";
 
 let dbInitialized = false;
@@ -106,10 +109,50 @@ export async function POST(request: Request) {
       booking.service.size,
       Number(booking.extraDays)
     );
+    // RESCUE BONUS (Cris 28-sep-2026, msg 23361): $15 more off, ONLY when the
+    // request carries the signed "rescue" proof from the abandoned-cart email
+    // AND the original booking belongs to this same customer (phone or email).
+    // No proof / bad signature / other customer → no bonus. Never a 400 here:
+    // the response reports rescueBonus so the wizard can drop the line and
+    // show the real total before the card form mounts.
+    let rescueBonus = 0;
+    let rescuedFrom = "";
+    const proof = booking.rescue as { b?: unknown; t?: unknown; e?: unknown } | null | undefined;
+    if (proof && typeof proof === "object") {
+      const pb = typeof proof.b === "string" ? proof.b : "";
+      const pt = typeof proof.t === "string" ? proof.t : "";
+      const pe = typeof proof.e === "string" ? proof.e : "";
+      const kind = isValidBookingId(pb) ? verifyBookingTokenKind(pb, pt, pe, RESCUE_PROOF_GRACE_SECONDS) : null;
+      let sameCustomer = false;
+      if (kind === "rescue") {
+        try {
+          const [orig] = await getPool().execute<RowDataPacket[]>(
+            "SELECT c.phone, c.email FROM bookings b JOIN customers c ON c.id = b.customer_id WHERE b.booking_id = ? LIMIT 1",
+            [pb]
+          );
+          const o = orig[0];
+          const digits = (v: unknown) => String(v || "").replace(/\D/g, "").slice(-10);
+          const lower = (v: unknown) => String(v || "").trim().toLowerCase();
+          sameCustomer =
+            !!o &&
+            ((digits(o.phone) !== "" && digits(o.phone) === digits(booking.customerPhone)) ||
+              (lower(o.email) !== "" && lower(o.email) === lower(booking.customerEmail)));
+        } catch (err) {
+          console.warn(`⚠️ CHECKOUT rescue lookup failed for ${pb}: ${String(err).slice(0, 120)}`);
+        }
+      }
+      if (kind === "rescue" && sameCustomer) {
+        rescueBonus = RESCUE_BONUS;
+        rescuedFrom = pb;
+      } else {
+        console.warn(`🚫 CHECKOUT rescue bonus refused: from=${pb || "?"} kind=${kind} sameCustomer=${sameCustomer}`);
+      }
+    }
+
     let chargeTotal: number;
     if (computedTotal != null) {
-      chargeTotal = computedTotal;
-      if (!Number.isFinite(clientTotal) || Math.abs(clientTotal - computedTotal) > 1) {
+      chargeTotal = computedTotal - rescueBonus;
+      if (!Number.isFinite(clientTotal) || Math.abs(clientTotal - chargeTotal) > 1) {
         console.warn(
           `⚠️ CHECKOUT price corrected: ${booking.service.serviceType} ${booking.service.size} extraDays=${booking.extraDays} client=$${clientTotal} → charged server price $${computedTotal}`
         );
@@ -428,6 +471,8 @@ export async function POST(request: Request) {
         address: booking.address,
         city: booking.city,
         zip_code: booking.zipCode,
+        rescue_bonus: String(rescueBonus),
+        rescued_from: rescuedFrom,
         authorized_charges: String(booking.authorizedCharges || false),
         sms_consent: String(booking.smsConsent || false),
         delivery_window: booking.deliveryWindow || "",
@@ -488,6 +533,10 @@ export async function POST(request: Request) {
             // before re-mounting a restored payment step (Hermes B3).
             sessionId: session.id,
             clientSecret: session.client_secret,
+            // What the server will actually charge + whether the $15 rescue
+            // bonus was honored, so the wizard can correct its summary.
+            chargeTotal,
+            rescueBonus,
             // The browser must init Stripe with the SAME key context that
             // created the session: platform publishable + connected account
             // when the fee path succeeded, the site's own key otherwise — a
@@ -500,6 +549,8 @@ export async function POST(request: Request) {
             success: true,
             bookingId,
             checkoutUrl: session.url,
+            chargeTotal,
+            rescueBonus,
           }
     );
   } catch (error) {

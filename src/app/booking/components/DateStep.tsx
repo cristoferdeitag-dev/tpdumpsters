@@ -380,6 +380,12 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
                 <span className="font-semibold">-${booking.onlineDiscount.toFixed(2)}</span>
               </div>
             )}
+            {booking.rescueDiscount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Book-now bonus from your email ($15 OFF)</span>
+                <span className="font-semibold">-${booking.rescueDiscount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="border-t pt-2 mt-2 flex justify-between">
               <span className="font-bold text-[#333] text-base">Total</span>
               <div className="text-right">

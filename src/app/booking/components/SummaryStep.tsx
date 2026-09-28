@@ -118,6 +118,12 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
                 <span className="text-[#1a7f37] font-medium">−${booking.onlineDiscount.toFixed(2)}</span>
               </div>
             )}
+            {booking.rescueDiscount > 0 && (
+              <div className="flex justify-between">
+                <span className="text-[#4b5156]">Book-now bonus (from your email)</span>
+                <span className="text-[#1a7f37] font-medium">−${booking.rescueDiscount.toFixed(2)}</span>
+              </div>
+            )}
           </div>
         </details>
       </div>

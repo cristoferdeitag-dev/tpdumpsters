@@ -7,6 +7,7 @@ import { sendEmail, isMailConfigured } from "@/lib/mailer";
 import { BODY, FONT, GOLD, INK, PHONE, esc, firstName, formatLongDay, helpBox, primaryButton, wrapBrandedEmail } from "@/lib/emails/layout";
 import { sendWhatsApp } from "@/lib/twilio";
 import { getStripe } from "@/lib/stripe";
+import { RESCUE_BONUS, LIST_PREMIUM } from "@/lib/pricing";
 import type { RowDataPacket, ResultSetHeader } from "mysql2";
 
 // POST /api/abandoned-watch   (Authorization: Bearer <DASHBOARD_PASSWORD>)
@@ -84,14 +85,18 @@ function bearerAuthDenied(request: NextRequest): NextResponse | null {
 }
 
 function recoveryEmail(name: string, sizeNum: string, serviceType: string, deliveryDate: string, total: number, resumeUrl: string) {
-  const subject = "Your dumpster is still reserved — finish your booking";
+  const subject = `Your dumpster is still reserved — finish now and save an extra $${RESCUE_BONUS}`;
   const deliveryLabel = formatLongDay(deliveryDate);
-  const totalLabel = `$${total.toFixed(2)}`;
+  // total = online price already saved on the booking ($50 online discount
+  // included). The rescue link is signed as "rescue", so the checkout takes
+  // RESCUE_BONUS more off — the email must show THAT total, nothing else.
+  const onlineLabel = `$${total.toFixed(2)}`;
+  const totalLabel = `$${Math.max(0, total - RESCUE_BONUS).toFixed(2)}`;
   const text =
     `Hi ${firstName(name)},\n\n` +
     `Your ${sizeNum}-yard dumpster for ${serviceType.toLowerCase()} (delivery ${deliveryLabel}) is still saved.\n\n` +
     `Finish your booking here — it takes less than a minute and your info is already filled in:\n${resumeUrl}\n\n` +
-    `Total: ${totalLabel} (online discount included)\n\n` +
+    `Your online price is ${onlineLabel} (the $${LIST_PREMIUM} online discount is already included). Finish through the link above and we'll take another $${RESCUE_BONUS} off — your total: ${totalLabel}.\n\n` +
     `Questions, or prefer to book by phone? Call or text us at ${PHONE}.\n\n` +
     `— TP Dumpsters\nhttps://tpdumpsters.com`;
   // Same shell as the booking confirmation so both emails read as one company.
@@ -107,7 +112,7 @@ function recoveryEmail(name: string, sizeNum: string, serviceType: string, deliv
               <h1 style="margin:0 0 16px 0;${FONT}font-size:26px;line-height:32px;color:${INK};">Your dumpster is waiting, ${esc(firstName(name))}.</h1>
               <p style="margin:0 0 24px 0;${FONT}font-size:15px;line-height:23px;color:${BODY};">Your <strong style="color:${INK};">${esc(sizeNum)}-yard dumpster</strong> for ${esc(serviceType.toLowerCase())}, delivery <strong style="color:${INK};">${esc(deliveryLabel)}</strong>, is still saved — your info is already filled in. Finishing takes less than a minute.</p>
               ${primaryButton(resumeUrl, `Finish my booking — ${totalLabel}`)}
-              <p style="margin:0;${FONT}font-size:13px;line-height:20px;color:${BODY};">Online discount included.</p>
+              <p style="margin:0;${FONT}font-size:13px;line-height:20px;color:${BODY};">Your online price is <strong style="color:${INK};">${onlineLabel}</strong> ($${LIST_PREMIUM} online discount included). Finish through this link and we take another <strong style="color:${INK};">$${RESCUE_BONUS} off</strong> — your total: <strong style="color:${INK};">${totalLabel}</strong>.</p>
             </td>
           </tr>`,
       helpBox("Questions, or prefer to book by phone?"),
@@ -338,7 +343,7 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const resumeUrl = buildResumeUrl(row.booking_id); // null when secret unconfigured (Hermes A2)
+      const resumeUrl = buildResumeUrl(row.booking_id, { rescue: true }); // signed as RESCUE → carries the $15 bonus; null when secret unconfigured (Hermes A2)
       const sizeNum = String(row.dumpster_size || "").replace(/[^0-9]/g, "") || "?";
       const deliveryDay = dateToYMD(row.delivery_date);
       const total = Number(row.total_price) || 0;
@@ -360,7 +365,7 @@ export async function POST(request: NextRequest) {
         const alertMsg =
           `🛒 *Carrito abandonado — TP Dumpsters*\n` +
           `${row.cust_name} · ${row.cust_phone}\n` +
-          `${sizeNum}yd ${row.service_type} · $${total.toFixed(0)} · entrega ${deliveryDay} · ${row.city}\n` +
+          `${sizeNum}yd ${row.service_type} · $${total.toFixed(0)} (−$${RESCUE_BONUS} si termina por el link) · entrega ${deliveryDay} · ${row.city}\n` +
           `📧 Correo de rescate: ${emailed ? "enviado ✅" : emailNote}\n` +
           (resumeUrl ? `🔗 Link para reanudar (se lo pueden reenviar): ${resumeUrl}` : `🔗 Sin link de reanudar (falta configurar el secreto)`);
         for (const phoneTo of TEAM_NUMBERS) {

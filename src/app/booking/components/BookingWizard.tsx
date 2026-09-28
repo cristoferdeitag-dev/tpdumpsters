@@ -37,6 +37,10 @@ export interface BookingData {
   totalPrice: number;
   subtotal: number;
   onlineDiscount: number;
+  // $15 book-now bonus, only when the customer came back through the signed
+  // rescue email link; `rescue` is that proof, re-verified by /api/checkout.
+  rescueDiscount: number;
+  rescue: { b: string; t: string; e: string } | null;
   address: string;
   city: string;
   zipCode: string;
@@ -62,6 +66,8 @@ const initialBooking: BookingData = {
   totalPrice: 0,
   subtotal: 0,
   onlineDiscount: 0,
+  rescueDiscount: 0,
+  rescue: null,
   address: "",
   city: "",
   zipCode: "",
@@ -353,7 +359,9 @@ export default function BookingWizard() {
         const saved = JSON.parse(raw);
         if (isValidSave(saved) && Date.now() - saved.createdAt < STORAGE_MAX_AGE_MS) {
           saveCreatedAtRef.current = saved.createdAt;
-          setBooking(saved.booking);
+          // Spread over the defaults so blobs saved before a new field
+          // existed (e.g. rescueDiscount) still restore cleanly.
+          setBooking({ ...initialBooking, ...saved.booking });
           if (saved.step >= 1 && saved.step <= 4) setStep(saved.step);
           const p = saved.payment;
           if (p?.clientSecret && p?.publishableKey && p.sessionId) {
@@ -420,7 +428,8 @@ export default function BookingWizard() {
         const discount = ONLINE_DISCOUNT_FLAT;
         updated.subtotal = subtotal;
         updated.onlineDiscount = discount;
-        updated.totalPrice = Math.round((subtotal - discount) * 100) / 100;
+        const rescue = Number(updated.rescueDiscount) || 0;
+        updated.totalPrice = Math.round((subtotal - discount - rescue) * 100) / 100;
       }
       return updated;
     });
@@ -464,6 +473,12 @@ export default function BookingWizard() {
       });
       const data = await res.json();
       if (res.ok && data.clientSecret && data.publishableKey) {
+        if (booking.rescueDiscount > 0 && Number(data.rescueBonus) === 0) {
+          // Server refused the bonus (link expired / different customer):
+          // drop the line so the summary matches what Stripe will charge.
+          updateBooking({ rescueDiscount: 0, rescue: null });
+          setResumeNote("The $15 bonus on your link has expired — the regular online price applies below.");
+        }
         // Mount Stripe's payment form right here in the wizard
         setPayment({ clientSecret: data.clientSecret, publishableKey: data.publishableKey, stripeAccount: data.stripeAccount, sessionId: data.sessionId });
         setIsSubmitting(false);

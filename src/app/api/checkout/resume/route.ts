@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPool, dateToYMD } from "@/lib/db";
-import { verifyBookingToken } from "@/lib/resume-token";
+import { verifyBookingTokenKind } from "@/lib/resume-token";
+import { RESCUE_BONUS } from "@/lib/pricing";
 import { isValidBookingId } from "@/lib/auth";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { getStripe } from "@/lib/stripe";
@@ -75,9 +76,12 @@ export async function POST(request: NextRequest) {
   const bid = typeof body.bid === "string" ? body.bid : "";
   const token = typeof body.t === "string" ? body.t : "";
   const exp = typeof body.e === "string" ? body.e : "";
-  if (!isValidBookingId(bid) || !verifyBookingToken(bid, token, exp)) {
+  // "rescue" = link signed by the abandoned-cart email → $15 book-now bonus.
+  const kind = isValidBookingId(bid) ? verifyBookingTokenKind(bid, token, exp) : null;
+  if (!kind) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  const rescueDiscount = kind === "rescue" ? RESCUE_BONUS : 0;
 
   try {
     const db = getPool();
@@ -189,11 +193,15 @@ export async function POST(request: NextRequest) {
         pickupDate: dateToYMD(row.pickup_date),
         extraDays: Number(row.extra_days) || 0,
         extraDayFee: Number(row.extra_day_fee) || 75,
-        totalPrice: Number(row.total_price),
+        totalPrice: Number(row.total_price) - rescueDiscount,
         // Summary hides the discount row when these are 0 (Hermes B4
         // residual) — reconstruct them the same way the wizard computes them.
         subtotal: Number(row.base_price) + (Number(row.extra_days) || 0) * (Number(row.extra_day_fee) || 75),
         onlineDiscount: 50,
+        // Book-now bonus: the wizard shows it and sends the same signed proof
+        // back to /api/checkout, which re-verifies it before charging.
+        rescueDiscount,
+        rescue: kind === "rescue" ? { b: bid, t: token, e: exp } : null,
         address: row.address,
         city: row.city,
         zipCode: row.zip_code,
