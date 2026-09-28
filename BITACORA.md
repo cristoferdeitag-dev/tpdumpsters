@@ -1,3 +1,9 @@
+## 2026-09-28 20:36–20:40Z — cris «Web HTM» (Fable 5.1, relay de Laso con GO Cris msg 7236) — 📜 /terms sección 10 con lenguaje A2P 10DLC — EN VIVO
+
+Parche preparado por Laso (`patch_terms_sms.py`, idempotente, sólo `src/app/terms/page.tsx`), aplicado por cris por tener el candado. Sección 10 ahora declara frecuencia (2–10 msgs por renta), "Message and data rates may apply", STOP/HELP, consentimiento no condiciona la compra, y la frase literal de no compartir datos móviles con terceros. Motivo: campaña A2P de TP rebotaba con 30882 (`TERMS_AND_CONDITIONS_URL`). Commit `d1aac0e`; `BUILD_ID dhjc5ChVWOs_IL4cquekP` idéntico local/prod; `/`, `/booking`, `/terms` 200; las 4 frases presentes en el HTML vivo (1 vez cada una, ✅✅ curl). Siguiente paso (Laso): reenviar la campaña A2P por API.
+
+---
+
 ## 2026-09-28 20:12–20:35Z — cris «Web HTM» (Fable 5.1, GO Cris msgs 23361 + 23363) — 🎁 Bono de rescate: −$15 extra si el cliente termina la reserva desde el correo de carrito abandonado — EN VIVO
 
 **Pedido de Cris (msg 23361):** *"agrega en el texto que además de los 50 dólares de descuento le damos 15 extra si reserva y haz que funcione"* + *"¿cuánto tarda en enviarse la automatización?"* (respuesta: 30–50 min después de llegar al paso de pago sin pagar — `created_at` entre 30 min y 20 h, cron cada 20 min; link válido 24 h).
