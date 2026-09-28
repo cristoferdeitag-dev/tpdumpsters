@@ -1,3 +1,43 @@
+## 2026-09-28 22:54–23:00Z — cris2 «Laso» (Opus 5, GO Cris msg 7273) — 🧪 Reenvío A2P con el 301 YA VIVO: rebotó en 21 segundos. El sitio queda descartado como causa
+
+**Por qué se hizo.** El reenvío anterior fue a las `21:49:19Z`. El commit de la razón social (`d100ad1`) es de `21:45:13Z` y el deploy + el 301 de `tpservicesca.com` se anunciaron en GLOBAL_EVENTS a las `21:53Z`. **El rechazo cayó en medio de esos dos hitos**, así que no había forma de saber si el revisor ya veía el sitio arreglado. Reenviar cuesta $0 (medido tres veces antes), así que el experimento era gratis.
+
+**Estado del sitio ANTES de reenviar (✅✅ verificado, `curl` en vivo 22:54Z):**
+
+| Comprobación | Resultado |
+|---|---|
+| `tpservicesca.com/` · `/privacy` · `/terms` | `301` → `tpdumpsters.com/…` |
+| Destino final siguiendo el 301 | `200` en `/privacy` y `/terms` |
+| `Tp Pavers services Inc` en `/privacy`, `/terms`, `/sms-policy` | 1× en cada una |
+
+**Lo que se mandó.** `DELETE` de la campaña `QE2c6890…` (`204`) + `POST` nueva (`201`, `IN_PROGRESS`). Payload idéntico al anterior **más una frase nueva** en `Description` y `MessageFlow`:
+
+> `The registered company website tpservicesca.com now redirects to tpdumpsters.com, so the same documents are also reachable at https://tpservicesca.com/privacy and https://tpservicesca.com/terms.`
+
+Longitudes finales: `description` 865, `message_flow` 1720.
+
+**Resultado (✅✅ dos vías: API + los dos correos que Cris reenvió, msgs 7274/7275, timbrados 4:55 pm MX = 22:55Z).**
+
+- Campaña creada `22:55:14Z`, `FAILED` con `date_created == date_updated` → **no hubo crawl**. Nadie visitó el sitio. → [[feedback_rechazo_instantaneo_no_hubo_crawl]]
+- Mismos dos códigos de siempre: **30882** (`TERMS_AND_CONDITIONS_URL`) y **30908** (`PRIVACY_POLICY_URL`).
+- **Costo $0** ✅✅: saldo `$15.79561` antes **y** `$15.79561` después.
+
+**🔑 Lo que este experimento cierra.** Era la última hipótesis que dependía de este repo, y quedó descartada: con el 301 sirviendo, la razón social publicada, la frase obligatoria literal en el `message_flow` y las URLs del dominio registrado escritas explícitamente en el texto de la campaña, **el rechazo es idéntico y llega en segundos**. El filtro automático no está leyendo ningún sitio: decide por el `website_url` del perfil de negocio de la marca (`IT32ce63…`), que dice `https://tpservicesca.com/`. **No hay nada más que hacer desde el código.**
+
+El texto largo del correo del 30908 lo refuerza: dice que la política «faltaba en el sitio web **o** en el `message_flow`». En el `message_flow` va literal y verificada — el que falta es el sitio web *que ellos tienen registrado*.
+
+**Perfil de negocio, leído completo (✅ una vía, Trust Hub API):** todos los campos correctos — `business_name = Tp Pavers services Inc`, `business_registration_number = 99-2533265`, `business_type = Corporation`, `business_industry = CONSTRUCTION`, `business_identity = direct_customer`, `business_regions_of_operation = USA_AND_CANADA`. **El único campo malo es `website_url`.**
+
+**Saldo y quema (✅ una vía, Usage API):** `$15.79561`, gasto del mes `$8.2935`, promedio `$0.2962`/día → ~53 días de aire. El call tracking **no** está en riesgo; no urge recargar.
+
+**Respaldo.** `/root/.tp-a2p-campaign-backup-2026-09-28-2254.json` (chmod 600) — payload completo previo al DELETE, por si hay que restaurar la campaña tal cual.
+
+**Dónde queda.** Todo depende del ticket **#29754467** con Twilio Support. La pregunta que decide: *¿cambiar el `website_url` de un perfil aprobado manda la marca a re-vetting?* La respuesta llega por correo a **tppaver@gmail.com** (no tenemos acceso a ese buzón desde acá — Cris avisa cuando caiga). No hay SLA verificado de Twilio para compliance; no se inventa uno.
+
+**Pendiente ofrecido a Cris, sin GO todavía:** borrar el servicio de mensajería duplicado y vacío `MGdf3642a77b1c29cf23f05984791bce01`, que arrastra una campaña muerta de 2025 (`30908` + `30909`) colgada de la misma marca.
+
+---
+
 ## 2026-09-28 22:05–22:25Z — cris2 «Laso» (Opus 5, GO Cris msgs 7248 + 7263) — 🔗 BookingDumpsters DESLIGADO de la marca A2P de TP
 
 **Qué pasaba:** la campaña A2P de BookingDumpsters (`MG1d289c…`, número +1 510 591 4302) colgaba de la marca `BN40a61…`, que está registrada a nombre de **Tp Pavers services Inc**. O sea: BD pedía permiso para mandar SMS bajo la razón social del cliente TP. Cris pidió deslindar completo, con la condición *"que no llegue correo a TP"*.
