@@ -1,3 +1,26 @@
+## 2026-09-28 19:45–20:15Z — cris2 «Laso» (Opus 5, GO Cris msgs 7220 + 7224) — ⚖️ /privacy, /terms y /sms-policy EN VIVO + consentimiento de SMS en el checkout (desbloqueo A2P)
+
+**Por qué:** Twilio rechazó la campaña A2P 10DLC de TP (`QE2c6890da…`, service `MG471e21…`) con **30909 — CTA no verificable**, campo `MESSAGE_FLOW`. El `message_flow` registrado describe el consentimiento en prosa pero **no da una URL pública** donde el revisor lo vea, y la única casilla del checkout era la de autorización de **cargos**, no de SMS. Mientras la campaña esté FAILED, ningún número de la cuenta manda SMS a EE. UU. (rebote 30034).
+
+**Verificación previa (Cris pidió "revisa si no estaban ya"):** las tres páginas **no existían** ✅✅ — tres vías: (1) no hay ruta en `src/app/`, (2) `grep -rniE "privacy|terms of|sms-policy"` en `src/` = 0 archivos, (3) el sitemap vivo no las lista y **14** URLs candidatas (`/privacy`, `/terms`, `/sms-policy`, `/privacy-policy`, `/terms-of-service`, `/terms-and-conditions`, `/sms`, `/legal`, `/tos`, `/privacidad`, `/terminos`, `/sms-terms`, `/messaging-policy`, `/sms-policy/`) daban **404**.
+
+**Cambios (commit `17acc3d`):**
+- `src/components/LegalPage.tsx` — shell compartido (Header + tarjeta + Footer + FloatingButtons) y los helpers `H2`/`P`/`UL`, para no triplicar layout.
+- `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`, `src/app/sms-policy/page.tsx` — con lo que exigen los carriers: la frase textual *"No mobile information will be shared with third parties or affiliates for marketing or promotional purposes…"*, STOP/HELP, *"Message and data rates may apply"*, frecuencia declarada, y las tres vías de opt-in. Los términos citan las reglas reales (10 yd = 3 días, 20/30 = 7; día extra y tonelada extra **remitidos al checkout**, no clavados: `pricing.ts` es la fuente única y los precios cambian).
+- `SummaryStep.tsx` — casilla de SMS **aparte de la de cargos**, arranca DESMARCADA y **no bloquea el pago**. Viaja a la metadata de Stripe como `sms_consent`; `BookingWizard` (tipo + default), `BookingV2` (default, sólo para que compile) y `checkout/resume` la recuperan.
+- `Footer.tsx` — las tres enlazadas desde **todo** el sitio (es lo que abre el revisor). `sitemap.ts` — las tres incluidas, prioridad 0.3.
+
+**QA en navegador real (Playwright 390×2, sembrando `tp_wizard_v1` para caer en el paso 4):** paso 4 visible ✅, casilla presente ✅, **el botón de pago se habilita marcando SÓLO la de cargos** ✅ (si el consentimiento de SMS bloqueara la compra, el carrier lo rechaza), y la de SMS sigue desmarcada ✅.
+
+**Deploy (procedimiento de [[ref_tpdumpsters_deploy]]):** push a main → `rm -rf .next && npm run build` (con `NEXT_PUBLIC_GOOGLE_MAPS_KEY` verificado en `.env.local` antes de compilar) → rsync de `.next/` → kill `next-server` → curl de respawn. **BUILD_ID `MC3uHeb4PnPG2LgG4cMhd` idéntico local y en Hostinger ✅✅.** En producción: `/privacy`, `/terms`, `/sms-policy`, `/booking` y `/` → 200; las 6 frases obligatorias del carrier presentes 1 vez cada una en `tpdumpsters.com/sms-policy`; las 3 URLs en el `sitemap.xml` vivo; los 3 links en el footer de la home; el chunk del checkout servido en vivo trae el texto del consentimiento.
+
+**Lo que NO se hizo (y por qué):** **no** se reenvió la campaña A2P. Cada intento de campaña se cobra: el histórico de la cuenta trae `a2p-10dlc-registrationfees-campaignvetting` = **2 one-time por $30** (→ $15 cada uno) ✅ una vía, con 3 campañas creadas (una no se cobró o se acreditó). **El saldo de la cuenta es $15.86** ✅ una vía: un reenvío lo deja en ~$0.86 y eso tumba el call tracking del 650-1133 que quedó en prod hoy. Recomendación: recargar Twilio **antes** de reenviar. El `message_flow` nuevo (el que cita las URLs) queda redactado y listo para disparar.
+
+**Pendientes que salieron de aquí:**
+- `/booking-v2` inicializa `authorizedCharges: false` y **nunca lo cambia** — si ese flujo llega a producción, toda reserva viajaría con `authorized_charges:"false"` a Stripe (la evidencia de disputa). Sólo se le añadió `smsConsent` para que compile; **no se tocó la lógica**.
+- El default de la columna `extra_day_fee` en `db.ts` sigue en **75** mientras `pricing.ts` cobra **49** (autorizado por Asaí el 15-sep). No es fuga: el valor viaja en el INSERT. Vale limpiarlo para que nadie lo lea como precio vigente.
+- Corregir la campaña de **BookingDumpsters** (30882 T&C + 30908 privacidad — ahí las páginas SÍ existen, el contenido no alcanza). Trabajo aparte.
+
 ## 2026-09-28 18:29–18:42Z — asai «Web HTM» (Opus 5) — 🚫 Fuera la línea de Zelle de las facturas y de la cotización — EN VIVO
 
 **GO de Asaí (msg 3578):** *"quitemos la frase de zelle"*. Nació de un error real: al rehacer la factura de Byron, la pantalla de Cobros le avisó *"no más de 500 caracteres"*. Los términos de general debris miden **506** con esa línea y `invoice_data.description` de una Checkout Session topa en **500** — eran esos ~46 caracteres, no su texto.
