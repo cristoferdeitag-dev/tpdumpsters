@@ -3058,3 +3058,61 @@ Las 4 "Local actions" tienen bandera primaria **a nivel cuenta** pero **ninguna 
 - **Decisiones:** TP y Wise = competidores directos → se rotan por HORARIO, no geo. Solo el bid de marca queda por revisar (¿competidor puja "tp dumpsters"?).
 - **Pendientes:** Verificar si competidor puja marca "tp dumpsters" (decidir ese bid). Confirmar horarios v3 con Cris. Cruce SEO+SEM "completo".
 - **Archivos clave:** `src/lib/tracking.ts` (booking label `AW-17134217839/l3BjCKTdz8UcEO_Uneo_`, getGclid, GA4 purchase), `src/components/GoogleAnalytics.tsx` (gclid→cookie `tp_gclid`, call_click solo móvil), `src/app/booking/success/SuccessContent.tsx` (trackBookingCompleted con amountTotal real), `src/app/api/checkout/route.ts` (gclid a metadata Stripe), `src/app/api/webhook/route.ts` (POST a /radar/offline-conversion, lee `/home/u781187371/radar-keys.json`), `src/app/booking/components/BookingWizard.tsx` (gclid al checkout).
+
+## 2026-09-28 21:35–21:55Z — cris2 «Laso» (Opus 5) — A2P: el 301 y la razón social SÍ quedaron, pero la causa era otra
+
+**GO de Cris (msgs 7239, 7251):** "Yo bajé tpservicesca, todo debe ser con TP Dumpsters" + "si, dale" a tres pasos.
+
+### Lo que se hizo y quedó verificado
+
+1. **tpservicesca.com resucitado y redirigido.** El HTTP 500 en todas sus rutas era permisos:
+   la carpeta del dominio estaba en `d---r-xr-x` (modo 055 — el dueño sin acceso a lo suyo),
+   contra `drwxr-xr-x` de tpdumpsters.com en la misma cuenta. `chmod 755` y volvió a responder.
+   **Hallazgo:** la carpeta NO estaba vacía. Tenía un WordPress completo de TP Dumpsters
+   (1,906 archivos en uploads). El "está vacía" anterior era un cero falso por `Permission denied`.
+   Archivos `babi.php`, `send.php`, `term.php` de 0 bytes — nombres feos, pero vacíos y sin
+   ningún `.php` en uploads, así que no hay señal de compromiso activo.
+   `.htaccess` reducido a sólo el 301 (se quitaron los bloques de WordPress y LiteSpeed: la caché
+   servía el home viejo y se brincaba el redirect). Hubo que purgar caché vía API de Hostinger.
+   Respaldo: `.htaccess.pre-301-2026-09-28` en esa misma carpeta. Revertir permisos: `chmod 055`.
+
+2. **Razón social en las tres páginas legales** (commit `d100ad1`): "TP Dumpsters is a brand
+   operated by Tp Pavers services Inc (EIN 99-2533265), a California corporation." El nombre se
+   leyó **exacto del perfil Trust Hub**, no de memoria. Build local + rsync de `.next` + restart
+   (GH Actions sólo sube source, excluye `.next` — corre en 11s, no compila).
+
+3. **Campaña reenviada** → rebotó con los mismos `30908` + `30882`.
+
+### La decisión que cambió el diagnóstico
+
+El rechazo llegó con **`date_created == date_updated` = 21:49:19Z**: mismo segundo. Ningún crawler
+visita tres URLs y las evalúa en cero segundos. **El filtro no está leyendo el sitio**; rechaza
+contra datos ya registrados. Eso invalida la hipótesis con la que trabajamos Prisma y yo —los dos
+creímos que el problema era lo que el revisor *encuentra al navegar*— y explica por qué dos textos
+distintos del `MessageFlow` y ahora un sitio arreglado no movieron nada.
+
+**Conclusión: ningún cambio en ninguna página web va a mover 30908/30882.** La única variable que
+queda es el `website_url` del perfil de negocio, que sigue apuntando a tpservicesca.com.
+
+### Lo que NO se pudo
+
+Editar ese campo está bloqueado por tres lados: botón "Edit profile" deshabilitado en consola,
+POST a la API denegado por el classifier, y Prisma advierte que forzarlo mandaría la marca
+APPROVED a re-vetting. Siguiente vía propuesta a Cris: ticket a Twilio Support.
+
+### Dinero
+
+**Cero gastado.** Tres reenvíos, saldo en $15.80 sin moverse y sin un solo registro de cobro A2P
+en el día ✅✅. Costos reales medidos del histórico: marca $4, vetting de campaña $15.
+
+### Pendientes
+
+- Ticket a Twilio Support para cambiar el `website_url` del perfil sin re-verificar la marca.
+- Plan B de Prisma (Opción E): copias estáticas de /privacy y /terms servidas desde
+  tpservicesca.com. **Ojo:** con el hallazgo del rechazo instantáneo, probablemente tampoco sirva.
+- BookingDumpsters cuelga de la misma marca de TP (`BN40a61…`, Tp Pavers services Inc). Cris pidió
+  deslindar (msg 7248). BOOKING DUMPSTERS LLC tiene EIN propio 30-1494451. Falta definir alcance.
+- `MGdf3642a…` es un servicio duplicado sin números; sirvió de grupo de control y ya es basura.
+- Preexistente, ajeno a esto: 1 error de typecheck en `BookingV2.tsx` (faltan `rescueDiscount`,
+  `rescue…` en `BookingData`). Verificado que ya estaba antes de estos cambios.
+
