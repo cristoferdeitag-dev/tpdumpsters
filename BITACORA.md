@@ -1,3 +1,32 @@
+## 2026-09-28 20:16–20:35Z — cris2 «Laso» (Opus 5, GO Cris msgs 7232 + 7236) — 🎯 A2P 10DLC: el 30909 CAYÓ, y la causa raíz de los otros dos NO está en este repo
+
+**Resultado corto:** se reenvió la campaña A2P **dos veces**. El **30909 (CTA no verificable) quedó resuelto** — las páginas legales publicadas hoy sirvieron. Quedan **30908 + 30882**, y su causa **no está en tpdumpsters.com**.
+
+**🔑 Hallazgo 1 — reenviar NO cuesta.** Tres mediciones del saldo: `$15.84061` **idéntico** antes del primer reenvío, después del primero y después del segundo; y **cero registros de uso** de `a2p-10dlc-registrationfees-*` en el día (✅✅ dos vías). El rechazo llega en **menos de 1 minuto**, con `date_updated == date_created`: es un escáner automático que corre **antes** del vetting de pago del TCR. La estimación previa de "$15 por intento" aplica al vetting real, no a un rebote automático. **Se puede iterar el texto sin gastar.** La recarga de Twilio sigue haciendo falta, pero por el reenvío de llamadas del 650-1133, no por esto.
+
+**🎯 Hallazgo 2 — CAUSA RAÍZ de 30908/30882.** Los campos que rebotan son `PRIVACY_POLICY_URL` y `TERMS_AND_CONDITIONS_URL`, **que no existen como parámetros de la API de `Usa2p`**. Viven en el perfil de negocio de la marca (Trust Hub, EndUser `IT32ce6314559c508b29d43707de0409bc`), donde:
+
+> `website_url = https://tpservicesca.com/` ← **no tpdumpsters.com**
+
+**y `tpservicesca.com` está CAÍDO: HTTP 500 en todas las rutas, incluida la home** (`HTTP/2 500`, `content-length: 0`, `x-powered-by: PHP/8.2.30`, `platform: hostinger`; DNS resuelve y el servidor contesta → no es red ni DNS, el sitio truena solo) ✅✅. El revisor va a ese dominio a buscar las políticas y encuentra una pantalla de error. Relación causal = inferencia ~; los dos hechos = verificados ✅✅.
+
+**Lo que se hizo en este repo (vía relay a `cris`, que tenía el candado):** parche `patch_terms_sms.py` a la sección 10 de `/terms` — commit `d1aac0e`, `BUILD_ID dhjc5ChVWOs_IL4cquekP`, verificado en vivo por ambas instancias. **Ese cambio es correcto y se queda**: el lenguaje que le faltaba (frecuencia, rates, HELP, frase literal) hacía falta de todos modos. Simplemente no era lo que bloqueaba.
+
+**Decisiones:**
+- **No se tocó el perfil de la marca.** La marca está `APPROVED` / `VERIFIED`; cambiarle el `website_url` puede mandarla a re-verificación, que sí cuesta. No se arriesga lo único ya ganado sin GO explícito de Cris.
+- **No se tocó `tpservicesca.com`.** TP es cliente; se le reportó a Cris (msg 7238) y se espera su decisión.
+
+**Errores propios que vale la pena no repetir:** asumí dos veces que el revisor leía el dominio del checkout. La pista estaba a la vista desde el primer rebote — un campo que la API no me deja mandar vive en otro recurso — y además el síntoma discriminaba solo: el 30909 reaccionó a mis cambios y los otros dos no se movieron ni un milímetro entre dos textos distintos. Un error que no reacciona a la corrección es diagnóstico equivocado, no corrección insuficiente. Memoria nueva: `feedback_error_nombra_un_campo_buscar_donde_vive`.
+
+**Pendientes:**
+1. **Decisión de Cris:** levantar `tpservicesca.com` + publicarle sus legales (recomendado), o cambiar el `website_url` de la marca (riesgo de re-verificación).
+2. **Aparte y quizá más urgente que el A2P:** `tpservicesca.com` lleva caído un tiempo indeterminado y nadie se había dado cuenta.
+3. **BookingDumpsters** (`MG1d289c…`) arrastra los mismos 30882 + 30908 → **revisar primero el `website_url` de su marca** antes de tocarle el sitio. Puede ser exactamente el mismo cuento.
+
+**Archivos clave:** `/root/scripts/tp_a2p_resubmit_2026-09-28.py` (MessageFlow v2, dry-run por defecto) · `src/app/terms/page.tsx` · memorias `ref_twilio_a2p_tp_bd_estado`, `feedback_error_nombra_un_campo_buscar_donde_vive`.
+
+---
+
 ## 2026-09-28 20:36–20:40Z — cris «Web HTM» (Fable 5.1, relay de Laso con GO Cris msg 7236) — 📜 /terms sección 10 con lenguaje A2P 10DLC — EN VIVO
 
 Parche preparado por Laso (`patch_terms_sms.py`, idempotente, sólo `src/app/terms/page.tsx`), aplicado por cris por tener el candado. Sección 10 ahora declara frecuencia (2–10 msgs por renta), "Message and data rates may apply", STOP/HELP, consentimiento no condiciona la compra, y la frase literal de no compartir datos móviles con terceros. Motivo: campaña A2P de TP rebotaba con 30882 (`TERMS_AND_CONDITIONS_URL`). Commit `d1aac0e`; `BUILD_ID dhjc5ChVWOs_IL4cquekP` idéntico local/prod; `/`, `/booking`, `/terms` 200; las 4 frases presentes en el HTML vivo (1 vez cada una, ✅✅ curl). Siguiente paso (Laso): reenviar la campaña A2P por API.
