@@ -260,7 +260,7 @@ export default function QuoteView({ quoteId }: { quoteId: string }) {
               "Extra weight: $179/ton (prorated) beyond included tonnage",
               "Cancellation: 24-hour notice required. $150 cancellation fee applies",
               "Mattresses, appliances & tires: $20–$60 each (special disposal required)",
-              "Payment: Credit card (online) or Zelle (TP PAVERS SERVICE INC — 510 253 62 30)",
+              "Payment: Credit card (online)",
               "A team member will contact you to confirm delivery details",
             ].map((term) => (
               <li key={term} className="text-[10px] text-[#666] font-[var(--font-poppins)] flex items-start gap-1.5">

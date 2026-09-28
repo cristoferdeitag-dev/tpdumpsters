@@ -227,7 +227,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build MANUAL v3 terms (Asaí's exact wording, fits 500-char Stripe cap)
+    // Build MANUAL v3 terms (Asaí's exact wording, fits 500-char Stripe cap).
+    // 28-sep-2026 (Asaí, msg 3578): fuera la linea de Zelle — nadie paga por ese
+    // medio (610 de 610 movimientos del ledger de Cobros son tarjeta) y sus ~46
+    // chars eran los que reventaban el tope de 500 con varias cajas.
     const allLight = items.every((i) =>
       ["Clean Soil", "Clean Concrete", "Mixed Materials", "Bricks", "Clean Asphalt"].includes(i.serviceType)
     );
@@ -253,7 +256,6 @@ export async function POST(request: NextRequest) {
       `• Do not exceed the marked fill line. No prohibited materials`,
       `• 24h notice - $150 cancellation fee`,
       `• Payment upon arrival or via the "pay online" link above`,
-      `• Zelle: TP PAVERS SERVICE INC - 510 253 62 30`,
     ];
     // "Thanks for choosing TP Dumpsters!" lives INSIDE the General Rental
     // Terms block per Asaí (2026-05-01). Footer is reserved for per-invoice
