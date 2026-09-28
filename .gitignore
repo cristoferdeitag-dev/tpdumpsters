@@ -30,3 +30,6 @@ next-env.d.ts
 # logs
 stderr.log
 console.log
+
+# Respaldos locales de trabajo — nunca van al repo
+.respaldos/
