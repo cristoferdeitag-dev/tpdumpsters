@@ -1,3 +1,59 @@
+## 2026-09-28 18:29–18:42Z — asai «Web HTM» (Opus 5) — 🚫 Fuera la línea de Zelle de las facturas y de la cotización — EN VIVO
+
+**GO de Asaí (msg 3578):** *"quitemos la frase de zelle"*. Nació de un error real: al rehacer la factura de Byron, la pantalla de Cobros le avisó *"no más de 500 caracteres"*. Los términos de general debris miden **506** con esa línea y `invoice_data.description` de una Checkout Session topa en **500** — eran esos ~46 caracteres, no su texto.
+
+**Por qué se puede quitar:** 610 de 610 movimientos del ledger de Cobros son tarjeta, cero Zelle (✅ una vía). Contrapeso honesto: en 90 días hubo ~$9,490 en 14 facturas cobradas fuera de Stripe (facturas pagadas $247,112.72 vs cobros con tarjeta $237,622.16, ✅ una vía) — efectivo/cheque/Zelle mezclados, sin separar.
+
+**Cambios (commit `50bf37b`):**
+- `src/app/api/invoice/route.ts` — fuera `• Zelle: TP PAVERS SERVICE INC - 510 253 62 30` de los General Rental Terms.
+- `src/app/quote/[id]/QuoteView.tsx` — *"Payment: Credit card (online) or Zelle (…)"* → *"Payment: Credit card (online)"*. Es la misma frase con los datos bancarios, en el documento que sí ve el cliente.
+
+**Deploy (procedimiento de [[ref_tpdumpsters_deploy]]):** push a main → `rm -rf .next && npm run build` (con `NEXT_PUBLIC_GOOGLE_MAPS_KEY` presente en `.env.local`, verificado antes de compilar) → rsync de `.next/` a Hostinger → kill `next-server`. **Verificado ✅✅:** `BUILD_ID C0O-mOXAhNfzHRPuOqm_E` idéntico local y en prod; `grep 'TP PAVERS SERVICE INC'` en el `.next` **de producción** → **0**; la línea nueva presente en 5 archivos del build; home y `/booking` → 200.
+
+**No se tocó:** `api/invoice/mark-paid`, el dashboard interno y `QuoteForm` siguen permitiendo registrar un pago en efectivo/cheque/Zelle. Se retira ofrecerlo, no recibirlo.
+
+**Pendiente de decisión de Asaí:** 7 páginas de servicio (`general-debris`, `clean-soil`, `clean-concrete`, `clean-asphalt`, `mixed-materials`, `household-cleanout`, `construction-debris`, `green-waste`, `roofing`) llevan `{ item: "Payment methods", fee: "Credit card online or Zelle" }`, y `api/chat` lista Zelle entre los métodos aceptados. Preguntado en el msg 3579.
+
+**Dato de negocio (Asaí, msg 3578):** *"En usa y en este trabajo no se usa whatsapp. todo es por texto"* — al cliente que pida datos de Zelle se le mandan por SMS, no por WhatsApp.
+
+## 2026-09-28 17:28–17:30Z — cris2 «Laso» (Fable 5.1, GO Cris msg 7194) — 📞 Call tracking PASO 2 APLICADO: las llamadas de anuncio ya pasan por Twilio
+
+**Sin cambios en este repo.** Google Ads TP `6835960996`, `campaignAssets:mutate` (validate → apply → read-back):
+- **High Intent `23638936955`** y **DSA `24190713728`**: call asset `282120013581` (510-650-2083, AT&T directo) → **REMOVED**; call asset **`256929485080` (510-650-1133, Twilio) → ENABLED**. Sin hueco: primero se creó el nuevo, luego se quitó el viejo, en una sola mutación.
+- Flujo desde ahora: anuncio → forwarding de Google → Twilio 650-1133 (`Calls.json` guarda From real, hora, duración) → `Dial timeout 40` → AT&T 650-2083. Asaí contesta igual y ve el número del cliente.
+- El resto de campañas (pausadas, Marca, Retargeting) no se tocaron. `Calls from ads` ($1, AD_CALL) sigue contando igual — el call reporting es a nivel cuenta.
+- **Rollback listo:** `/root/scripts/tp_call_asset_rollback_2026-09-28.py --apply` (sin flag = validate_only). Solo con GO de Cris.
+
+**Qué vigilar (shadow 2-3 semanas):** (1) que Twilio empiece a registrar llamadas entrantes al 650-1133 (`Calls.json`) en línea con los ~99 `phone_calls`/30 d de Google; (2) `📞 tp-call-conv` en `journalctl -u htm-tools` cada vez que Asaí cobre una factura telefónica — `uploaded=true` = match; (3) primer `callStartDateTime` aceptado por Google (tolerancia Twilio vs registro de Google); (4) saldo Twilio (alarma cada 6 h); (5) primer SMS reenviado a Asaí (A2P). Reporte de match rate desde `/root/htm-tools/data/tp-call-conversions.json`.
+
+---
+
+## 2026-09-28 17:17–17:24Z — cris2 «Laso» (Fable 5.1, GO Cris msg 7192) — 📞 Call tracking Twilio-middle: PASO 1 EN PROD (shadow), sin swap de asset
+
+**Sin cambios en este repo.** Cambios en Google Ads TP, Twilio y htm-tools (detalle en `/root/htm-tools/BITACORA.md`):
+- **Google Ads `6835960996`:** nueva conversion action **`7804593726` "Phone Sale — Call Import (Twilio 650-1133)"** — UPLOAD_CALLS, PURCHASE, **secundaria** (`primaryForGoal=false`, `includeInConversionsMetric=false`). No toca puja. `validate_only` de `uploadCallConversions` → `CALL_NOT_FOUND` (la API acepta llamadas; sin bloqueo de allowlist).
+- **Twilio 650-1133:** TwiML propio en htm-tools (`Dial timeout 40` al 650-2083; SMS entrantes reenviados a Asaí — antes 404). Backup `/root/reports/twilio_6501133_backup_20260928.json`. ⚠️ El número no está en el Messaging Service A2P: vigilar el primer SMS reenviado (30034).
+- **Matcher** en `/radar/offline-conversion` (htm-tools): el webhook de este repo (`src/app/api/webhook/route.ts:297-345`) ya manda cada `invoice.payment_succeeded` con teléfono; ahora además se cruza contra Twilio (14 d) y se sube como conversión de llamada. **No hubo que tocar Hostinger.**
+- **Alarma saldo Twilio** cada 6 h (`twilio_balance_alarm.sh`, umbral $5).
+
+**Estado:** hasta el swap, las llamadas de anuncio siguen entrando directo al 650-2083 → Twilio 0 y el matcher no cruza nada. **PASO 2 (con GO explícito de Cris): swap del call asset en High Intent `23638936955` y DSA `24190713728` a `256929485080` (650-1133)**; reversible con un mutate de vuelta a `282120013581`. Avisar a Asaí (ella no cambia nada; ve el número real del cliente).
+
+---
+
+## 2026-09-28 16:35–16:50Z — cris2 «Laso» (Fable 5.1, GO Cris) — 🔎 MEDICIÓN: estado real del call tracking Twilio-middle (advisory de Prisma verificado y corregido)
+
+**Sin cambios en el repo ni en la cuenta.** Cris pidió a Prisma retomar el plan de call tracking de TP y que me lo pasara (verificado en state.db de Prisma 16:33Z/16:40Z). Prisma citó como bloqueos vigentes los de agosto; los medí y los dos están viejos:
+- **Twilio TP (`AC7973…`, `/root/.env.twilio`): activa, HTTP 200, saldo $15.92** ✅ una vía. La suspendida es la de Booking (`AC2f4e…`, status 4), que no participa.
+- **ToS de call reporting en TP Dumpsters `6835960996`: YA aceptado** (`callReportingEnabled=true`, `callConversionReportingEnabled=true`) ✅ una vía (API). El pendiente es de Pavers.
+- Ya existe **650-1133 → 650-2083** (cris, 21-sep) y el call asset `256929485080` con ese número, **pero sólo en la campaña PAUSADA "Local Impresiones"**; High Intent y DSA usan el asset `282120013581` = 650-2083 directo. Resultado: **Twilio 0 llamadas en 30 d ✅✅** vs **99 `phone_calls` en Google en 30 d** (76 HI + 23 DSA) ✅ una vía.
+- No existe conversion action `UPLOAD_CALLS` (cero verificado: la misma query devolvió AD_CALL/UPLOAD_CLICKS/GOOGLE_HOSTED). El uploader `/radar/offline-conversion` (htm-tools) no sube llamadas.
+
+**Reco a Cris (msg 7184), UNA:** (1) hoy sin GO: `validate_only` de UploadCallConversions (riesgo allowlist) + conversion action `UPLOAD_CALLS` secundaria + matcher Stripe→Twilio `Calls.json` (14 d)→Google en shadow — nada mueve la puja; (2) **con GO**: swap del call asset de HI y DSA al 650-1133 (1 mutate, reversible, Asaí no nota nada); (3) 2-3 semanas shadow → switch. Twilio ya guarda caller/hora/duración: no hace falta receptor de statusCallback.
+
+**Pendiente:** respuesta de Cris (¿arranco paso 1? / GO paso 2). Relay de Prisma cerrado con `resolution`; acuse+corrección dejado en `instance-relay/prisma/`. Memoria: `project_tp_call_tracking_twilio_estado`.
+
+---
+
 ## 2026-09-25 18:50–19:15Z — asai «Web HTM» (Opus 5.5) — 🧮 Tope diario online de 6 + reintento/alerta de eventos + vigía de pickups ACTIVO
 
 **Órdenes de Asaí:** msg 3449 (vigía online+manual; "si hay error de por qué las online no ponen el pickup, arreglarlo"), 3452/3458/3460 (con 6 deliveries+swaps en el calendario, cerrar el día SOLO para reservas online y ofrecer el siguiente).
