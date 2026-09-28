@@ -429,6 +429,7 @@ export async function POST(request: Request) {
         city: booking.city,
         zip_code: booking.zipCode,
         authorized_charges: String(booking.authorizedCharges || false),
+        sms_consent: String(booking.smsConsent || false),
         delivery_window: booking.deliveryWindow || "",
         notes: (booking.notes || "").slice(0, 500),
         billing_line1: booking.billingAddress?.line1 || "",

@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
     let deliveryWindow = "";
     let gclid = "";
     let authorizedCharges = false;
+    let smsConsent = false;
     let billingAddress: { line1: string; city: string; state: string; zip: string } | null = null;
     try {
       const stripe = getStripe();
@@ -150,6 +151,7 @@ export async function POST(request: NextRequest) {
         deliveryWindow = md.delivery_window || "";
         gclid = md.gclid || "";
         authorizedCharges = md.authorized_charges === "true";
+        smsConsent = md.sms_consent === "true";
         if (md.billing_line1) {
           billingAddress = {
             line1: md.billing_line1,
@@ -201,6 +203,7 @@ export async function POST(request: NextRequest) {
         notes: row.notes || "",
         billingAddress,
         authorizedCharges,
+        smsConsent,
       },
     });
   } catch (err) {

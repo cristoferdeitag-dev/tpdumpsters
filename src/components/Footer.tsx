@@ -89,8 +89,17 @@ export default function Footer() {
             <span className="text-white/30"> · </span>
             <span className="text-[#eec]">150 Brookside Dr, Richmond, CA 94801</span>
           </p>
-          <p className="text-[#e8c8c8] text-[11px] font-[var(--font-poppins)]">
-            &copy; {new Date().getFullYear()} TP Dumpsters. All rights reserved.
+          <p className="text-[11px] font-[var(--font-poppins)]">
+            {/* Los legales tienen que estar enlazados desde TODA página: es lo
+                que el revisor de A2P 10DLC busca para validar el consentimiento
+                de SMS, y fue el motivo del rechazo 30909 (28-sep-2026). */}
+            <a href="/privacy" className="text-[#eec] hover:text-white">Privacy Policy</a>
+            <span className="text-white/30"> · </span>
+            <a href="/terms" className="text-[#eec] hover:text-white">Terms</a>
+            <span className="text-white/30"> · </span>
+            <a href="/sms-policy" className="text-[#eec] hover:text-white">SMS Terms</a>
+            <span className="text-white/30"> · </span>
+            <span className="text-[#e8c8c8]">&copy; {new Date().getFullYear()} TP Dumpsters. All rights reserved.</span>
           </p>
         </div>
       </div>

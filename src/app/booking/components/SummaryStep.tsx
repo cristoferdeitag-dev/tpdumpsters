@@ -39,6 +39,8 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
   // booking shipped authorized_charges:"false" no matter what the customer
   // checked. Initialized from the booking so a restored session keeps it.
   const [authorizedCharges, setAuthorizedCharges] = useState(booking.authorizedCharges || false);
+  // Opcional: no bloquea el pago, sólo viaja a la metadata de Stripe.
+  const [smsConsent, setSmsConsent] = useState(booking.smsConsent || false);
   // El cliente ya intentó pagar: a partir de aquí se le señala la casilla.
   const [attempted, setAttempted] = useState(false);
 
@@ -232,6 +234,46 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
             Check the box to authorize the charges — we can’t take the payment without it.
           </p>
         )}
+      </div>
+
+      {/* ── Consentimiento de SMS, aparte y OPCIONAL ──────────────────────
+         Twilio rechazó la campaña A2P de TP con 30909 ("CTA no verificable"):
+         el revisor necesita ver en el sitio una casilla de consentimiento de
+         SMS, y la única que había era la de autorización de CARGOS. Requisitos
+         del carrier que este bloque cumple y que NO se deben tocar:
+           · arranca DESMARCADA y no bloquea el pago (marketing no puede ser
+             condición de compra)
+           · es su propia casilla, no va empaquetada con otro consentimiento
+           · el texto dice quién manda, qué manda, la frecuencia, que aplican
+             tarifas, y STOP/HELP
+           · enlaza a /sms-policy y /privacy, que es lo que el revisor abre
+         Viaja a la metadata de Stripe como sms_consent (28-sep-2026). */}
+      <div className="rounded-xl p-4 border border-[#d7dadd] bg-white mt-3">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={smsConsent}
+            onChange={(e) => {
+              setSmsConsent(e.target.checked);
+              updateBooking({ smsConsent: e.target.checked });
+            }}
+            className="mt-0.5 w-[18px] h-[18px] accent-tp-red flex-shrink-0"
+          />
+          <span className="text-[13px] text-[#1d2329] font-[var(--font-poppins)] leading-relaxed">
+            <strong className="font-semibold">Text me about my rental (optional).</strong> I agree to
+            receive text messages from TP Dumpsters at the number I provided, about my delivery,
+            pickup and account. Message frequency varies. Message and data rates may apply. Reply
+            STOP to cancel or HELP for help. Consent is not a condition of purchase. See our{" "}
+            <a href="/sms-policy" target="_blank" rel="noopener noreferrer" className="underline decoration-[#c9ccd0]">
+              SMS Terms
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-[#c9ccd0]">
+              Privacy Policy
+            </a>
+            .
+          </span>
+        </label>
       </div>
 
       {/* ── Total y pago anclados abajo: nunca hay que buscarlos ── */}

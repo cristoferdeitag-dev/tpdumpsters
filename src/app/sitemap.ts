@@ -48,5 +48,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...otherPageEntries, ...blogIndex, ...blogEntries, ...cityPages];
+  // Legales: prioridad baja para SEO, pero tienen que estar en el sitemap para
+  // que el revisor de A2P 10DLC (y Google) las encuentren sin adivinar la URL.
+  const legalPages: MetadataRoute.Sitemap = ["privacy", "terms", "sms-policy"].map((page) => ({
+    url: `${baseUrl}/${page}`,
+    lastModified: now,
+    changeFrequency: "yearly" as const,
+    priority: 0.3,
+  }));
+
+  return [...staticPages, ...otherPageEntries, ...blogIndex, ...blogEntries, ...cityPages, ...legalPages];
 }

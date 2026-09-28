@@ -46,6 +46,7 @@ export interface BookingData {
   notes: string;
   billingAddress: BillingAddress | null;
   authorizedCharges: boolean;
+  smsConsent: boolean;
 }
 
 const EXTRA_DAY_FEE = 49; // $49/day — updated 2026-06-24
@@ -70,6 +71,7 @@ const initialBooking: BookingData = {
   notes: "",
   billingAddress: null,
   authorizedCharges: false,
+  smsConsent: false,
 };
 
 // 18-sep-2026: los emojis (🗑️ 📅 📍 📋) se fueron con el rediseño — el

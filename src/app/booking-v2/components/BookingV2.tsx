@@ -130,6 +130,7 @@ const emptyBooking: BookingData = {
   notes: "",
   billingAddress: null,
   authorizedCharges: false,
+  smsConsent: false,
 };
 
 export default function BookingV2() {
