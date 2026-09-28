@@ -123,14 +123,28 @@ export default function TermsPage() {
         limited under California law.
       </P>
 
-      <H2>10. Communications</H2>
+      <H2>10. Communications and text messages</H2>
       <P>
         By providing your contact information you agree that we may contact you about your order by
-        phone, email and text message. Text messaging is governed by our{" "}
+        phone, email and text message.
+      </P>
+      <P>
+        If you opt in to text messages, you will receive SMS from TP Dumpsters about your delivery,
+        pickup, billing and account. Message frequency varies, typically 2 to 10 messages per rental.
+        Message and data rates may apply. Reply STOP at any time to cancel, or HELP for help. Consent
+        to receive text messages is not a condition of any purchase. The full program terms are in our{" "}
         <Link href="/sms-policy" className="text-tp-red underline">
           SMS Terms &amp; Conditions
         </Link>
-        ; you can opt out at any time by replying STOP. How we handle your data is described in our{" "}
+        .
+      </P>
+      <P>
+        <strong className="font-semibold">
+          No mobile information will be shared with third parties or affiliates for marketing or
+          promotional purposes. All the above categories exclude text messaging originator opt-in
+          data and consent; this information will not be shared with any third parties.
+        </strong>{" "}
+        How we handle the rest of your data is described in our{" "}
         <Link href="/privacy" className="text-tp-red underline">
           Privacy Policy
         </Link>

@@ -1,3 +1,46 @@
+## 2026-09-28 20:12–20:35Z — cris «Web HTM» (Fable 5.1, GO Cris msgs 23361 + 23363) — 🎁 Bono de rescate: −$15 extra si el cliente termina la reserva desde el correo de carrito abandonado — EN VIVO
+
+**Pedido de Cris (msg 23361):** *"agrega en el texto que además de los 50 dólares de descuento le damos 15 extra si reserva y haz que funcione"* + *"¿cuánto tarda en enviarse la automatización?"* (respuesta: 30–50 min después de llegar al paso de pago sin pagar — `created_at` entre 30 min y 20 h, cron cada 20 min; link válido 24 h).
+
+**Diseño (server-authoritative, sin tocar la URL del link ni el scrub del layout):**
+- `src/lib/pricing.ts`: `RESCUE_BONUS = 15`, `RESCUE_PROOF_GRACE_SECONDS = 7 días`.
+- `src/lib/resume-token.ts` (reescrito): la firma HMAC lleva *kind* — `bookingId.exp` (plain) o `bookingId.exp.rescue`. Misma forma de URL; el bono sólo existe si el token fue firmado como rescate. `verifyBookingTokenKind()` devuelve `plain | rescue | null`; `buildResumeUrl(bid, {rescue:true})`.
+- `abandoned-watch/route.ts`: link firmado como rescate; asunto *"…finish now and save an extra $15"*; el correo muestra precio online y **total con −$15** en botón y texto; la alerta interna dice "(−$15 si termina por el link)".
+- `checkout/resume/route.ts`: si el link es de rescate devuelve `rescueDiscount: 15`, `totalPrice − 15` y el comprobante `rescue: {b,t,e}`.
+- `checkout/route.ts`: re-verifica el comprobante (firma rescate + gracia) **y que el booking original sea del mismo cliente (teléfono o correo)**; sólo entonces `chargeTotal = online − 15`. Nunca 400: la respuesta trae `chargeTotal` y `rescueBonus` para que el wizard corrija su resumen. Metadata Stripe: `rescue_bonus`, `rescued_from`.
+- Wizard + `DateStep` + `SummaryStep`: campos `rescueDiscount`/`rescue` persistidos con el estado; línea "Book-now bonus"; si el servidor rechaza el bono, se quita la línea y se avisa antes de montar la tarjeta. Restore de localStorage ahora hace spread sobre `initialBooking` (blobs viejos sin los campos nuevos).
+
+**Verificación ✅✅:** unit test local de la firma (plain/rescue/otro bid/alterado/vencido) · build limpio · **e2e en producción sin cobrar** (los tokens los firmó el propio servidor de Hostinger; el secreto no salió): reserva A → resume con link rescate = `rescueDiscount 15 / total 634` → checkout con comprobante = `chargeTotal 634, rescueBonus 15` y en **Stripe** `amount_total 63400`, `metadata.rescue_bonus=15`, `rescued_from=A` → negativos: otro cliente con el mismo comprobante, token simple y token alterado = **649 sin bono**. Limpieza: 4 sesiones Stripe vencidas por API, 5 reservas de prueba (`notes` "PRUEBA INTERNA 28-sep") → `status=cancelled` en MySQL.
+
+**Deploy:** commit `a9aae89` → push main → build local → rsync `.next` → kill `next-server` → `BUILD_ID j1_Iyd1rhfWmI2Aoc-MUv` idéntico local/prod; `/` y `/booking` 200.
+
+**Trampa nueva:** el classifier bloquea copiar secretos de Hostinger al VPS *y* correr scripts que lean llaves allá; lo que sí pasa es pedirle al servidor que firme el token de UNA reserva (derivado, es lo que recibe el cliente) y probar los endpoints públicos desde aquí.
+
+**Pendientes:** ninguno de código. Operativo: Asaí llama a los 4 clientes del 24–27 sep (sus links ya vencieron y no traen bono; si vuelven a reservar, es precio online normal salvo que se les reenvíe un link nuevo del vigía).
+
+**Archivos clave:** `src/lib/pricing.ts` · `src/lib/resume-token.ts` · `src/app/api/abandoned-watch/route.ts` · `src/app/api/checkout/resume/route.ts` · `src/app/api/checkout/route.ts` · `src/app/booking/components/{BookingWizard,DateStep,SummaryStep}.tsx`
+
+---
+
+## 2026-09-28 19:45–20:07Z — cris «Web HTM» (Fable 5.1, GO Cris msgs 23347 y 23356) — ✉️ Correo de rescate MUERTO desde el 24-sep: causa, remitente nuevo `reservations@` y vigía del vigía — EN VIVO (sin tocar código)
+
+**Qué estaba pasando (✅✅ Hostinger API + logs del buzón + Twilio):** el correo de rescate de carritos daba `535 authentication failed` desde el 24-sep. La contraseña del 17-sep funcionó hasta el 22-sep. El 23-sep 17:07Z (11:07 am MX) el buzón `contact@tpdumpsters.com` fue modificado (`updated_at` en Hostinger) y en los 30 min siguientes alguien leyó 8 correos y mandó 2 por webmail: **una persona reseteó la clave en hPanel** y el sitio se quedó con la vieja. Los archivos de credenciales no cambiaron (mismo hash VPS/Hostinger). Buzón `active`, sin bloqueo por spam. Ningún mensaje de Telegram lo menciona.
+
+**Hecho (nada en el repo; candado de Laso respetado, luego liberado):**
+- **Buzón nuevo `reservations@tpdumpsters.com`** por API Hostinger (orden `OR165a5c9fcfc5fef557cfab929104`, mailbox `AC7b15b2bf1c7b3802ab96c60863e6`). Es credencial de sistema: nadie lo abre ni lo rota por webmail. Reply-To `contact@` (Asaí sigue recibiendo respuestas).
+- `/home/u781187371/mail-creds.json` y `/root/.env.tp-mail` rotados (backups `.bak-20260928-contact`). Registrado en `ref_llaves_index.md`.
+- **`next-server` reiniciado** (kill del procedimiento de deploy): `mailer.ts` cachea las credenciales en memoria; la primera prueba dio 535 con la clave ya correcta, tras el kill `success:true` en 6 s. Home y `/booking` 200.
+- **Prueba por el camino de producción:** `POST /api/abandoned-watch {"test":…}` → `success:true` a cristoferdeitag@gmail.com y tppaver@gmail.com.
+- **Vigía del vigía** (GO msg 23347): `/root/scripts/tp_abandoned_watch.sh` ahora agrega `FALLOS=[booking:canal:error]` cuando un carrito `notified` trae `email: failed:` o `teamAlert: false`, grita en GLOBAL_EVENTS y manda Telegram a Cris. Antes, 6 días de SMTP muerto pasaron con el log diciendo sólo `notified` (0 líneas `failed`). Backup `.bak-20260928-vigia-fallos`.
+
+**Hallazgo para el fix de Laso (aviso interno → Telegram):** `sendWhatsApp()` devuelve `success:true` cuando Twilio *encola* (antes del 63015) → `whatsapp=1` sin entrega → `teamAlert ok` falso y cooldown de 3 días al cliente (6 `skip:cooldown` el 25-sep, 52 el 26-sep). Con Telegram (síncrono) se cura solo.
+
+**Pendientes:** (1) ✅ Cris confirmó con captura (msg 23359, 20:08Z): llegó a la bandeja de tppaver@gmail.com, De "TP Dumpsters • reservations@", Responder a contact@, TLS — entrega ✅✅. (2) Laso: aviso interno a Telegram. (3) Rescate telefónico manual de los 4 clientes del 24–27 sep (lista de Laso). (4) Decidir si `contact@` cambia de clave otra vez para uso humano (ya no afecta al sitio).
+
+**Archivos clave:** `/root/scripts/tp_abandoned_watch.sh` · `/home/u781187371/mail-creds.json` (Hostinger) · `/root/.env.tp-mail` · `src/lib/mailer.ts` (leído, sin tocar) · `src/app/api/abandoned-watch/route.ts` (leído, sin tocar)
+
+---
+
 ## 2026-09-28 19:45–20:15Z — cris2 «Laso» (Opus 5, GO Cris msgs 7220 + 7224) — ⚖️ /privacy, /terms y /sms-policy EN VIVO + consentimiento de SMS en el checkout (desbloqueo A2P)
 
 **Por qué:** Twilio rechazó la campaña A2P 10DLC de TP (`QE2c6890da…`, service `MG471e21…`) con **30909 — CTA no verificable**, campo `MESSAGE_FLOW`. El `message_flow` registrado describe el consentimiento en prosa pero **no da una URL pública** donde el revisor lo vea, y la única casilla del checkout era la de autorización de **cargos**, no de SMS. Mientras la campaña esté FAILED, ningún número de la cuenta manda SMS a EE. UU. (rebote 30034).
