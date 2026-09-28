@@ -1,3 +1,34 @@
+## 2026-09-28 22:05–22:25Z — cris2 «Laso» (Opus 5, GO Cris msgs 7248 + 7263) — 🔗 BookingDumpsters DESLIGADO de la marca A2P de TP
+
+**Qué pasaba:** la campaña A2P de BookingDumpsters (`MG1d289c…`, número +1 510 591 4302) colgaba de la marca `BN40a61…`, que está registrada a nombre de **Tp Pavers services Inc**. O sea: BD pedía permiso para mandar SMS bajo la razón social del cliente TP. Cris pidió deslindar completo, con la condición *"que no llegue correo a TP"*.
+
+**Qué se hizo:** `DELETE /v1/Services/MG1d289c…/Compliance/Usa2p/QE2c6890…` → **HTTP 204**.
+
+- ✅✅ Verificado por dos vías: la colección devuelve 0 campañas **y** el GET directo del recurso da **404**.
+- ✅✅ Marca de TP **intacta**: `APPROVED / VERIFIED`, `tcr_id=BZXKMUM`, sin `failure_reason`.
+- ✅✅ **Costo $0**: saldo `$15.79561` idéntico antes y después.
+- El servicio de BD conserva su número y sus webhooks a bookingdumpsters.com.
+- Respaldo del texto completo de la campaña: `/root/.twilio-bd-campaign-backup-2026-09-28.json` (chmod 600).
+
+**⚠️ Trampa de la API, vale la pena recordarla:** los tres Messaging Services reportan el **mismo** sid de campaña `QE2c6890…`. Parece que compartieran objeto — **no lo comparten**: el recurso `Usa2p` se direcciona por *service*, y cada uno trae su propio `messaging_service_sid`, fecha, `use_case` y descripción. Se verificó **antes** del DELETE, no después. Además, `DELETE` sobre la colección `/Compliance/Usa2p` responde **405**; hay que pegarle al sub-recurso con el sid.
+
+**Medido de paso:** el número de BD lleva sin tráfico desde el **11-jun-2026** (SMS) / 5-jun-2026 (llamada). La cuenta `AC7973acc…` es **padre** y tiene **0 subcuentas** (la lista de `/Accounts.json` trae 1 sola entrada, que es ella misma).
+
+**Decisiones:**
+- El ticket de Twilio **#29754467** ya estaba enviado; se le dijo a Cris que no le agregue comentario ni CC (un comentario nuevo lo reordena en la fila de soporte).
+- Para que BD mande SMS necesita **marca propia** con su EIN (BOOKING DUMPSTERS LLC, 30-1494451). Dos caminos: subcuenta (gratis, el número se mueve solo, pero comparte saldo y facturación con la madre) o cuenta Twilio aparte (aísla, pero exige correo nuevo, verificación y mover el número vía soporte).
+
+**Pendientes:**
+1. **Bloqueante, preguntado a Cris (msg 7265):** ¿a qué correo llegan los avisos de la cuenta `AC7973acc…`? **No se puede leer por API** — `/Accounts/{sid}.json` no expone el email. Si es de Cris/HTM → subcuenta y la condición "sin correo a TP" se cumple sola.
+2. Recargar Twilio antes del deslinde completo: marca $4 + vetting $15 = **$19 one-time**, y el saldo es $15.79.
+3. Seguimiento al ticket #29754467 (la pregunta clave: ¿cambiar `website_url` manda la marca a re-vetting?).
+4. `MGdf3642a…` — servicio duplicado, sin números, ya sirvió de grupo de control. Es basura borrable.
+5. bookingdumpsters.com `/privacy` todavía no trae la frase obligatoria de no compartir datos móviles.
+
+**Archivos clave:** `/root/.twilio-bd-campaign-backup-2026-09-28.json` · memoria `ref_twilio_a2p_tp_bd_estado` · `/root/reports/tp/twilio_ticket_a2p_2026-09-28.md`
+
+---
+
 ## 2026-09-28 20:16–20:35Z — cris2 «Laso» (Opus 5, GO Cris msgs 7232 + 7236) — 🎯 A2P 10DLC: el 30909 CAYÓ, y la causa raíz de los otros dos NO está en este repo
 
 **Resultado corto:** se reenvió la campaña A2P **dos veces**. El **30909 (CTA no verificable) quedó resuelto** — las páginas legales publicadas hoy sirvieron. Quedan **30908 + 30882**, y su causa **no está en tpdumpsters.com**.
