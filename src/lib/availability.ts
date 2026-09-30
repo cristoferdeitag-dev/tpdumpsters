@@ -35,7 +35,8 @@ const BLOCKED_DATE_MESSAGES: ReadonlyMap<string, string> = new Map([
  * Prune past dates regularly, same as BLOCKED_DATES.
  */
 export const SIZE_BLOCKED_DATES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  ["2026-09-22", new Set(["30 Yard"])], // Tuesday 9/22 — only 30 Yard closed; 10/20 Yard both open (Asaí corrected 2026-09-21 23:52Z: "agrega que tambien se pueden 10yds")
+  // 2026-09-22 (30 Yard) pruned 2026-09-30 — past date.
+  ["2026-10-01", new Set(["20 Yard"])], // Thursday 10/1 — 20 Yard closed; 10/30 Yard open. From Friday 10/2 the 20 Yard is open again (Asaí 2026-09-30 via her Hermes: "de hoy para mañana ya no hay disponibles 20yd, de mañana para friday sí")
 ]);
 
 // Standing rule: TP does not deliver on Sundays.
