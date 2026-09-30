@@ -1,3 +1,83 @@
+## 2026-09-30 21:05Z — cris (Fable 5.1) — ✅ EN VIVO: 20 Yard CERRADO para el jueves 1-oct-2026 (orden de Asaí vía su Hermes); abierto desde el viernes 2-oct
+
+**Origen:** relay `instance-relay/cris/2026-09-30T204500Z-hermes-brief-tp-20yd.json` (from `hermes-asai`, brief en `_payloads/2026-09-30-brief-tp-20yd-manana.md`). **Verificado por segunda vía** en `/root/.hermes/profiles/asai/state.db` (messages rowid 560 y 570): Asaí escribió *"De hoy para mañana ya no hay disponibles 20yd. De mañana para friday si"* y luego *"Ya está? Porque uno me llamó y no quiero que haga Booking para mañana de 20yd… está en vivo??"*. Aplica [[feedback_asai_cierre_de_dia_es_orden_directa]]: sin pedir GO.
+
+**Cambio (`63bee48`):** `src/lib/availability.ts` → `SIZE_BLOCKED_DATES` = `["2026-10-01", {"20 Yard"}]`; se podó la entrada pasada del 22-sep (30 Yard). 10 y 30 Yard siguen abiertos el 1-oct; el 20 Yard vuelve el 2-oct (no hay entrada para esa fecha).
+
+**Deploy (protocolo [[ref_tpdumpsters_deploy]]):** push a main → build local (`.env.local` con `NEXT_PUBLIC_GOOGLE_MAPS_KEY` presente) → rsync `.next/` a Hostinger (BUILD_ID `aJEhDoEyV_EzT-9uy0Ej8` confirmado remoto) → kill `next-server` → `/booking` 200.
+
+**Verificación:**
+- ✅✅ Producción: `POST /api/checkout` con 20 Yard / 2026-10-01 → **400 "the 20 Yard dumpster is fully booked for that delivery date"** (rechazo antes de tocar la BD; no quedó fila).
+- ✅ una vía (tsx local, misma función): 1-oct 10 Yard → abierto · 1-oct 30 Yard → abierto · 2-oct y 3-oct 20 Yard → abiertos. No se probó en prod la ruta "abierta" porque `checkout` crearía una reserva real.
+
+**Avisos:** Cris por Telegram; Asaí vía relay a su instancia `asai` y acuse a `hermes-asai`. Candado liberado. **Recordatorio:** podar `2026-10-01` después del jueves.
+
+---
+
+## 2026-09-30 15:20Z — cris2 «Laso» (Opus 5) — ¿Tocar el código de la app para emitir el bono y luego revertir? Se puede, pero se recomendó NO. Solo lectura
+
+**Qué preguntó Cris (msg 7429).** *"¿Podrías cambiar el código de la aplicación momentáneamente, para que se genere de ahí la factura, y después cambiarlo de nuevo?"* Antes (msg 7427) aclaró que **sí lo convenció** el enfoque de factura a mano; lo que quería era entender el mecanismo. (La entrada del 30-sep 03:30Z decía que no estaba convencido — ya quedó corregida ahí mismo.)
+
+**Lo que se verificó (grep en `/root/bookingdumpsters`, sin tocar nada):**
+- El **porcentaje** NO vive en el código: vive en env vars de **Vercel, target `production`** → `HTM_FEE_OVERRIDES={"a0000000-0000-0000-0000-000000000001": 1.5}` (SOLO TP; el resto de proveedores al 1%). Fuente: `bookingdumpsters/BITACORA.md:948` y `:1176`.
+- El **tope del 5%** SÍ vive en el código: `src/lib/htm-commission.ts:29` (`pct > 5` → `misconfigured`, fail-closed).
+- → Un 80% por la app necesita **las dos cosas**: editar el archivo del tope **y** cambiar la env var. Más deploy de ida y deploy de regreso.
+
+**Los tres argumentos en contra (todos medidos, no teóricos):**
+1. **El override llavea por `company_id`, no por transacción.** Mientras la ventana esté abierta, **toda** factura que Asaí emita a cualquier cliente de TP sale al 80%. Volumen real: **62 facturas manuales en septiembre** (~2/día). Y una comisión ya cobrada **no se puede bajar** (la API solo expone `retrieve`/`list`/`refund`).
+2. **Precedente real de caída:** `bookingdumpsters/BITACORA.md:985` — redeploys hechos justo por `HTM_FEE_OVERRIDES` (TP 1.5%) salieron de una rama vieja y **tumbaron Cobros en producción**.
+3. **Riesgo de que se quede:** si el deploy de regreso falla o alguien despliega encima, TP queda al 80% y no se nota hasta el estado de cuenta.
+
+**Decisiones.** Nada tocado: sin candado, sin deploy, sin commit, sin cambios en Stripe ni en Vercel. Se reafirmó el **script de una sola vez por fuera del repo** (una factura, un cliente, un monto, sin deploy) como el camino recomendado. Se le dijo a Cris que si de todos modos prefiere la vía del código, se hace — con Asaí avisado de no emitir nada en la ventana y la reversión verificada en producción.
+
+**Pendiente.** Respuesta de Cris a *"¿voy con el script?"*; que designe la reserva del bono (o el criterio); acuerdo escrito con Thiago sobre reembolso (sin `refund_application_fee=true`, $649 reembolsado deja a TP en −$538).
+
+**🔢 Conteo de septiembre medido en este turno** (`GET /v1/invoices?created[gte]=1-sep` con `Stripe-Account: acct_1RW0CFIRhgZxSFKH`, llave de la **plataforma**, 2 páginas, 146 facturas): **131 pagadas** ✅✅ = **69** del checkout del sitio (metadata `booking_id/customer_name/dumpster_size`) + **62** de proveedor (`metadata.product=provider_invoice`). Cuadra exacto con las 131 comisiones / $1,432.01 de la entrada anterior. **Las 62 traen `htm_fee_cents`** → todas pasan por `resolveHtmFee`, así que todas quedarían al 80% si se toca el override. Precisión: sólo **2** traen `created_via=tp_charge_now`; las otras 60 vienen de versiones previas del mismo flujo (el campo se agregó después). Se le dijo a Cris el número fino.
+
+**🆕 GIRO DEL DISEÑO — Cris propuso un BOTÓN "Bono" en la plataforma (msg 7431):** *"¿y si hiciéramos un botón que literal diga bono? Y que funcione con la lógica que queremos. Si seguimos con el trato lo usaremos cada mes, si no se desactiva y ya."* **Es mejor que las dos opciones previas y se recomendó** (msg 7432): el `pct` viaja **en la petición de esa factura**, no en la configuración del proveedor → no se toca `HTM_FEE_OVERRIDES` ni se sube el tope global de 5% (que protege a todos los proveedores); camino aparte con su propio tope. **Mata la objeción de Hermes/Astra** (la carrera del TTL: A abandona → se libera → B se lleva el bono → A regresa y paga → dos al 80%): con botón no hay carrera, es una factura ya emitida que el humano elige, y el candado correcto es **uno por mes** (validar que no exista ya una factura con `bonus_month=YYYY-MM` pagada), no por tiempo.
+
+**Tres decisiones abiertas del botón, planteadas a Cris:** (1) **¿quién lo ve?** — voto: sólo HTM, no el proveedor, porque si TP le da clic se cobra 80% a sí mismo y no se puede bajar; (2) **confirmación de dos pasos** antes de emitir; (3) **reembolso** — o el botón fuerza `refund_application_fee=true`, o va por escrito con Thiago. **Propuesta de partición:** el bono de septiembre sale con el **script de una sola vez** (hoy es 30-sep, el botón no llega), y el **botón queda para octubre en adelante**.
+
+**Archivos clave:** `bookingdumpsters/src/lib/htm-commission.ts:29`, `bookingdumpsters/src/app/api/provider/tp-charge/route.ts`, `bookingdumpsters/BITACORA.md:948,985,1176`.
+
+---
+
+## 2026-09-30 03:30–05:05Z — cris2 «Laso» (Opus 5) — Bono 80% para HTM en una transacción: consejo de 3, un cero falso propio, y el hallazgo que cambia el diseño. NADA DESPLEGADO
+
+**Contexto.** TP rompió récord de ventas del mes y Thiago ofreció que la primera reserva del 30-sep sea 80% para HTM como bono de desempeño. Cris cerró el espacio de diseño (msg 7391): no hay transferencia transfronteriza posible, así que **tiene que ir por la comisión de Stripe**, es el **80% completo** (no adicional al 1.5%) y **en una sola transacción**. *"Por eso no quiero equivocarme."*
+
+**Consejo de 3 con brief congelado** (`brief_bono80_v2.md`, sha256 `71add70b736efb94`, idéntico a los tres): Prisma GO-con-cambios (candado con TTL), Hermes/Astra **NO-GO a eso** — encontró el hoyo: A abandona → el TTL libera → B se lleva el bono → la sesión de A sigue viva 24 h → A regresa y paga → **dos ventas al 80%**. Claude GO-con-cambios, converge con Hermes en **una reserva designada**. Crudos en `voto_{hermes,prisma,claude}.md`.
+
+**Lo medido en Stripe (solo lectura):**
+- Comisión efectiva **1.5%** ✅✅ sobre 91 cargos, rango 1.4952%–1.5102% — la dispersión la explica exacto el `Math.round` de `checkout/route.ts:446`.
+- Cobertura **91/91** en 13 días contra **12/93** en julio. Control contra cero falso: la misma consulta acotada a julio sí devuelve los 81 sin fee.
+- Desglose de un cargo real de $749: `stripe_fee` $22.02 (2.9% + $0.30) + `application_fee` $11.24, **ambos del balance de TP** → TP absorbe el procesamiento sobre el 100%. Con bono al 80%, TP neto $127.78 = **17.06%**, no 20%.
+
+**🚨 MI ERROR DEL TURNO — cero falso, ya corregido.** Reporté "las facturas de TP no llevan comisión, 0 de 131 cargos vienen de factura". **Falso: son 129 de 131.** Pregunté por `charge.invoice` con la llave de TP, y ese campo **no existe** en la versión `2025-05-28.basil` que corre esa cuenta (igual que `invoice.charge` e `invoice.payment_intent`). Campo ausente = vacío = se lee como cero real. Y mi "segunda vía" miraba otros campos removidos por el mismo cambio → **no eran dos vías, era una**. → [[feedback_charge_invoice_no_existe_en_basil_cero_falso]]
+
+**Cómo se mide bien:** desde la cuenta de la **plataforma**, `GET /v1/application_fees?expand[]=data.charge` (ahí el charge sí trae `invoice`). Septiembre en TP (`acct_1RW0CFIRhgZxSFKH`): **131 comisiones, $1,432.01**
+
+| Origen | n | monto |
+|---|---|---|
+| AUTO — la genera el checkout (`checkout/route.ts:418`, `invoice_creation` activado) | 69 | $754.65 |
+| **A MANO — Asaí en la app de BD** (`product: provider_invoice`, `created_via: tp_charge_now`) | **62** | **$677.36** |
+
+Casi la mitad del dinero de HTM en TP sale de facturas que Asaí hace a mano **y ya traen la comisión**. Los botones de factura de tpdumpsters.com (`src/app/api/invoice/*`) siguen sin poder llevarla: usan `getStripe()`, llave propia de TP.
+
+**Hallazgos que quedan para quien siga:**
+- `.github/workflows/deploy.yml:16` usa `rsync --delete` → cualquier archivo de candado dentro del árbol desplegado se borra en cada deploy y **rearma el bono en silencio**. Tiene que vivir en `/home/u781187371/`.
+- `bookingdumpsters/src/lib/htm-commission.ts` rechaza `pct > 5` (fail-closed). Una comisión excepcional **no** puede salir por ahí.
+- No se puede **subir** una application fee después de un pago exitoso: la API sólo expone `retrieve`/`list`/`refund`. Todo diseño de "cobramos y luego ajustamos hacia arriba" está muerto de origen.
+- `grep -rn "idempotencyKey" src/` en tpdumpsters-live → vacío. La app de BD sí la usa.
+
+**Decisiones.** No se tocó nada: sin candado tomado, sin deploy, sin commit, sin cambios en Stripe. Recomendé emitir el bono sobre una factura hecha a mano por Asaí, por fuera y con la llave de la plataforma.
+
+**Pendiente.** ~~**Cris no está convencido** (msg 7407: *"No me convence, mañana seguimos"*)~~ → **CORREGIDO 30-sep (msg 7427):** Cris aclaró *"no, si me convenció, solo quiero entender cómo lo haríamos"*. El *"No me convence"* del 7407 **no era rechazo del enfoque**, era que no había alcanzado a entender el mecanismo. El plan (factura a mano por fuera, con la llave de la plataforma) **sigue en pie y aprobado en principio**. Falta que él designe la reserva del bono (o el criterio) y revisar el script antes de ejecutarlo. Sigue abierto el acuerdo escrito con Thiago: qué cuenta como la transacción del bono y qué pasa si se reembolsa — sin `refund_application_fee=true`, una reserva de $649 con bono deja a TP en −$538, y TP puede reembolsar desde su panel sin esa casilla.
+
+**Archivos clave:** `src/lib/stripe.ts` (117-157, TTL 60 s), `src/app/api/checkout/route.ts` (418, 445-446, 500-521), `src/app/api/invoice/*`, `.github/workflows/deploy.yml:16`, `bookingdumpsters/src/app/api/provider/tp-charge/route.ts` (200-205), `bookingdumpsters/src/lib/htm-commission.ts`.
+
+---
+
 ## 2026-09-28 22:54–23:00Z — cris2 «Laso» (Opus 5, GO Cris msg 7273) — 🧪 Reenvío A2P con el 301 YA VIVO: rebotó en 21 segundos. El sitio queda descartado como causa
 
 **Por qué se hizo.** El reenvío anterior fue a las `21:49:19Z`. El commit de la razón social (`d100ad1`) es de `21:45:13Z` y el deploy + el 301 de `tpservicesca.com` se anunciaron en GLOBAL_EVENTS a las `21:53Z`. **El rechazo cayó en medio de esos dos hitos**, así que no había forma de saber si el revisor ya veía el sitio arreglado. Reenviar cuesta $0 (medido tres veces antes), así que el experimento era gratis.
