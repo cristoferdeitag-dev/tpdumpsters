@@ -1,3 +1,8 @@
+## 2026-10-02 21:10Z — cris (Opus 5.5) — ✉️ Correo de carrito abandonado a los 5 MIN (antes 30) — EN VIVO (GO Cris msg 24181)
+**Cambio (`route.ts` de `/api/abandoned-watch`):** `b.created_at <= NOW() - INTERVAL 5 MINUTE` (antes 30). Cron del vigía `/root/scripts/tp_abandoned_watch.sh` de `*/20` → **`*/2`** → el correo sale entre el minuto 5 y el 7. **Deploy:** push main → build local (llave Maps ✅) → rsync `.next/` (BUILD_ID `F6qJ3Kb-khLXr_SNeh6z8` confirmado remoto; fuente remota con `INTERVAL 5 MINUTE`) → kill next-server; `/` y `/booking` 200; corrida manual del vigía HTTP 200.
+**Riesgo aceptado por Cris:** a los 5 min algunos clientes aún están en la página de pago de Stripe; el correo trae el link de reanudar con −$15, así que puede llegar a quien iba a pagar igual (Astra ya advirtió no regalar descuento a quien terminaría solo). Medir el 16-oct: correos enviados vs rescates (`rescued_from`).
+**Wise (mismo GO):** `/root/scripts/wise-abandono/send.py` → umbral 10 min (antes 60), cron `*/2`.
+
 ## 2026-10-02 19:50Z — cris (Fable 5.1) — 💵 Prueba de presupuesto: High Intent $170 → $220/día por 14 días (GO Cris msg 24144) + alarma diaria
 **Base:** margen 30-40 % ya con anuncios (Cris msg 24107) → Ads cubierto; HI perdía 41-43 % de IS por presupuesto (Ads API, 90 d). Costo por reserva base: $244 (90 d).
 **Cambio (Ads API, validateOnly → real → readback ✅✅):** `campaignBudgets/15426019603` ("High Intent") `amount_micros` 170,000,000 → **220,000,000**. Única campaña que usa ese presupuesto. Puja sin tocar.
