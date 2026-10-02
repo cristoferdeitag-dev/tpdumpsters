@@ -1,3 +1,32 @@
+## 2026-10-02 17:50Z — cris (Fable 5.1) — 🏛️ Google Ads TP tras la revisión (Gemini Pro + Astra + Sol; GO Cris msg 24083): 12 negativas fuera, feed DSA limpio, Fase 1 "Materiales" + "quote" en exacta — EN VIVO
+**Revisión:** `/root/reports/consejo/2026-10-02-revision-wise-tp/sintesis.md`. Los tres: GO con cambios (revertir negativas comerciales, no abrir Tamaños en frase, fases de 14 d, DSA sin tocar).
+**Cambios en la cuenta `6835960996` (Ads API, validateOnly antes de cada mutate, readback ✅✅):**
+1. Lista `12259278038`: quitadas 12 negativas (`hauling`, `disposal service(s)`, `waste service(s)`, `refuse`, `portable dumpster`, `dumping service`, `furniture removal`, `nextdoor`, `republic` a secas, `storage container`) → quedan **38**.
+2. DSA page feed "TP City Pages (72)": quitadas `/milpitas`, `/santa-clara`, `/santa-clara-county` (0 ENABLED con esas URLs).
+3. **Fase 1** en High Intent: grupo `Contratista` (197777026029) + 8 exactas con **URL final por keyword**: concrete dumpster (rental) → `/clean-concrete`; roofing dumpster (rental) → `/roofing`; construction dumpster rental / construction debris dumpster / demolition dumpster rental → `/construction-debris`; dirt dumpster rental → `/clean-soil` (las frases previas siguen). Grupo `Precio Contratista` (193364051450) + `[dumpster rental quote]`, `[dumpster rental estimate]`, `[roll off dumpster quote]`, `[dumpster price quote]`. `Grupo de anuncios 1` (192768925174): **negativas a nivel grupo** `concrete`, `roofing`, `construction`, `demolition`, `dirt` (frase) para que esas búsquedas caigan en Contratista y no en el genérico. Presupuesto/puja/anuncios sin tocar.
+**Hallazgo (✅ una vía):** en High Intent ya existen los grupos `Tamaños — 10/20/30 Yard` (keywords 10/20/30 yard… exactas + frase, RSAs a `/booking`) y `Ciudades` (23 exactas de ciudad, RSA con LOCATION), todos **PAUSED** con 0 impresiones en 90 d; no consta en bitácora quién ni cuándo los pausó (change_event no se pudo consultar). Fase 2 (día 15): decidir si se reactivan sólo en exacta en vez de crear grupos nuevos.
+**Métrica Fase 1 (revisar 16-oct):** CPA de reserva vs CPA de llamada por grupo; cuánto gasto migró del genérico a Contratista; conversiones del grupo Contratista (hoy 1 en 90 d); gasto fuera de zona.
+
+## 2026-10-02 17:09Z — cris2 «Laso» (Opus 5, GO Cris msg 7499) — 📨 Campaña A2P 10DLC reenviada con los 2 campos que FALTABAN → IN_PROGRESS (primera vez que no rebota)
+
+**La causa la trajo el soporte de Twilio, no nosotros.** Honey S. respondió el ticket **#29754467** (2-oct, 6:41 PDT): las URLs de `tpdumpsters.com/privacy` y `/terms` **sí cumplen**; la campaña rebotaba porque *"las URL no se proporcionaron directamente en el registro de la campaña — el sistema verifica estos campos específicamente en los detalles de la campaña, no sólo en su sitio web o perfil comercial."*
+
+**⚠️ Corrige el diagnóstico del 28-sep (mío).** Yo había escrito que `PRIVACY_POLICY_URL`/`TERMS_AND_CONDITIONS_URL` *"no existen como parámetros de la API de `Usa2p`"*. Falso: la doc del recurso lista **`PrivacyPolicyUrl`** y **`TermsAndConditionsUrl`** como parámetros del POST (requeridos en el schema v2), y el GET de nuestra campaña FAILED no devolvía ninguno de los dos → nunca se enviaron. Registrado en `correccion.sh` (cero_falso). Leí los campos de la *respuesta* y concluí que el *parámetro de entrada* no existía — no es lo mismo.
+
+**Cambio:** `/root/scripts/tp_a2p_resubmit_2026-09-28.py` **v3** — se añadieron a `FIELDS` `PrivacyPolicyUrl=https://tpdumpsters.com/privacy` y `TermsAndConditionsUrl=https://tpdumpsters.com/terms`; `MIN_BALANCE` 15.0 → 14.0 (saldo real $14.54, GO de Cris). Sin tocar el `MessageFlow` ni la `Description` v2: **una variable a la vez.**
+
+**Resultado:** `DELETE` → **204**, `POST` → **201**. Campaña `QE2c6890da8086d771620e9b13fadeba0b` quedó **`IN_PROGRESS`, `errors: []`**, confirmado a +60s y +120s. Los dos intentos del 28-sep volvían a `FAILED` 30908+30882 **en menos de 1 minuto** → **pasó el filtro automático**, que es lo que nunca había logrado. ✅ una vía (API).
+
+**Lo que NO está verificado:** el GET no devuelve `privacy_policy_url` ni `terms_and_conditions_url` (schema v1), así que *que se guardaron* es **inferencia ~** basada en el 201 y el cambio de comportamiento. Y el veredicto del TCR aún no llega.
+
+**Sin tocar:** el sitio (cero cambios de código o deploy), la marca `BN40a61bf3488c39ebe67e270033458abd` (sigue `APPROVED`/`VERIFIED`) y el `website_url = https://tpservicesca.com/` del perfil — **ése no se mueve** hasta que Honey confirme que no dispara re-verificación de marca.
+
+**Saldo:** $14.54291 sin cambio tras el POST (el reenvío no cobró). **Si pasa a vetting real del TCR son $15 y no alcanza** — riesgo aceptado por Cris; si el saldo cae a ~$0 se cae el call tracking del 650-1133.
+
+**Pendientes:** (1) ver en qué queda `IN_PROGRESS`; (2) Cris pega la respuesta a Honey — borrador en `/root/reports/tp/twilio_respuesta_honey_2026-10-02.md`; (3) recargar ~$20 de colchón.
+
+---
+
 ## 2026-10-02 17:05Z — cris (Fable 5.1) — ✅ EN VIVO: /milpitas, /santa-clara y /santa-clara-county → 301 a inicio (GO Cris msg 24071 "dale a Milpitas")
 
 **Por qué:** las tres páginas estaban publicadas para ciudades que el checkout rechaza (lista blanca `src/lib/service-area.ts`, decisión de Asaí 17-sep); el Consejo IA del 2-oct las marcó como contradicción viva (Semrush hueco A). Santa Clara County como zona nueva sigue siendo decisión operativa de Asaí.
