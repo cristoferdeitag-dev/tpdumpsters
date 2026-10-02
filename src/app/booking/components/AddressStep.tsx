@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { BookingData } from "./BookingWizard";
 import { isOutsideServiceArea } from "@/lib/service-area";
 import { IconUser, IconPin, IconCard, IconAlert } from "@/components/MaterialIcons";
+import { useBookingLang } from "@/lib/i18n/useBookingLang";
+import type { BookingDict } from "@/lib/i18n/booking";
 
 interface Props {
   booking: BookingData;
@@ -15,26 +17,40 @@ interface Props {
 /* Marca de campo obligatorio. El asterisco gris del label pasaba
    desapercibido — va en rojo y anunciado a lectores de pantalla. */
 function Req() {
+  const { t } = useBookingLang();
   return (
     <>
       <span className="text-tp-red font-bold" aria-hidden="true"> *</span>
-      <span className="sr-only"> (required)</span>
+      <span className="sr-only">{t.common.required}</span>
     </>
   );
 }
 
-/* ───────── Validation helpers ───────── */
-function validateName(name: string): string | null {
-  if (name.trim().length < 2) return "Name must be at least 2 characters";
+/* ───────── Validation helpers ─────────
+   Same rules as always; they now return an error CODE (still a truthy
+   string, so every `!validateX()` check is unchanged) and errorText() turns
+   it into the message in the customer's language. "didYouMean:<email>"
+   carries the suggested address. */
+type ErrorCode = Exclude<keyof BookingDict["address"]["errors"], "didYouMean"> | `didYouMean:${string}`;
+
+function errorText(code: string | null | undefined, t: BookingDict): string {
+  if (!code) return "";
+  if (code.startsWith("didYouMean:")) return t.address.errors.didYouMean(code.slice("didYouMean:".length));
+  const msg = t.address.errors[code as Exclude<ErrorCode, `didYouMean:${string}`>];
+  return typeof msg === "string" ? msg : code;
+}
+
+function validateName(name: string): ErrorCode | null {
+  if (name.trim().length < 2) return "nameShort";
   if (!/^[a-zA-ZáéíóúñÁÉÍÓÚÑüÜ0-9\s'.,&-]+$/.test(name.trim()))
-    return "Name contains invalid characters";
+    return "nameInvalid";
   return null;
 }
 
-function validatePhone(phone: string): string | null {
+function validatePhone(phone: string): ErrorCode | null {
   const digits = phone.replace(/\D/g, "");
-  if (digits.length < 10) return "Phone must be at least 10 digits";
-  if (digits.length > 15) return "Phone number is too long";
+  if (digits.length < 10) return "phoneShort";
+  if (digits.length > 15) return "phoneLong";
   return null;
 }
 
@@ -78,33 +94,33 @@ function levenshtein(a: string, b: string): number {
   return dp[m][n];
 }
 
-function validateEmail(email: string): string | null {
-  if (!email || !email.trim()) return "Email is required";
+function validateEmail(email: string): ErrorCode | null {
+  if (!email || !email.trim()) return "emailRequired";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    return "Please enter a valid email";
+    return "emailInvalid";
 
   const domain = email.split("@")[1]?.toLowerCase();
-  if (!domain) return "Please enter a valid email";
+  if (!domain) return "emailInvalid";
 
   // Check for exact known typos
   if (DOMAIN_TYPOS[domain]) {
-    return `Did you mean ${email.split("@")[0]}@${DOMAIN_TYPOS[domain]}?`;
+    return `didYouMean:${email.split("@")[0]}@${DOMAIN_TYPOS[domain]}`;
   }
 
   // Check TLD
   const tld = domain.split(".").pop() || "";
-  if (tld.length < 2) return "Email domain looks incorrect";
+  if (tld.length < 2) return "emailDomain";
   
   // Common TLD typos
   if (["con", "cim", "vom", "comm", "cm", "om"].includes(tld)) {
-    return "Check your email — the domain ending looks incorrect";
+    return "emailTld";
   }
 
   // Fuzzy match: if domain is close to a known domain (1-2 chars off), suggest
   if (!VALID_DOMAINS.includes(domain)) {
     for (const valid of VALID_DOMAINS) {
       if (levenshtein(domain, valid) <= 2) {
-        return `Did you mean ${email.split("@")[0]}@${valid}?`;
+        return `didYouMean:${email.split("@")[0]}@${valid}`;
       }
     }
   }
@@ -112,8 +128,8 @@ function validateEmail(email: string): string | null {
   return null;
 }
 
-function validateZip(zip: string): string | null {
-  if (!/^\d{5}(-\d{4})?$/.test(zip)) return "Enter a valid ZIP code (e.g. 94601)";
+function validateZip(zip: string): ErrorCode | null {
+  if (!/^\d{5}(-\d{4})?$/.test(zip)) return "zipInvalid";
   return null;
 }
 
@@ -158,6 +174,7 @@ declare global {
 const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "";
 
 export default function AddressStep({ booking, updateBooking, onNext, onBack }: Props) {
+  const { t } = useBookingLang();
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showBilling, setShowBilling] = useState(booking.billingAddress !== null);
@@ -346,17 +363,17 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
   // salía si lo habías enfocado y salido. Ahora el paso nunca falla en silencio.
   const missing: string[] = [];
   if (booking.customerName.trim().length < 2 || validateName(booking.customerName))
-    missing.push("your name");
+    missing.push(t.address.miss.name);
   if (booking.customerPhone.replace(/\D/g, "").length < 10 || validatePhone(booking.customerPhone))
-    missing.push("phone number");
+    missing.push(t.address.miss.phone);
   if (booking.customerEmail.trim() === "" || validateEmail(booking.customerEmail))
-    missing.push("email");
-  if (booking.address.trim() === "") missing.push("street address");
-  if (booking.city.trim() === "") missing.push("city");
+    missing.push(t.address.miss.email);
+  if (booking.address.trim() === "") missing.push(t.address.miss.street);
+  if (booking.city.trim() === "") missing.push(t.address.miss.city);
   if (booking.zipCode.trim() === "" || validateZip(booking.zipCode))
-    missing.push("ZIP code");
-  if (!billingComplete) missing.push("billing address");
-  if (!notesValid) missing.push("where to place the dumpster");
+    missing.push(t.address.miss.zip);
+  if (!billingComplete) missing.push(t.address.miss.billing);
+  if (!notesValid) missing.push(t.address.miss.place);
 
   // El botón ya NO va disabled: si algo falta, marca todos los campos como
   // tocados (para que sus avisos aparezcan) y sube al primero que falta.
@@ -394,29 +411,28 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
   return (
     <div>
       <h2 className="font-[var(--font-poppins)] text-2xl font-bold text-[#333] mb-2">
-        Delivery address & contact
+        {t.address.title}
       </h2>
       <p className="text-sm text-[#888] mb-2 font-[var(--font-poppins)]">
-        Where should we deliver the dumpster?
+        {t.address.subtitle}
       </p>
       <p className="text-xs text-[#888] mb-8 font-[var(--font-poppins)]">
-        Fields marked <span className="text-tp-red font-bold">*</span> are required —
-        everything else is optional.
+        {t.common.requiredPrefix} <span className="text-tp-red font-bold">*</span> {t.address.requiredSuffix}
       </p>
 
       {/* Contact info */}
       <div className="mb-6">
         <h3 className="flex items-center gap-2 font-[var(--font-poppins)] font-semibold text-[#1d2329] mb-3 text-sm">
-          <IconUser size={18} className="text-[#4b5156]" /> Your information
+          <IconUser size={18} className="text-[#4b5156]" /> {t.address.yourInfo}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Name or company<Req />
+              {t.address.name}<Req />
             </label>
             <input
               type="text"
-              placeholder="John Smith or Company Name"
+              placeholder={t.address.namePh}
               value={booking.customerName}
               onChange={(e) => updateBooking({ customerName: e.target.value })}
               onBlur={() => handleBlur("customerName")}
@@ -425,13 +441,13 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {touched.customerName && errors.customerName && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                {errors.customerName}
+                {errorText(errors.customerName, t)}
               </p>
             )}
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Phone number<Req />
+              {t.address.phone}<Req />
             </label>
             <input
               type="tel"
@@ -445,17 +461,17 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {touched.customerPhone && errors.customerPhone && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                {errors.customerPhone}
+                {errorText(errors.customerPhone, t)}
               </p>
             )}
           </div>
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Email<Req />
+              {t.address.email}<Req />
             </label>
             <input
               type="email"
-              placeholder="john@email.com"
+              placeholder={t.address.emailPh}
               value={booking.customerEmail}
               onChange={(e) => updateBooking({ customerEmail: e.target.value })}
               onBlur={() => handleBlur("customerEmail")}
@@ -464,7 +480,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {touched.customerEmail && errors.customerEmail && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                {errors.customerEmail}
+                {errorText(errors.customerEmail, t)}
               </p>
             )}
           </div>
@@ -474,10 +490,10 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
       {/* Address */}
       <div className="mb-6">
         <h3 className="flex items-center gap-2 font-[var(--font-poppins)] font-semibold text-[#1d2329] mb-1 text-sm">
-          <IconPin size={18} className="text-[#4b5156]" /> Delivery address
+          <IconPin size={18} className="text-[#4b5156]" /> {t.address.deliveryAddress}
           {GOOGLE_MAPS_KEY && (
             <span className="text-xs text-[#aaa] font-normal ml-2">
-              — Start typing to search
+              {t.address.startTyping}
             </span>
           )}
         </h3>
@@ -485,17 +501,17 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             zona ya se valida sola al escribir la dirección, así que aquí basta
             una línea (Cris msg 22094: "el paso tres no se ve tan limpio"). */}
         <p className="text-xs text-[#4b5156] mb-3 font-[var(--font-poppins)]">
-          We serve the San Francisco Bay Area.
+          {t.address.weServe}
         </p>
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-              Street address<Req />
+              {t.address.street}<Req />
             </label>
             <input
               ref={addressInputRef}
               type="text"
-              placeholder={GOOGLE_MAPS_KEY ? "Start typing your address..." : "123 Main Street"}
+              placeholder={GOOGLE_MAPS_KEY ? t.address.streetPhSearch : "123 Main Street"}
               value={booking.address}
               onChange={(e) => updateBooking({ address: e.target.value })}
               aria-required="true"
@@ -504,14 +520,14 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             />
             {attempted && booking.address.trim() === "" && (
               <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                Street address is required
+                {t.address.streetRequired}
               </p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-                City<Req />
+                {t.address.city}<Req />
               </label>
               {/* Sin readOnly (9-sep-2026). Estaba como
                   `!!GOOGLE_MAPS_KEY && booking.city !== ""`, o sea: se bloqueaba
@@ -529,13 +545,13 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               />
               {attempted && booking.city.trim() === "" && (
                 <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                  City is required
+                  {t.address.cityRequired}
                 </p>
               )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-                ZIP code<Req />
+                {t.address.zip}<Req />
               </label>
               <input
                 type="text"
@@ -549,7 +565,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               />
               {touched.zipCode && errors.zipCode && (
                 <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-                  {errors.zipCode}
+                  {errorText(errors.zipCode, t)}
                 </p>
               )}
             </div>
@@ -558,11 +574,10 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         {outsideArea && (
           <div className="mt-3 rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3">
             <p className="text-sm font-semibold text-red-600 font-[var(--font-poppins)]">
-              Sorry — we don&apos;t currently service {booking.city.trim() || "that area"}.
+              {t.address.outside(booking.city.trim() || t.address.thatArea)}
             </p>
             <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-              We deliver to Contra Costa, Alameda, San Francisco, San Mateo, Marin, Solano
-              and nearby communities. Questions? Call (510) 650-2083.
+              {t.address.outsideDetail}
             </p>
           </div>
         )}
@@ -572,21 +587,21 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h3 className="flex items-center gap-2 font-[var(--font-poppins)] font-semibold text-[#1d2329] text-sm">
-            <IconCard size={18} className="text-[#4b5156]" /> Billing address
-            <span className="text-xs text-[#aaa] font-normal ml-2">(optional)</span>
+            <IconCard size={18} className="text-[#4b5156]" /> {t.address.billing}
+            <span className="text-xs text-[#aaa] font-normal ml-2">{t.address.optional}</span>
           </h3>
           {!showBilling && (
             <button
               onClick={() => setShowBilling(true)}
               className="text-xs text-[#4b5156] font-medium font-[var(--font-poppins)] underline decoration-[#c9ccd0] hover:text-[#1d2329]"
             >
-              + Add different billing address
+              {t.address.addBilling}
             </button>
           )}
         </div>
         {!showBilling && (
           <p className="text-xs text-[#999] font-[var(--font-poppins)]">
-            Same as delivery address by default.
+            {t.address.sameAsDelivery}
           </p>
         )}
         {showBilling && (
@@ -594,23 +609,23 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
             <input
               ref={billingInputRef}
               type="text"
-              placeholder="Start typing your billing address..."
+              placeholder={t.address.billingPh}
               defaultValue={booking.billingAddress ? `${booking.billingAddress.line1}, ${booking.billingAddress.city}` : ""}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-[var(--font-poppins)] focus:border-tp-red focus:outline-none transition-colors"
               autoComplete="off"
             />
             {booking.billingAddress ? (
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-[#555] font-[var(--font-poppins)]">
-                <div className="font-semibold text-[#333] mb-1">Billing address captured:</div>
+                <div className="font-semibold text-[#333] mb-1">{t.address.billingCaptured}</div>
                 <div>{booking.billingAddress.line1}</div>
                 <div>{booking.billingAddress.city}, {booking.billingAddress.state} {booking.billingAddress.zip}</div>
                 {(!booking.billingAddress.line1 || !booking.billingAddress.city || !booking.billingAddress.state || !booking.billingAddress.zip) && (
-                  <div className="text-red-500 mt-1">Some fields missing — pick a more specific address from the dropdown.</div>
+                  <div className="text-red-500 mt-1">{t.address.billingIncomplete}</div>
                 )}
               </div>
             ) : (
               <p className="text-xs text-[#888] font-[var(--font-poppins)]">
-                Pick an address from the dropdown so we capture the full street, city, state, and ZIP.
+                {t.address.billingPick}
               </p>
             )}
             <button
@@ -621,7 +636,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               }}
               className="text-xs text-[#999] font-[var(--font-poppins)] hover:text-tp-red"
             >
-              Use delivery address instead
+              {t.address.useDelivery}
             </button>
           </div>
         )}
@@ -632,14 +647,14 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           cualquier cosa o nada; el driver llegaba sin saber dónde dejarlo. */}
       <div className="mb-6">
         <label className="block text-xs font-semibold text-[#555] mb-1 font-[var(--font-poppins)]">
-          <IconPin size={18} className="text-[#4b5156]" /> Where exactly should we place the dumpster?<Req />
+          <IconPin size={18} className="text-[#4b5156]" /> {t.address.place}<Req />
         </label>
         <p className="text-xs text-[#999] mb-2 font-[var(--font-poppins)]">
-          The exact spot, plus a gate code if we need one.
+          {t.address.placeHelp}
         </p>
         <textarea
           ref={notesRef}
-          placeholder="Example: in the driveway, right side, in front of the garage door. Gate code 1234."
+          placeholder={t.address.placePh}
           value={booking.notes}
           onChange={(e) => updateBooking({ notes: e.target.value })}
           aria-required="true"
@@ -653,7 +668,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         />
         {(touched.notes || attempted) && !notesValid && (
           <p className="text-xs text-red-500 mt-1 font-[var(--font-poppins)]">
-            Please tell us where to place the dumpster
+            {t.address.placeMissing}
           </p>
         )}
       </div>
@@ -665,18 +680,16 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
         <div role="alert" aria-live="polite" className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
           {outsideArea ? (
             <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
-              We don&apos;t currently service {booking.city.trim() || "that area"} —
-              call us at (510) 650-2083 and we&apos;ll see what we can do.
+              {t.address.outsideAlert(booking.city.trim() || t.address.thatArea)}
             </p>
           ) : (
             <>
               <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
-                Before you continue, we still need: {missing.join(", ")}.
+                {t.address.stillNeed(missing)}
               </p>
               {!notesValid && (
                 <p className="text-xs text-amber-700 mt-1 font-[var(--font-poppins)]">
-                  The spot for the dumpster is required — our driver needs to know
-                  exactly where to leave it.
+                  {t.address.placeRequired}
                 </p>
               )}
             </>
@@ -689,7 +702,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
           onClick={onBack}
           className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm text-[#666] bg-gray-100 hover:bg-gray-200 transition-colors"
         >
-          ← Back
+          {t.common.back}
         </button>
         {/* Sin `disabled`: un botón muerto no explica nada. Si falta algo, el
             clic destapa los avisos y sube al campo que falta. */}
@@ -702,7 +715,7 @@ export default function AddressStep({ booking, updateBooking, onNext, onBack }: 
               : "bg-gray-200 text-gray-500 hover:bg-gray-300"
           }`}
         >
-          Next: Review & confirm →
+          {t.address.next}
         </button>
       </div>
     </div>

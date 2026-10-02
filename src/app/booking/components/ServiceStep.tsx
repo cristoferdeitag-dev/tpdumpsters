@@ -5,6 +5,18 @@ import { FaCalendarDays } from "react-icons/fa6";
 import type { BookingData, ServiceSelection } from "./BookingWizard";
 import { trackDumpsterSelected } from "@/lib/tracking";
 import { MATERIAL_ICONS, IconCheck } from "@/components/MaterialIcons";
+import { useBookingLang, rich } from "@/lib/i18n/useBookingLang";
+import {
+  dimensionsName,
+  money,
+  serviceDescription,
+  serviceName,
+  serviceNote,
+  sizeName,
+  sizeSubtext,
+  variantText,
+  weightIncluded,
+} from "@/lib/i18n/booking";
 
 interface Props {
   booking: BookingData;
@@ -165,6 +177,9 @@ function Check({ className }: { className?: string }) {
 }
 
 export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
+  // Display-only translation: svc.service / item.size / weightLimit stay the
+  // English ids the backend expects; only what's rendered changes.
+  const { lang, t } = useBookingLang();
   // 18-sep-2026 (Cris, msg 22063): «no puedes elegir el tamaño del dumpster
   // antes de saber qué vas a tirar». Hasta hoy este paso arrancaba con
   // "General Debris" YA seleccionado (índice 0), así que sus tres tamaños y
@@ -238,15 +253,15 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           antes de la primera decisión. Es un dato de navegación, no un
           adorno — el dorado se reserva para acentos de marca y precio. */}
       <h4 className="font-[var(--font-poppins)] text-[10.5px] font-semibold text-[#8a8f94] uppercase tracking-[0.12em] mb-1.5">
-        Step 1 of 4
+        {t.service.stepOf}
       </h4>
       <h2 className="font-[var(--font-oswald)] uppercase tracking-[0.01em] text-[26px] md:text-[34px] font-semibold text-[#1d2329] mb-2">
-        Choose your dumpster
+        {t.service.title}
       </h2>
       {/* 18-sep: el subtítulo estaba en #999 y con 91% de tráfico móvil mucha
           gente lo lee AL SOL, donde ese gris desaparece (Consejo IA). */}
       <p className="font-[var(--font-poppins)] text-[14.5px] leading-relaxed text-[#4b5156] mb-8">
-        Select what you&apos;re disposing of, then choose the size you need.
+        {t.service.subtitle}
       </p>
 
       {/* ── Materiales ──
@@ -282,7 +297,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                 </span>
               )}
               <Icon />
-              <span className="whitespace-normal">{svc.service}</span>
+              <span className="whitespace-normal">{serviceName(lang, svc.service)}</span>
             </button>
           );
         })}
@@ -298,8 +313,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           className="scroll-mt-28 bg-[#fafafa] rounded-2xl px-6 py-5 mb-10 border border-dashed border-[#ddd] text-center"
         >
           <p className="font-[var(--font-poppins)] text-[15px] text-[#555] leading-relaxed">
-            Pick what you&apos;re getting rid of and we&apos;ll show you the sizes and prices that
-            apply to it.
+            {t.service.pickFirst}
           </p>
         </div>
       )}
@@ -314,9 +328,9 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                   const I = MATERIAL_ICONS[activeService.service];
                   return I ? <I size={16} /> : null;
                 })()}
-                {activeService.service}:
+                {serviceName(lang, activeService.service)}:
               </span>{" "}
-              {activeService.description}
+              {serviceDescription(lang, activeService.service, activeService.description)}
             </p>
           </div>
 
@@ -325,12 +339,11 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           <div className="-mt-6 mb-10 bg-[#fffdf5] border-l-[3px] border-tp-gold rounded-r-lg px-5 py-4 space-y-2">
             {activeService.note && (
               <p className="font-[var(--font-poppins)] text-[13px] text-[#1d2329] leading-relaxed">
-                {activeService.note}
+                {serviceNote(lang, activeService.service, activeService.note)}
               </p>
             )}
             <p className="font-[var(--font-poppins)] text-[13px] text-[#1d2329] leading-relaxed">
-              Nothing above the top edge of the dumpster. Overloaded loads add a
-              <strong className="font-semibold"> $149 fee, charged at pickup</strong>.
+              {rich(t.service.overload)}
             </p>
           </div>
         </>
@@ -353,8 +366,14 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
           const isPopular = renderItems.length === 3 && idx === 0;
           const isFeatured = isPopular || renderItems.length === 1;
           const isDark = isFeatured || isSelected;
-          const subtext = item.sublabel || sizeSubtexts[item.size] || activeService?.service || "";
-          const heading = item.label || `${item.size} Dumpster`;
+          const subtext =
+            variantText(lang, cardServiceType, "sublabel", item.sublabel) ||
+            sizeSubtext(lang, item.size, sizeSubtexts[item.size]) ||
+            serviceName(lang, activeService?.service) ||
+            "";
+          const heading =
+            variantText(lang, cardServiceType, "label", item.label) ||
+            t.service.heading(sizeName(lang, item.size));
 
           return (
             <button
@@ -373,11 +392,11 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
               {/* ── Badge ── */}
               {isSelected ? (
                 <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
-                  ✓ Selected
+                  {t.service.selected}
                 </div>
               ) : isPopular ? (
                 <div className="bg-tp-red text-white text-[11px] font-bold text-center py-2 font-[var(--font-poppins)] uppercase tracking-widest">
-                  ⭐ Most Popular
+                  {t.service.popular}
                 </div>
               ) : null}
 
@@ -403,14 +422,14 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                       isDark ? "text-white/40" : "text-[#bbb]"
                     }`}
                   >
-                    Starting at
+                    {t.service.startingAt}
                   </span>
                   <span
                     className={`text-sm font-[var(--font-poppins)] line-through ${
                       isDark ? "text-white/40" : "text-[#aaa]"
                     }`}
                   >
-                    ${item.basePrice}
+                    {money(lang, item.basePrice)}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2 mb-2">
@@ -419,12 +438,12 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                       isDark ? "text-white" : "text-[#222]"
                     }`}
                   >
-                    ${item.price}
+                    {money(lang, item.price)}
                   </span>
                 </div>
                 <div className="mb-7">
                   <span className="inline-block bg-tp-green/15 text-tp-green text-[11px] font-bold font-[var(--font-poppins)] uppercase tracking-wider px-2.5 py-1 rounded-full">
-                    Save ${ONLINE_DISCOUNT} online
+                    {t.service.saveOnline(money(lang, ONLINE_DISCOUNT))}
                   </span>
                 </div>
 
@@ -444,7 +463,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                         isDark ? "text-white/80" : "text-[#555]"
                       }`}
                     >
-                      {item.dimensions}
+                      {dimensionsName(lang, item.dimensions)}
                     </span>
                   </li>
                   <li className="flex items-center gap-3">
@@ -454,7 +473,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                         isDark ? "text-white/80" : "text-[#555]"
                       }`}
                     >
-                      {item.weightLimit} included
+                      {weightIncluded(lang, item.weightLimit)}
                     </span>
                   </li>
                   <li className="flex items-center gap-3">
@@ -464,7 +483,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                         isDark ? "text-white/80" : "text-[#555]"
                       }`}
                     >
-                      {item.rentalDays}-day rental included
+                      {t.service.daysIncluded(item.rentalDays)}
                     </span>
                   </li>
                   <li className="flex items-center gap-3">
@@ -474,7 +493,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                         isDark ? "text-white/80" : "text-[#555]"
                       }`}
                     >
-                      Delivery, pickup &amp; disposal included
+                      {t.service.deliveryIncluded}
                     </span>
                   </li>
                   <li className="flex items-center gap-3">
@@ -484,7 +503,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                         isDark ? "text-white/80" : "text-[#555]"
                       }`}
                     >
-                      No hidden fees
+                      {t.service.noHiddenFees}
                     </span>
                   </li>
                 </ul>
@@ -502,7 +521,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
                         : "bg-transparent text-[#333] border-2 border-[#222] hover:bg-[#222] hover:text-white"
                     }`}
                   >
-                    Select this dumpster
+                    {t.service.selectThis}
                   </div>
                 )}
               </div>
@@ -512,7 +531,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
       </div>
 
       <p className="text-center text-xs text-[#bbb] mt-8 mb-10 font-[var(--font-poppins)]">
-        Extra weight charged at $179/ton (prorated) · Extra days: $49/day
+        {t.service.footnote}
       </p>
 
       {/* Spacer so sticky CTA never overlaps content above */}
@@ -526,7 +545,7 @@ export default function ServiceStep({ booking, updateBooking, onNext }: Props) {
               onClick={onNext}
               className="flex items-center gap-2 px-8 py-3.5 rounded-xl font-[var(--font-poppins)] font-semibold text-sm transition-all duration-200 bg-tp-red text-white hover:brightness-110 shadow-xl shadow-red-500/30"
             >
-              <FaCalendarDays /> Next: Choose dates →
+              <FaCalendarDays /> {t.service.next}
             </button>
           </div>
         </div>

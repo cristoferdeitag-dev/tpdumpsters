@@ -9,6 +9,8 @@ import ConfirmationStep from "./ConfirmationStep";
 import EmbeddedPayment from "./EmbeddedPayment";
 import { trackBookingStarted, trackBookingStep, trackBookingPayment, getGclid } from "@/lib/tracking";
 import { IconCheck } from "@/components/MaterialIcons";
+import { useBookingLang, BookingLangToggle } from "@/lib/i18n/useBookingLang";
+import type { BookingDict } from "@/lib/i18n/booking";
 
 /* ───────── Types ───────── */
 export interface BillingAddress {
@@ -82,12 +84,12 @@ const initialBooking: BookingData = {
 
 // 18-sep-2026: los emojis (🗑️ 📅 📍 📋) se fueron con el rediseño — el
 // indicador usa los números 1-4. Dejarlos aquí sólo los mantenía en el bundle.
-const STEPS = [
-  { id: 1, label: "Service" },
-  { id: 2, label: "Dates" },
-  { id: 3, label: "Address" },
-  { id: 4, label: "Summary" },
-];
+// Labels come from the dictionary (t.wizard.steps), by position.
+const STEPS = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+
+// The resume banner stores WHICH note to show, not its text, so switching
+// language re-renders it in the new language.
+type ResumeNote = keyof BookingDict["resume"];
 
 // Wizard progress survives a page reload. The failure this kills (Aug-2026
 // audit): mobile customers leave the tab to fetch their card, the browser
@@ -132,6 +134,7 @@ function isValidSave(s: unknown): s is { v: 1; createdAt: number; step: number; 
 }
 
 export default function BookingWizard() {
+  const { lang, t } = useBookingLang();
   const [step, setStep] = useState(1);
   const [booking, setBooking] = useState<BookingData>(initialBooking);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,7 +144,7 @@ export default function BookingWizard() {
   // can't clobber a saved session. resumeNote surfaces the state of an email
   // resume link (welcome back / already paid / date passed).
   const [restored, setRestored] = useState(false);
-  const [resumeNote, setResumeNote] = useState<string | null>(null);
+  const [resumeNote, setResumeNote] = useState<ResumeNote | null>(null);
   // While a saved payment step is being validated server-side the whole
   // wizard is blocked (Hermes round-2 bloqueante: a usable Summary during
   // the async check let the customer create a SECOND session before knowing
@@ -193,23 +196,23 @@ export default function BookingWizard() {
         if (typeof data.gclid === "string") resumeGclidRef.current = data.gclid;
         if (data.booking.deliveryWindow) {
           setStep(4);
-          setResumeNote("Welcome back! Your booking is saved — review it and pay below.");
+          setResumeNote("welcomeBack");
         } else {
           // The original delivery window couldn't be recovered — never
           // charge with an incomplete order (Hermes B4): one quick
           // re-pick on the Dates step, everything else stays filled.
           setStep(2);
-          setResumeNote("Welcome back! Please confirm your delivery date and time window — the rest of your booking is already filled in.");
+          setResumeNote("confirmWindow");
         }
         setRestoringPayment(false);
       } else if (res.ok && data?.alreadyHandled) {
         resumeParamsRef.current = null;
         setRestoringPayment(false);
-        setResumeNote("This booking was already completed. Questions? Call us at (510) 650-2083.");
+        setResumeNote("alreadyCompleted");
       } else if (res.ok && data?.expired) {
         resumeParamsRef.current = null;
         setRestoringPayment(false);
-        setResumeNote("The delivery date on this booking already passed — call us at (510) 650-2083 and we'll set you up with a new date.");
+        setResumeNote("datePassed");
       } else if (res.status === 404 && data?.error === "Not found") {
         // ONLY our endpoint's own 404 payload means invalid/expired token —
         // the one case where a fresh wizard is safe (no session context).
@@ -217,7 +220,7 @@ export default function BookingWizard() {
         // falls through to blocked (Hermes round-5).
         resumeParamsRef.current = null;
         setRestoringPayment(false);
-        setResumeNote("That link expired. You can book again below in a couple of minutes, or call us at (510) 650-2083.");
+        setResumeNote("linkExpired");
       } else {
         // blocked/503, 429, 5xx, malformed JSON — the original session's
         // state is UNKNOWN, so no new wizard (Hermes round-4): blocked panel,
@@ -263,7 +266,7 @@ export default function BookingWizard() {
         setBooking(initialBooking);
         setStep(1);
         setRestoringPayment(false);
-        setResumeNote("Looks like that booking was already paid. Need another dumpster? Book below, or call us at (510) 650-2083 if you need a copy of your receipt.");
+        setResumeNote("alreadyPaid");
       } else {
         // expired (or any terminal state): drop the payment, keep the data
         pendingPaymentRef.current = null;
@@ -477,7 +480,7 @@ export default function BookingWizard() {
           // Server refused the bonus (link expired / different customer):
           // drop the line so the summary matches what Stripe will charge.
           updateBooking({ rescueDiscount: 0, rescue: null });
-          setResumeNote("The $15 bonus on your link has expired — the regular online price applies below.");
+          setResumeNote("bonusExpired");
         }
         // Mount Stripe's payment form right here in the wizard
         setPayment({ clientSecret: data.clientSecret, publishableKey: data.publishableKey, stripeAccount: data.stripeAccount, sessionId: data.sessionId });
@@ -487,11 +490,11 @@ export default function BookingWizard() {
         // Server answered with the redirect flow (rollback safety net)
         window.location.href = data.checkoutUrl;
       } else {
-        alert("Error creating payment session. Please call us at (510) 650-2083.");
+        alert(t.wizard.sessionError);
         setIsSubmitting(false);
       }
     } catch {
-      alert("Error creating payment session. Please call us at (510) 650-2083.");
+      alert(t.wizard.sessionError);
       setIsSubmitting(false);
     }
   };
@@ -501,7 +504,12 @@ export default function BookingWizard() {
   }
 
   return (
-    <div ref={wizardTopRef} className="w-[92%] sm:w-[85%] max-w-[900px] mx-auto py-10 scroll-mt-24">
+    <div ref={wizardTopRef} lang={lang} className="w-[92%] sm:w-[85%] max-w-[900px] mx-auto py-10 scroll-mt-24">
+      {/* EN/ES switch (Cris, 2-oct-2026). Only swaps text — the booking
+          state above is untouched, so nothing typed is lost. */}
+      <div className="flex justify-end mb-5">
+        <BookingLangToggle />
+      </div>
       {/* Progress bar */}
       {/* ── Indicador de pasos ──
           18-sep-2026: eran círculos grandes con emoji (🗑️ 📅 📍 📋) y el
@@ -534,7 +542,7 @@ export default function BookingWizard() {
                     : "text-[#9aa0a6] font-medium"
                 }`}
               >
-                {s.label}
+                {t.wizard.steps[i]}
               </span>
             </div>
             {i < STEPS.length - 1 && (
@@ -550,7 +558,7 @@ export default function BookingWizard() {
 
       {resumeNote && (
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p className="text-sm text-amber-900 font-[var(--font-poppins)]">{resumeNote}</p>
+          <p className="text-sm text-amber-900 font-[var(--font-poppins)]">{t.resume[resumeNote]}</p>
         </div>
       )}
 
@@ -559,17 +567,16 @@ export default function BookingWizard() {
         {(!restored || restoringPayment) && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <div className="animate-spin w-10 h-10 border-4 border-tp-red border-t-transparent rounded-full" />
-            <p className="text-sm text-[#666] font-[var(--font-poppins)]">Loading...</p>
+            <p className="text-sm text-[#666] font-[var(--font-poppins)]">{t.common.loading}</p>
           </div>
         )}
         {restored && !restoringPayment && restoreBlocked && (
           <div className="text-center py-10">
             <p className="text-[#333] font-[var(--font-poppins)] font-semibold mb-2">
-              We couldn&apos;t verify your previous payment session.
+              {t.wizard.verifyFailTitle}
             </p>
             <p className="text-sm text-[#888] font-[var(--font-poppins)] mb-6">
-              To make sure you&apos;re never charged twice, we paused here.
-              Try again, or call us and we&apos;ll sort it out on the spot.
+              {t.wizard.verifyFailBody}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <button
@@ -585,7 +592,7 @@ export default function BookingWizard() {
                 }}
                 className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-bold text-sm bg-tp-red text-white hover:bg-tp-red-dark transition-colors"
               >
-                Try again
+                {t.wizard.tryAgain}
               </button>
               <a
                 href="tel:+15106502083"
