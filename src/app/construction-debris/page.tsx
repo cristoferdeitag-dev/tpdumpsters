@@ -251,7 +251,6 @@ const serviceCounties = [
   { name: "Solano County", slug: "solano-county" },
   { name: "Marin County", slug: "marin-county" },
   { name: "San Mateo County", slug: "san-mateo-county" },
-  { name: "Santa Clara County", slug: "santa-clara-county" },
   { name: "San Francisco", slug: "san-francisco" },
 ];
 

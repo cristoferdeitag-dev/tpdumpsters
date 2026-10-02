@@ -110,8 +110,6 @@ const cities: CityInfo[] = [
     description: 'Exclusive enclave within Oakland. Grand homes & tree-lined streets.', tag: '20/mo' },
   { name: 'San Lorenzo', lat: 37.6810, lng: -122.1244, slug: '/san-lorenzo',
     description: 'Central East Bay community between San Leandro & Hayward.', tag: '20/mo' },
-  { name: 'Milpitas', lat: 37.4323, lng: -121.8996, slug: '/milpitas',
-    description: 'South Bay gateway. Great Mall area, Calaveras Hills & tech corridor.', tag: '30/mo' },
   // ── Solano County extras ──
   { name: 'Fairfield', lat: 38.2494, lng: -122.0400, slug: '/fairfield',
     description: 'Solano County seat. Travis AFB, Anheuser-Busch & Green Valley.', tag: '20/mo' },
@@ -159,9 +157,6 @@ const cities: CityInfo[] = [
     description: 'The City of Good Living. Laureola Park, White Oaks & Devonshire.', tag: '10/mo' },
   { name: 'Millbrae', lat: 37.5985, lng: -122.3872, slug: '/millbrae',
     description: 'BART/Caltrain hub. Meadows, Mills Estate & Green Hills Country Club.', tag: '10/mo' },
-  // ── Santa Clara County ──
-  { name: 'Santa Clara', lat: 37.3541, lng: -121.9552, slug: '/santa-clara',
-    description: 'Home of Levi\'s Stadium. Mission, El Camino & Great America.', tag: '30/mo' },
 ];
 
 const activeCities = cities.filter((c) => c.slug !== '#');

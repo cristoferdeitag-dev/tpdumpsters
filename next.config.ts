@@ -8,6 +8,8 @@ const RETIRED_CITIES = [
   "bethel-island", "discovery-bay", "dixon", "fairfax", "menlo-park",
   "half-moon-bay", "san-jose", "sunnyvale", "mountain-view", "palo-alto",
   "cupertino", "campbell", "los-gatos", "saratoga", "morgan-hill", "gilroy",
+  // Santa Clara County pages the checkout rejects (Asaí 17-sep-2026; GO Cris 2-oct msg 24071)
+  "milpitas", "santa-clara", "santa-clara-county",
 ];
 
 const config: NextConfig = {

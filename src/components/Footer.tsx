@@ -27,7 +27,6 @@ const COUNTIES: { label: string; href: string }[] = [
   { label: "Solano County", href: "/solano-county" },
   { label: "Marin County", href: "/marin-county" },
   { label: "San Mateo County", href: "/san-mateo-county" },
-  { label: "Santa Clara County", href: "/santa-clara-county" },
 ];
 
 const SERVICES: { label: string; href: string }[] = [

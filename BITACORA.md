@@ -1,3 +1,15 @@
+## 2026-10-02 15:40Z — cris (Fable 5.1) — ✅ APLICADO en Google Ads: negativas de haulers municipales / servicios ajenos / marcas sin conversión (GO Cris msg 24061 "las negativas de TP, fuera")
+
+**Origen:** Consejo IA `/root/reports/consejo/2026-10-02-tp-vs-wise/` (search_term_view 4-jul→1-oct: $2,533 en 98 términos con 0 `all_conversions`, cota inferior). Criterio de Astra adoptado: sólo lo inequívocamente ajeno; **NO** ciudades (orden previa de Cris: no pausar ciudades), **NO** `debris box`, `redwood`, `cheap`, ni genéricos comerciales ("san francisco dumpsters", "dumpster rental berkeley ca" siguen vivos).
+
+**Cambio (script `/root/scripts/tp_gads_negativas_haulers_2026-10-02.py`, modos validate/apply/readback/rollback; validado con `validateOnly` antes):** lista compartida nueva **`12259278038` "Negativas Haulers municipales + servicios ajenos (2-oct, GO 24061)"**, 50 PHRASE, vinculada a **High Intent, DSA — Ciudades TP y Marca TP**. Grupos: patrones municipales (`sanitation`, `sanitary`, `scavenger`, `garbage company/companies/services`, `garbage pick up`, `waste service(s)`, `waste solutions`, `disposal service(s)`, `refuse`, `resource recovery`), haulers con nombre (`republic`, `republic services/waste`, `allied waste`, `recology`, `waste management`, `waste connections`, `contra costa disposal`, `cpor`, `california waste`), otros servicios (`hauling`, `furniture removal`, `trash can(s)`, `dumping service`, `portable dumpster`, `storage bin/container`), marcas roll-off con 0 conv en 90 d en High Intent (`hippo`, `pirate`, `cobra roll off`, `aldana`, `junk180`, `victor dumpster`, `lam dumpsters`, `lloyds`, `rumpke`, `nextdoor`, `bay dumpster rentals`) y **`wise dumpsters`** (nunca pujar por la marca del otro cliente — Astra). Readback ✅✅: lista 50 miembros ENABLED + 3 vínculos.
+
+**Trade-off medido antes de aplicar (90 d):** las negativas nuevas bloquean 12 términos que SÍ tuvieron alguna conversión: 3 "Calls from ads" (republic waste 6-jul, pacific sanitation santa rosa 8-sep, richmond sanitation service 10-sep), 1 call click (ssf scavenger 14-jul) y 1/3 de reserva server-side atribuida (republic dumpster rental 18-sep) por ~$135 de gasto, contra ~$450 en términos municipales que no dieron nada. Se decidió aplicar: 4 llamadas y 0.33 reservas en 90 d no justifican ~$585. Nota: la decisión del 18-sep (conquista de competidores en High Intent) queda parcialmente revertida para **haulers municipales**; las marcas roll-off que sí convierten (`debris box`, `redwood`, `triple h`…) siguen libres en High Intent.
+
+**Sin tocar:** presupuestos, pujas, campañas, geos. **Rollback:** `python3 /root/scripts/tp_gads_negativas_haulers_2026-10-02.py rollback` (borra la lista; los vínculos caen con ella).
+**Pendiente:** revisar términos a 14 d (16-oct) para ver si la cuota de impresiones de High Intent/DSA se movió a términos buenos; podar `2026-10-01` de `SIZE_BLOCKED_DATES` (ya pasó el jueves).
+
+---
 ## 2026-09-30 21:05Z — cris (Fable 5.1) — ✅ EN VIVO: 20 Yard CERRADO para el jueves 1-oct-2026 (orden de Asaí vía su Hermes); abierto desde el viernes 2-oct
 
 **Origen:** relay `instance-relay/cris/2026-09-30T204500Z-hermes-brief-tp-20yd.json` (from `hermes-asai`, brief en `_payloads/2026-09-30-brief-tp-20yd-manana.md`). **Verificado por segunda vía** en `/root/.hermes/profiles/asai/state.db` (messages rowid 560 y 570): Asaí escribió *"De hoy para mañana ya no hay disponibles 20yd. De mañana para friday si"* y luego *"Ya está? Porque uno me llamó y no quiero que haga Booking para mañana de 20yd… está en vivo??"*. Aplica [[feedback_asai_cierre_de_dia_es_orden_directa]]: sin pedir GO.
@@ -13,6 +25,13 @@
 **Avisos:** Cris por Telegram; Asaí vía relay a su instancia `asai` y acuse a `hermes-asai`. Candado liberado. **Recordatorio:** podar `2026-10-01` después del jueves.
 
 ---
+
+## 2026-10-02 04:40Z — cris (Fable 5.1) — 🏛️ CONSEJO IA «TP vs Wise» (GO Cris msgs 24038/24040): brief 90 d + Semrush, votos Gemini Pro / Hermes(Flash) / Claude, síntesis
+**Expediente:** `/root/reports/consejo/2026-10-02-tp-vs-wise/` — `brief.md` (sha 6bb5beb7…, 67 KB: contexto + Semrush + datos 90 d jul-sep medidos por subagente: Ads, Stripe, Jobber, GA4, Zadarma), `semrush_hallazgos.md`, `datos_90d.md` (+ scripts/), `gemini.md`, `sol.md` (Hermes respondió con gemini-3.8-flash, NO Astra → relay `…-ASTRA.json` pendiente), `claude.md` (escrito a ciegas), `sintesis.md`.
+**Cifras clave 90 d (✅✅ salvo nota):** TP Ads $16,096 → 66 reservas server-side $48,055 + 111 llamadas; ventas Stripe neto $253,831 (online 47.8 %); HI pierde 41-43 % IS por presupuesto, DSA 52-73 %. Wise Ads $4,856 en UNA campaña a maximizar clics sobre 5 pueblos (~480 búsquedas/mes, IS 82-90 %); Jobber $280,036 facturado ✅ una vía; online 2 reservas $1,498 desde 15-sep. Zadarma 14 d: 157 entrantes / 53 sin atender (34 %) — auditoría independiente en curso por pedido de Cris.
+**Errores míos detectados y anotados en la síntesis §0:** el brief decía "TP base San Mateo"; medido: campañas centradas en Pinole + entregas top Richmond/San Pablo/I-80, y las 20 exclusiones de Ads (9-sep) fueron decisión de Cris por tiempo de manejo. Los 3 votos razonaron el reparto geográfico con el mapa equivocado.
+**Veredicto (en `sintesis.md` §4):** Wise = teléfono primero (34 % sin atender), conversiones con valor + matcher Zadarma↔Jobber, misma plata en toda su área con Max Conv; TP = negativas, probar +presupuesto HI/DSA con tope $300/reserva, decidir Santa Clara, remarketing por correo/SMS, consolidar páginas. Canibalización Antioch/Pittsburg/Bay Point: decisión de Cris.
+**Pendiente:** voto Astra · auditoría Zadarma · confirmar ciudad del patio de TP · GO de Cris a cualquier cambio (nada se tocó en cuentas ni repos).
 
 ## 2026-09-30 15:20Z — cris2 «Laso» (Opus 5) — ¿Tocar el código de la app para emitir el bono y luego revertir? Se puede, pero se recomendó NO. Solo lectura
 
