@@ -6,6 +6,7 @@ import { buildResumeUrl, isResumeConfigured } from "@/lib/resume-token";
 import { sendEmail, isMailConfigured } from "@/lib/mailer";
 import { BODY, FONT, GOLD, INK, PHONE, esc, firstName, formatLongDay, helpBox, primaryButton, wrapBrandedEmail } from "@/lib/emails/layout";
 import { sendWhatsApp } from "@/lib/twilio";
+import { notifyAdminsTelegram } from "@/lib/telegram";
 import { getStripe } from "@/lib/stripe";
 import { RESCUE_BONUS, LIST_PREMIUM } from "@/lib/pricing";
 import type { RowDataPacket, ResultSetHeader } from "mysql2";
@@ -371,6 +372,19 @@ export async function POST(request: NextRequest) {
         for (const phoneTo of TEAM_NUMBERS) {
           const r = await sendWhatsApp(phoneTo, alertMsg);
           if (r.success) whatsapp = 1;
+        }
+        // Copia por Telegram al bot de notificaciones de Cris (msg 24207: "TP no
+        // manda los datos de los que no terminan en el booking"). No cuenta como
+        // entrega del aviso de equipo (ese sigue siendo el WhatsApp).
+        try {
+          await notifyAdminsTelegram(
+            `🛒 Carrito abandonado — TP Dumpsters\n${row.cust_name} · ${row.cust_phone}${row.cust_email ? " · " + row.cust_email : ""}\n` +
+            `${sizeNum}yd ${row.service_type} · $${total.toFixed(0)} · entrega ${deliveryDay} · ${row.city}\n` +
+            `Correo de rescate: ${emailed ? "enviado" : emailNote}` + (resumeUrl ? `\nLink para reanudar: ${resumeUrl}` : ""),
+            { only: ["8665156164"] }
+          );
+        } catch (e) {
+          console.error("🛒 abandoned-watch: aviso Telegram falló", e);
         }
       }
 

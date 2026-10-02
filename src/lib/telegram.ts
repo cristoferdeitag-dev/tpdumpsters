@@ -4,7 +4,10 @@ const TELEGRAM_KEYS_PATH = "/home/u781187371/telegram-keys.json";
 
 interface TelegramConfig {
   botToken: string;
-  adminChatIds: Array<{ chatId: string; name: string }>;
+  // botToken por destinatario (opcional): Cris recibe todo por su bot propio de
+  // notificaciones (@Notificacioneshtm_bot, 2-oct-2026, msg 24207); Asaí sigue
+  // con el bot de siempre. Sin override se usa el botToken general.
+  adminChatIds: Array<{ chatId: string; name: string; botToken?: string }>;
 }
 
 let _cachedConfig: TelegramConfig | null = null;
@@ -38,11 +41,12 @@ function getTelegramConfig(): TelegramConfig | null {
   return null;
 }
 
-async function sendOne(chatId: string, text: string): Promise<boolean> {
+async function sendOne(chatId: string, text: string, tokenOverride?: string): Promise<boolean> {
   const config = getTelegramConfig();
   if (!config) return false;
+  const token = tokenOverride || config.adminChatIds.find((r) => r.chatId === chatId)?.botToken || config.botToken;
   try {
-    const res = await fetch(`https://api.telegram.org/bot${config.botToken}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
@@ -59,8 +63,9 @@ async function sendOne(chatId: string, text: string): Promise<boolean> {
   }
 }
 
-export async function notifyAdminsTelegram(text: string): Promise<void> {
+export async function notifyAdminsTelegram(text: string, opts?: { only?: string[] }): Promise<void> {
   const config = getTelegramConfig();
   if (!config) return;
-  await Promise.allSettled(config.adminChatIds.map((r) => sendOne(r.chatId, text)));
+  const dest = opts?.only ? config.adminChatIds.filter((r) => opts.only!.includes(r.chatId)) : config.adminChatIds;
+  await Promise.allSettled(dest.map((r) => sendOne(r.chatId, text)));
 }
