@@ -1,3 +1,6 @@
+## 2026-10-02 22:35Z — cris (Opus 5.5) — 🔕 Aviso duplicado "Stripe invoice paid" en reservas en línea — QUITADO (GO Cris msg 24201)
+**Causa (captura de Cris msg 24199):** una reserva web (TP-MURI3PJL, $599) disparaba dos avisos: "💰 New booking paid" (checkout) y "💰 Stripe invoice paid" (`invoice.payment_succeeded` de la factura que Stripe genera para esa reserva). **Cambio `route.ts`:** si `inv.metadata.booking_id` empieza con `TP-`, no se manda el aviso de factura (se loguea "aviso omitido"); las facturas manuales de Asaí (sin booking_id) siguen avisando y el resto del flujo (sync a Dumpsterin, etc.) no cambia. Verificado que las facturas web traen `booking_id` TP- (Stripe: 4GBCGQN1-0001 → TP-MURI3PJL, GGJ7M2A4-0001 → TP-MURHOI22; manuales → None). **Deploy:** BUILD_ID `48iCw9RpPMGn2z48qCxR_` confirmado remoto (el texto "aviso omitido" está en el bundle del webhook); `/` y `/booking` 200; webhook sin firma → 400 (sigue cerrado).
+
 ## 2026-10-02 21:15Z — cris (Opus 5.5) — ✉️ AJUSTE (GO Cris msg 24183 "que quede en 10 y 15"): TP a los **10 min** (`INTERVAL 10 MINUTE`, BUILD_ID `VkEDmQ8K6H5qKpUP5lfJY` desplegado y verificado remoto; / y /booking 200) y Wise a los **15 min**. Vigías siguen cada 2 min.
 
 ## 2026-10-02 21:10Z — cris (Opus 5.5) — ✉️ Correo de carrito abandonado a los 5 MIN (antes 30) — EN VIVO (GO Cris msg 24181)
