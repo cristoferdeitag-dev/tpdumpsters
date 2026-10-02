@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
          FROM bookings b
          JOIN customers c ON c.id = b.customer_id
         WHERE b.status = 'awaiting_payment'
-          AND b.created_at <= NOW() - INTERVAL 5 MINUTE
+          AND b.created_at <= NOW() - INTERVAL 10 MINUTE
           AND b.created_at >= NOW() - INTERVAL 20 HOUR
         ORDER BY b.created_at DESC`
     );
