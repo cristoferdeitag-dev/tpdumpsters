@@ -1,3 +1,8 @@
+## 2026-10-02 18:05Z — cris (Fable 5.1) — Remarketing TP (GO Cris msg 24089): campaña de display pausada; rescates medidos (0 de 1, campo verificado); SMS bloqueado por A2P
+**Campaña `Retargeting — Abandonos Booking` (24184829166, DISPLAY, $0 en 90 d) → PAUSED** (validateOnly + readback ✅✅). Los 3 revisores: no sirve como está; el remarketing útil es correo/SMS.
+**Rescates del correo de carrito (−$15, vivo desde 28-sep), medido en Stripe por DOS objetos:** Checkout Sessions desde 28-sep: 19 creadas / 13 pagadas / **1 con `rescued_from`** (sin pagar aún) → 0 rescates pagados; PaymentIntents desde 28-sep: 31 / 29 pagados / 0 con `rescued_from`. El campo existe (está en las claves de metadata de las sesiones). Carritos notificados por el vigía desde 28-sep: **1** (2-oct 08:40Z). Conclusión: el rescate ha tenido 1 oportunidad en 4 días; no se puede juzgar todavía. Revisar el 16-oct.
+**SMS al cliente:** imposible hoy: Twilio A2P de TP en proceso (Laso reenvió la campaña 17:09Z, ver entrada de cris2). Zadarma tampoco manda SMS a EE.UU. (probado desde Wise: "Remitente no permitido / No es posible enviar SMS a ese número").
+
 ## 2026-10-02 17:50Z — cris (Fable 5.1) — 🏛️ Google Ads TP tras la revisión (Gemini Pro + Astra + Sol; GO Cris msg 24083): 12 negativas fuera, feed DSA limpio, Fase 1 "Materiales" + "quote" en exacta — EN VIVO
 **Revisión:** `/root/reports/consejo/2026-10-02-revision-wise-tp/sintesis.md`. Los tres: GO con cambios (revertir negativas comerciales, no abrir Tamaños en frase, fases de 14 d, DSA sin tocar).
 **Cambios en la cuenta `6835960996` (Ads API, validateOnly antes de cada mutate, readback ✅✅):**
