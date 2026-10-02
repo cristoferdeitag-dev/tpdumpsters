@@ -151,10 +151,19 @@ export async function POST(req: NextRequest) {
         `\n🧾 ${invoiceNumber}` +
         (lineDescription ? `\n📝 ${lineDescription.slice(0, 200)}` : "") +
         `\n🔗 https://dashboard.stripe.com/invoices/${inv.id}`;
-      try {
-        await notifyAdminsTelegram(text);
-      } catch (telErr) {
-        console.error("📨 Admin Telegram (invoice) error:", telErr);
+      // Reserva en línea (booking_id "TP-…"): ya avisó "New booking paid"; la
+      // factura que Stripe genera para ella sería un aviso DUPLICADO de la misma
+      // venta (Cris msg 24200/24201, 2-oct-2026). Las facturas manuales de Asaí
+      // (sin booking_id TP-) siguen avisando igual.
+      const esReservaWeb = String(inv.metadata?.booking_id || inv.subscription_details?.metadata?.booking_id || "").startsWith("TP-");
+      if (!esReservaWeb) {
+        try {
+          await notifyAdminsTelegram(text);
+        } catch (telErr) {
+          console.error("📨 Admin Telegram (invoice) error:", telErr);
+        }
+      } else {
+        console.log(`📨 invoice paid de reserva web ${inv.metadata?.booking_id} — aviso omitido (ya salió "New booking paid")`);
       }
 
       // Sync to Dumpsterin so Asaí / Cris see this paid invoice in the CRM.
