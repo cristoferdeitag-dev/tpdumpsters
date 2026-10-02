@@ -1,3 +1,26 @@
+## 2026-10-02 18:40Z — cris (Fable 5.1) — ✅ Fase 2 adelantada: grupos "Tamaños 10/20/30" ENCENDIDOS en exacta (GO Cris msg 24107 "prendamos de una vez")
+**Por qué hoy y no el 17-oct:** Cris lo pidió; riesgo bajo medido (tamaños = 14 términos, $64, 0 conv en 90 d; DSA ya los excluye; Marca no compite). La lectura del 16-oct se hará por grupo para separar Fase 1 (materiales/quote) de Fase 2 (tamaños).
+**Cambios (Ads API, validateOnly → real → readback ✅✅):** grupos `199345695549/199730615277/201222017162` → ENABLED (RSAs APPROVED, a `/booking` con paths por tamaño). Keywords activas sólo EXACTAS: [10 yard dumpster rental] [10 yd dumpster] [small dumpster rental] (nueva, exacta) · [20 yard dumpster rental] [20 yd dumpster] · [30 yard dumpster rental] [30 yd dumpster]. Pausadas las de frase ("10/20/30 yard dumpster", "small dumpster rental" frase, "large dumpster rental") y los duplicados de tamaño del `Grupo de anuncios 1` ([10/15/30/40 yard dumpster rental]) → Grupo 1 ya no tiene keywords de tamaño. Las variantes cost/price se quedan en Precio Homeowner/Contratista. Sin tocar presupuesto ni puja.
+**Dato nuevo de Cris (msg 24107):** utilidad por renta **30-40 % ya descontado TODO, incluidos anuncios** → Ads de TP está cubierto; hay margen para probar subir presupuesto con tope por reserva (propuesto, sin GO aún).
+**Revisión 16-oct (cron ya agendado):** por grupo, CPA de reserva vs llamada; Tamaños: impresiones/IS/CPC/conv; Contratista/Precio Contratista; migración de gasto del Grupo 1.
+
+## 2026-10-02 18:16–18:30Z — cris2 «Laso» (Opus 5, órdenes Cris msg 7503 + 7507 + 7509) — 💵 La comisión de plataforma que paga TP sube de 1.5% → **2.1%**, también en el checkout de tpdumpsters.com (lado Hostinger). Sin tocar código ni deploy
+
+**Verbatim (msg 7507):** *"Este 2.1 es para Tp, pero no solo en el bokking en línea, wnt todo el sistema"*. Ejecutó **Hermes** por encargo de Cris (msg 7509) porque el classifier me negó el SSH (`[Production Reads]`, ni para leer).
+
+**Qué cambió aquí:** el campo `htm_application_fee_pct` de `/home/u781187371/stripe-keys.json` **en Hostinger**, de `1.5` a `2.1` (float). Ese archivo es el que lee `src/lib/stripe.ts` → `getPlatform()` cuando la env `HTM_APPLICATION_FEE_PCT` del server no está. **No requiere deploy ni reiniciar next-server:** `PLATFORM_TTL_MS = 60_000` re-lee el JSON cada 60 s → aplica en ≤1 min. **No se tocó el repo ni GitHub Actions.**
+
+**✅ Una vía (reporte de Hermes):** respaldo `stripe-keys.json.bak-2026-10-02` creado antes de escribir; valor previo confirmado `1.5`; ahora `htm_application_fee_pct == 2.1`; JSON válido con sus 7 llaves; permisos 600. No pude verificarlo yo (SSH bloqueado) y el archivo lleva llaves live de Stripe → **no se imprime ni se copia fuera del server**.
+
+**⚠️ Modo de falla silencioso a tener presente:** si ese JSON queda inválido, `getPlatform()` cae a **modo legacy SIN comisión** (`console.error` 🚨 en el log) — las ventas siguen pasando y HTM cobra $0. Se ve como "todo funciona". Topes: rechaza `feePct < 0 || > 5`.
+
+**⏳ Pendiente:** la prueba de fuego es Stripe. A las 18:26Z no hay ningún `application_fee` posterior al cambio (últimos 4 cobros: 15:56–16:12Z, al 1.5%). El primer cobro nuevo debe traer `application_fee_amount == 2.1%`.
+
+**Abierto (trabajo de código, sin GO):** las facturas de `src/app/api/invoice/*` usan `getStripe()` = llave propia de TP → por diseño **no pueden** llevar `application_fee`; ahí caen también las `paid_out_of_band` (efectivo/cheque/Zelle). Ese camino sigue al 0% de comisión.
+
+Detalle completo del tema (medición de septiembre, los dos archivos, Wise al 2.0%): `/root/bookingdumpsters/BITACORA.md` entrada del 2-oct 17:30–18:30Z + memoria `ref_tp_comisiones_stripe_y_booking_medidas.md`.
+
+---
 ## 2026-10-02 18:05Z — cris (Fable 5.1) — Remarketing TP (GO Cris msg 24089): campaña de display pausada; rescates medidos (0 de 1, campo verificado); SMS bloqueado por A2P
 **Campaña `Retargeting — Abandonos Booking` (24184829166, DISPLAY, $0 en 90 d) → PAUSED** (validateOnly + readback ✅✅). Los 3 revisores: no sirve como está; el remarketing útil es correo/SMS.
 **Rescates del correo de carrito (−$15, vivo desde 28-sep), medido en Stripe por DOS objetos:** Checkout Sessions desde 28-sep: 19 creadas / 13 pagadas / **1 con `rescued_from`** (sin pagar aún) → 0 rescates pagados; PaymentIntents desde 28-sep: 31 / 29 pagados / 0 con `rescued_from`. El campo existe (está en las claves de metadata de las sesiones). Carritos notificados por el vigía desde 28-sep: **1** (2-oct 08:40Z). Conclusión: el rescate ha tenido 1 oportunidad en 4 días; no se puede juzgar todavía. Revisar el 16-oct.
