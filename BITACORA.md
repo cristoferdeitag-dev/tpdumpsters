@@ -1,3 +1,12 @@
+## 2026-10-02 23:00Z — cris2 «Laso» (Opus 5) — ✅ EN PRODUCCIÓN: réplica pública del CTA de opt-in en /sms-policy (GO Cris msg 7562 "dale")
+**Commit `cfcd601`** (push a `main` OK) · **BUILD_ID `NkPd3Bnm0cbj_X3y4lkCn`** confirmado en Hostinger (`cat .next/BUILD_ID` remoto = local).
+**Deploy por el camino de siempre:** `.env.local` con `NEXT_PUBLIC_GOOGLE_MAPS_KEY` verificado ANTES de construir → `rm -rf .next && npm run build` → rsync de `.next/` a Hostinger → `kill` del `next-server` → primer golpe a `/booking` para el respawn.
+**Verificado en producción ✅✅ (HTML servido, dos vías: build local y URL pública):** `/sms-policy` trae `Reply STOP to cancel`, `Text me about my rental`, `Consent is not a condition` y `id="opt-in"`; `Last updated: October 2, 2026`. `/`, `/booking`, `/privacy`, `/terms` → 200. **URL para Twilio: https://tpdumpsters.com/sms-policy#opt-in**
+**La llave de Maps no se rompió:** el primer grep al HTML de `/booking` no la encontró y estuve a punto de reportar un cero falso — vive en los **chunks de JS**, no en el HTML. Comprobado: 10 archivos de `.next/static` la traen inlineada y el chunk servido desde producción la devuelve. Sin el literal `process.env...||""` que avisa la memoria.
+**Captura:** `/root/reports/tp-sms-cta-2026-10-02/seccion-opt-in.png` (del mismo build levantado en local, puerto 3977, ya apagado).
+**Trampa nueva anotada:** tras ~8 cargas seguidas, tpdumpsters.com empezó a devolver **403 al navegador headless** mientras `curl` seguía en 200 con el mismo User-Agent → es límite por ritmo de carga, **no** bloqueo por agente. Comprobado que el sitio responde 200 a curl pelón, curl/8.x, Googlebot y python-requests, así que el revisor de TCR no se va a topar con un bloqueo. Para fotografiar, levantar el build en local en vez de golpear producción.
+**Sigue pendiente 🔴:** la evidencia DENTRO del registro de la campaña en la Console (párrafo listo en `/root/reports/tp-sms-cta-2026-10-02/README.md`) + respuesta de Honey (#29754467). **$19.51 y cada intento cuesta $15 no reembolsable: un solo tiro.**
+
 ## 2026-10-02 22:52Z — cris2 «Laso» (Opus 5) — 📡 Dos vigías del A2P cada 15 min (EN VIVO) + 📄 borrador de la evidencia del CTA (SIN GO)
 **Pedido:** Cris, msg 7560: "1) dale / 2) también", sobre (1) un vigía que avise en cuanto contesten de Twilio y (2) el borrador de `/sms-policy` con la evidencia del CTA.
 
