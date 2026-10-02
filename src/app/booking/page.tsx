@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BookingHero from "@/components/BookingHero";
 import DynamicBookingWizard from "./components/DynamicBookingWizard";
+import { BookingLangProvider } from "@/lib/i18n/useBookingLang";
 
 export const metadata: Metadata = {
   title: "Book a Dumpster Online | TP Dumpsters - Bay Area",
@@ -24,12 +25,15 @@ export default function BookingPage() {
       {/* Hero — "placa de especificación": el visitante que llega de un anuncio de
           "dumpster rental cost" ve tamaño y precio antes de hacer scroll. Los precios
           son los de reserva online de GENERAL_SIZES (ServiceStep); la lista es $50 más. */}
+      {/* One language state for hero + wizard (EN default, ?lang=es for Spanish ads). */}
+      <BookingLangProvider>
       <BookingHero />
 
       {/* Booking wizard — client-only render (no SSR = no hydration issues) */}
       <section id="booking" className="scroll-mt-20 bg-[#f5f5f5] min-h-screen pb-20">
         <DynamicBookingWizard />
       </section>
+      </BookingLangProvider>
 
       <Footer />
     </>

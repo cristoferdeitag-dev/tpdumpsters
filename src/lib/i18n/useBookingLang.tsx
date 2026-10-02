@@ -12,6 +12,8 @@ interface Ctx {
   lang: Lang;
   t: BookingDict;
   setLang: (lang: Lang) => void;
+  /** true only inside a real provider; lets an inner provider defer to an outer one. */
+  mounted?: boolean;
 }
 
 const BookingLangContext = createContext<Ctx>({
@@ -37,6 +39,10 @@ function readInitialLang(): Lang | null {
 }
 
 export function BookingLangProvider({ children }: { children: ReactNode }) {
+  // If a provider already wraps this one (the /booking page wraps hero +
+  // wizard so both switch together), defer to it: two providers would keep
+  // two separate languages and the hero would not follow the toggle.
+  const parent = useContext(BookingLangContext);
   // Starts in English on the server and on the first client render (no
   // hydration mismatch), then switches right after mount if needed.
   const [lang, setLangState] = useState<Lang>("en");
@@ -62,8 +68,10 @@ export function BookingLangProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  if (parent.mounted) return <>{children}</>;
+
   return (
-    <BookingLangContext.Provider value={{ lang, t: BOOKING_DICT[lang], setLang }}>
+    <BookingLangContext.Provider value={{ lang, t: BOOKING_DICT[lang], setLang, mounted: true }}>
       {children}
     </BookingLangContext.Provider>
   );
