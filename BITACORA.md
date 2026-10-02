@@ -1,14 +1,15 @@
 ## 2026-10-02 17:05Z — cris (Fable 5.1) — ✅ EN VIVO: /milpitas, /santa-clara y /santa-clara-county → 301 a inicio (GO Cris msg 24071 "dale a Milpitas")
 
-**Por qué:** las tres páginas estaban publicadas para ciudades que el checkout rechaza (lista blanca , decisión de Asaí 17-sep); el Consejo IA del 2-oct las marcó como contradicción viva (Semrush hueco A). Santa Clara County como zona nueva sigue siendo decisión operativa de Asaí.
+**Por qué:** las tres páginas estaban publicadas para ciudades que el checkout rechaza (lista blanca `src/lib/service-area.ts`, decisión de Asaí 17-sep); el Consejo IA del 2-oct las marcó como contradicción viva (Semrush hueco A). Santa Clara County como zona nueva sigue siendo decisión operativa de Asaí.
 
-**Cambio (`6b02c28`):**  → las 3 slugs entran a  (mismo mecanismo que San José/Sunnyvale de junio: redirect permanente a ); borradas ; quitados los enlaces internos que apuntaban ahí:  (Santa Clara County),  (pines Milpitas y Santa Clara), lista de condados en 8 páginas de servicio (clean-soil, roofing, household-cleanout, construction-debris, green-waste, general-debris, mixed-materials, clean-concrete) y . **Sin tocar:** menciones en prosa (fremont "nearby Milpitas", terms, services, chat del bot) y .
+**Cambio (`6b02c28`):** `next.config.ts` → las 3 slugs entran a `RETIRED_CITIES` (mismo mecanismo que San José/Sunnyvale de junio: redirect permanente a `/`); borradas `src/app/{milpitas,santa-clara,santa-clara-county}/`; quitados los enlaces internos que apuntaban ahí: `src/components/Footer.tsx` (Santa Clara County), `src/components/ServiceAreaMap.tsx` (pines Milpitas y Santa Clara), lista de condados en 8 páginas de servicio (clean-soil, roofing, household-cleanout, construction-debris, green-waste, general-debris, mixed-materials, clean-concrete) y `src/app/sitemap.ts`. **Sin tocar:** menciones en prosa (fremont "nearby Milpitas", terms, services, chat del bot) y `service-area.ts`.
 
-**Deploy (protocolo [[ref_tpdumpsters_deploy]]):** push main → build local ( con llave de Maps ✅) → rsync  (BUILD_ID  confirmado remoto) → kill  → respawn.
-**Verificación ✅✅ (prod):** , ,  → **308 → https://tpdumpsters.com/**; , ,  → 200; sitemap.xml en prod: 0 menciones de esas slugs.
-**Pendiente:** podar  de  (ya pasó); revisar en GSC en 2-4 semanas que las 3 URLs salgan del índice.
+**Deploy (protocolo [[ref_tpdumpsters_deploy]]):** push main → build local (`.env.local` con llave de Maps ✅) → rsync `.next/` (BUILD_ID `8AH22ho3WGkMbRpSAVapy` confirmado remoto) → kill `next-server` → respawn.
+**Verificación ✅✅ (prod):** `/milpitas`, `/santa-clara`, `/santa-clara-county` → **308 → https://tpdumpsters.com/**; `/booking`, `/pinole`, `/` → 200; `sitemap.xml` en prod: 0 menciones de esas slugs.
+**Pendiente:** podar `2026-10-01` de `SIZE_BLOCKED_DATES` (ya pasó); revisar en GSC en 2-4 semanas que las 3 URLs salgan del índice.
 
 ---
+
 ## 2026-10-02 15:40Z — cris (Fable 5.1) — ✅ APLICADO en Google Ads: negativas de haulers municipales / servicios ajenos / marcas sin conversión (GO Cris msg 24061 "las negativas de TP, fuera")
 
 **Origen:** Consejo IA `/root/reports/consejo/2026-10-02-tp-vs-wise/` (search_term_view 4-jul→1-oct: $2,533 en 98 términos con 0 `all_conversions`, cota inferior). Criterio de Astra adoptado: sólo lo inequívocamente ajeno; **NO** ciudades (orden previa de Cris: no pausar ciudades), **NO** `debris box`, `redwood`, `cheap`, ni genéricos comerciales ("san francisco dumpsters", "dumpster rental berkeley ca" siguen vivos).
