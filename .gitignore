@@ -33,3 +33,4 @@ console.log
 
 # Respaldos locales de trabajo — nunca van al repo
 .respaldos/
+.claude/worktrees/
