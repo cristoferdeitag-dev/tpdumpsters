@@ -13,6 +13,14 @@ import {
   FaMapLocationDot,
 } from "react-icons/fa6";
 import { trackBookingCompleted } from "@/lib/tracking";
+import { BookingLangProvider, BookingLangToggle, useBookingLang } from "@/lib/i18n/useBookingLang";
+import { formatBookingDate, money, serviceName, sizeName, type Lang } from "@/lib/i18n/booking";
+
+// Dates arrive from Stripe metadata as yyyy-mm-dd; English shows them as
+// always (raw), Spanish formats them. Anything else is shown untouched.
+function showDate(lang: Lang, d: string): string {
+  return lang === "es" && /^\d{4}-\d{2}-\d{2}$/.test(d) ? formatBookingDate(lang, d) : d;
+}
 
 type SessionInfo = {
   bookingId: string | null;
@@ -31,7 +39,17 @@ type SessionInfo = {
   invoicePdf: string | null;
 };
 
+// Same EN/ES choice as the wizard (remembered in localStorage, or ?lang=es).
 export default function SuccessContent() {
+  return (
+    <BookingLangProvider>
+      <SuccessInner />
+    </BookingLangProvider>
+  );
+}
+
+function SuccessInner() {
+  const { lang, t } = useBookingLang();
   const searchParams = useSearchParams();
   const bookingIdParam = searchParams.get("booking_id") || "N/A";
   const sessionId = searchParams.get("session_id");
@@ -88,8 +106,11 @@ export default function SuccessContent() {
     : null;
 
   return (
-    <section className="min-h-screen bg-[#f5f5f5] py-12">
+    <section lang={lang} className="min-h-screen bg-[#f5f5f5] py-12">
       <div className="w-[92%] sm:w-[85%] max-w-[700px] mx-auto">
+        <div className="flex justify-end mb-4">
+          <BookingLangToggle />
+        </div>
         <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-12 text-center">
           {/* TP logo — same asset as the site header (Asaí, 28-jul) */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -104,28 +125,31 @@ export default function SuccessContent() {
           </div>
 
           <h1 className="font-[var(--font-poppins)] text-3xl font-bold text-[#333] mb-2">
-            Booking Confirmed! 🎉
+            {t.success.title}
           </h1>
           <p className="font-[var(--font-poppins)] text-[#666] mb-2">
-            Payment received — your dumpster rental is confirmed.
+            {t.success.subtitle}
           </p>
           {info?.customerEmail && (
             <p className="font-[var(--font-poppins)] text-xs text-[#888] mb-2">
-              Check your inbox at <strong>{info.customerEmail}</strong> for both emails below.
+              {t.success.inboxBefore}
+              <strong>{info.customerEmail}</strong>
+              {t.success.inboxAfter}
             </p>
           )}
 
           {/* Booking ID */}
           <div className="bg-gray-50 rounded-xl p-4 inline-block my-6">
             <p className="font-[var(--font-poppins)] text-xs text-[#888] uppercase tracking-wider mb-1">
-              Booking Reference
+              {t.success.reference}
             </p>
             <p className="font-[var(--font-oswald)] text-3xl font-bold text-tp-red tracking-wider">
               {bookingId}
             </p>
             {info?.amountTotal != null && (
               <p className="font-[var(--font-poppins)] text-sm text-[#666] mt-2">
-                Total paid: <strong>${info.amountTotal.toFixed(2)}</strong>
+                {t.success.totalPaid}
+                <strong>{money(lang, info.amountTotal, true)}</strong>
               </p>
             )}
           </div>
@@ -134,36 +158,36 @@ export default function SuccessContent() {
           {info && (info.deliveryDate || fullAddress || info.dumpsterSize) && (
             <div className="text-left bg-white border border-gray-200 rounded-xl p-5 mb-6">
               <h3 className="font-[var(--font-poppins)] font-bold text-[#333] mb-3 text-sm uppercase tracking-wider">
-                Your Booking
+                {t.success.yourBooking}
               </h3>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                 {info.dumpsterSize && (
                   <>
-                    <dt className="text-[#888]">Dumpster</dt>
+                    <dt className="text-[#888]">{t.success.dumpster}</dt>
                     <dd className="text-[#333] font-medium">
-                      {info.dumpsterSize}
-                      {info.serviceType ? ` — ${info.serviceType}` : ""}
+                      {sizeName(lang, info.dumpsterSize)}
+                      {info.serviceType ? ` — ${serviceName(lang, info.serviceType)}` : ""}
                     </dd>
                   </>
                 )}
                 {info.deliveryDate && (
                   <>
-                    <dt className="text-[#888]">Delivery</dt>
+                    <dt className="text-[#888]">{t.success.delivery}</dt>
                     <dd className="text-[#333] font-medium">
-                      {info.deliveryDate}
+                      {showDate(lang, info.deliveryDate)}
                       {info.deliveryWindow ? ` — ${info.deliveryWindow}` : ""}
                     </dd>
                   </>
                 )}
                 {info.pickupDate && (
                   <>
-                    <dt className="text-[#888]">Pickup</dt>
-                    <dd className="text-[#333] font-medium">{info.pickupDate}</dd>
+                    <dt className="text-[#888]">{t.success.pickup}</dt>
+                    <dd className="text-[#333] font-medium">{showDate(lang, info.pickupDate)}</dd>
                   </>
                 )}
                 {fullAddress && (
                   <>
-                    <dt className="text-[#888]">Address</dt>
+                    <dt className="text-[#888]">{t.success.address}</dt>
                     <dd className="text-[#333] font-medium">{fullAddress}</dd>
                   </>
                 )}
@@ -175,7 +199,7 @@ export default function SuccessContent() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 mt-4 text-tp-red text-sm font-semibold hover:underline"
                 >
-                  <FaMapLocationDot /> View delivery location on Google Maps
+                  <FaMapLocationDot /> {t.success.viewMap}
                 </a>
               )}
             </div>
@@ -190,13 +214,12 @@ export default function SuccessContent() {
               botón de descarga e impresión. */}
           <div className="text-left bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
             <h3 className="font-[var(--font-poppins)] font-bold text-[#333] mb-3 text-sm flex items-center gap-2">
-              <FaFileInvoice className="text-blue-600" /> Your receipt &amp; invoice
+              <FaFileInvoice className="text-blue-600" /> {t.success.receiptTitle}
             </h3>
             {info?.hostedInvoiceUrl || info?.invoicePdf ? (
               <>
                 <p className="text-sm text-[#444]">
-                  Download or print them here — they include the charge, the rental
-                  dates and your booking ID. Save them now for your records.
+                  {t.success.receiptBody}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   {info?.hostedInvoiceUrl && (
@@ -206,7 +229,7 @@ export default function SuccessContent() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-300 rounded-lg text-blue-700 text-sm font-semibold hover:bg-blue-100 transition-colors"
                     >
-                      <FaFileInvoice /> View receipt &amp; invoice
+                      <FaFileInvoice /> {t.success.viewReceipt}
                     </a>
                   )}
                   {info?.invoicePdf && (
@@ -216,7 +239,7 @@ export default function SuccessContent() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-blue-300 rounded-lg text-blue-700 text-sm font-semibold hover:bg-blue-100 transition-colors"
                     >
-                      <FaFileInvoice /> Download PDF
+                      <FaFileInvoice /> {t.success.downloadPdf}
                     </a>
                   )}
                 </div>
@@ -225,12 +248,11 @@ export default function SuccessContent() {
               /* Stripe tarda un instante en emitir la factura. Nunca dejar la
                  frase colgando ni prometer un correo: se dice qué hacer. */
               <p className="text-sm text-[#444]">
-                Your invoice is still being generated. Refresh this page in a
-                moment, or call us at{" "}
+                {t.success.invoicePendingBefore}
                 <a href="tel:+15106502083" className="font-semibold text-blue-700">
                   (510) 650-2083
-                </a>{" "}
-                and we&apos;ll get you a copy.
+                </a>
+                {t.success.invoicePendingAfter}
               </p>
             )}
           </div>
@@ -238,42 +260,44 @@ export default function SuccessContent() {
           {/* What happens next */}
           <div className="text-left bg-gray-50 rounded-xl p-6 mb-8">
             <h3 className="font-[var(--font-poppins)] font-bold text-[#333] mb-4">
-              What happens next?
+              {t.success.whatNext}
             </h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <FaCreditCard className="text-tp-green flex-shrink-0 mt-1" />
                 <div>
-                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">Payment confirmed</p>
+                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">{t.success.paidTitle}</p>
                   <p className="font-[var(--font-poppins)] text-xs text-[#888]">
-                    Your card has been charged successfully. Your receipt and invoice are ready above.
+                    {t.success.paidBody}
                   </p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
                 <FaCalendarDays className="text-tp-red flex-shrink-0 mt-1" />
                 <div>
-                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">Delivery scheduled</p>
+                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">{t.success.scheduledTitle}</p>
                   <p className="font-[var(--font-poppins)] text-xs text-[#888]">
-                    Our team will deliver on your selected date and window. We&apos;ll text you 30 min before arrival.
+                    {t.success.scheduledBody}
                   </p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
                 <FaLocationDot className="text-tp-gold flex-shrink-0 mt-1" />
                 <div>
-                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">Placement</p>
+                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">{t.success.placementTitle}</p>
                   <p className="font-[var(--font-poppins)] text-xs text-[#888]">
-                    Our driver will place the dumpster at your specified location. Make sure the area is clear and accessible.
+                    {t.success.placementBody}
                   </p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
                 <FaPhone className="text-tp-green flex-shrink-0 mt-1" />
                 <div>
-                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">Need to change or cancel?</p>
+                  <p className="font-[var(--font-poppins)] text-sm font-semibold text-[#333]">{t.success.changeTitle}</p>
                   <p className="font-[var(--font-poppins)] text-xs text-[#888]">
-                    Call (510) 650-2083 or email info@tpdumpsters.com. Quote your booking ID <strong>{bookingId}</strong>.
+                    {t.success.changeBefore}
+                    <strong>{bookingId}</strong>
+                    {t.success.changeAfter}
                   </p>
                 </div>
               </li>
@@ -283,7 +307,8 @@ export default function SuccessContent() {
           {/* Cancellation policy */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 text-left">
             <p className="font-[var(--font-poppins)] text-xs text-amber-800">
-              <strong>Cancellation policy:</strong> Cancel more than 24 hours before delivery for a 90% refund. Cancellations within 24 hours of delivery are non-refundable.
+              <strong>{t.success.policyLabel}</strong>
+              {t.success.policyText}
             </p>
           </div>
 
@@ -293,18 +318,18 @@ export default function SuccessContent() {
               href="/"
               className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm bg-tp-red text-white hover:bg-tp-red-dark transition-colors"
             >
-              Back to Home
+              {t.success.backHome}
             </Link>
             <a
               href="tel:+15106502083"
               className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm bg-gray-100 text-[#333] hover:bg-gray-200 transition-colors"
             >
-              📞 Call (510) 650-2083
+              {t.success.call}
             </a>
           </div>
 
           {loading && (
-            <p className="text-xs text-[#aaa] mt-6">Loading booking details…</p>
+            <p className="text-xs text-[#aaa] mt-6">{t.success.loadingDetails}</p>
           )}
         </div>
       </div>

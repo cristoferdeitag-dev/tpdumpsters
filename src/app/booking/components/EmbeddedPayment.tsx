@@ -11,6 +11,12 @@ import { loadStripe } from "@stripe/stripe-js";
 import type { StripeCheckout, StripeCheckoutContact } from "@stripe/stripe-js";
 import { FaLock, FaPhone } from "react-icons/fa6";
 import type { BookingData } from "./BookingWizard";
+import { useBookingLang } from "@/lib/i18n/useBookingLang";
+import { money, serviceName, sizeName } from "@/lib/i18n/booking";
+
+// Stripe's own decline text is shown as Stripe sends it; our fallbacks are
+// stored as codes so they follow the language switch.
+type PayError = { kind: "stripe"; msg: string } | { kind: "declined" } | { kind: "failed" } | null;
 
 interface Props {
   clientSecret: string;
@@ -37,12 +43,13 @@ function beacon(where: string, err: string) {
 }
 
 export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAccount, booking, onBack }: Props) {
+  const { lang, t } = useBookingLang();
   const containerRef = useRef<HTMLDivElement>(null);
   const checkoutRef = useRef<StripeCheckout | null>(null);
   const [mounted, setMounted] = useState(false);
   const [failed, setFailed] = useState(false);
   const [paying, setPaying] = useState(false);
-  const [payError, setPayError] = useState<string | null>(null);
+  const [payError, setPayError] = useState<PayError>(null);
   // Cardholder name is its own editable field (Cris 2026-07-23): the person
   // booking (e.g. a worker) often pays with a card under someone else's or
   // the company's name — prefill with the contact name but let them fix it.
@@ -151,13 +158,13 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       // On success Stripe redirects to return_url; reaching here with an
       // error type means the charge didn't go through (declined, 3DS fail…).
       if (result && result.type === "error") {
-        setPayError(result.error.message || "Your card was declined. Please try another card.");
+        setPayError(result.error.message ? { kind: "stripe", msg: result.error.message } : { kind: "declined" });
         setPaying(false);
       }
     } catch (err) {
       console.error("Payment confirm error:", err);
       beacon("embedded-confirm-error", String(err));
-      setPayError("We couldn't process the payment. Please try again or call us.");
+      setPayError({ kind: "failed" });
       setPaying(false);
     }
   };
@@ -166,17 +173,17 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
     return (
       <div className="text-center py-10">
         <p className="text-[#333] font-[var(--font-poppins)] font-semibold mb-2">
-          The payment form couldn&apos;t load.
+          {t.payment.loadFailTitle}
         </p>
         <p className="text-sm text-[#888] font-[var(--font-poppins)] mb-6">
-          Please try again, or call us and we&apos;ll take your booking by phone.
+          {t.payment.loadFailBody}
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <button
             onClick={onBack}
             className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm text-[#666] bg-gray-100 hover:bg-gray-200 transition-colors"
           >
-            ← Back to summary
+            {t.payment.backToSummary}
           </button>
           <a
             href="tel:+15106502083"
@@ -193,20 +200,20 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
     <div>
       <div className="flex items-center justify-between mb-1">
         <h2 className="font-[var(--font-poppins)] text-2xl font-bold text-[#333]">
-          Payment
+          {t.payment.title}
         </h2>
         <button
           onClick={onBack}
           disabled={paying}
           className="text-sm text-[#666] font-[var(--font-poppins)] font-semibold hover:text-tp-red transition-colors disabled:opacity-50"
         >
-          ← Back
+          {t.common.back}
         </button>
       </div>
       <p className="text-sm text-[#888] mb-5 font-[var(--font-poppins)]">
         {/* `size` ya viene como "20 Yard" — el " yd" de antes lo dejaba en
             "20 Yard yd" (Cris lo vio en su iPhone, 9-sep-2026). */}
-        {booking.customerName} · {booking.service?.serviceType} {booking.service?.size}
+        {booking.customerName} · {serviceName(lang, booking.service?.serviceType)} {sizeName(lang, booking.service?.size)}
       </p>
 
       {!mounted && (
@@ -218,7 +225,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
       {mounted && (
         <div className="mb-4">
           <label className="block text-[13px] font-semibold text-[#333] mb-1.5 font-[var(--font-poppins)]">
-            Name on card
+            {t.payment.nameOnCard}
           </label>
           <input
             type="text"
@@ -226,7 +233,7 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
             onChange={(e) => setCardName(e.target.value)}
             autoComplete="cc-name"
             className="w-full px-4 py-3 rounded-lg border border-gray-300 text-sm font-[var(--font-poppins)] focus:outline-none focus:border-tp-red focus:ring-1 focus:ring-tp-red"
-            placeholder="Exactly as it appears on the card"
+            placeholder={t.payment.nameOnCardPh}
           />
         </div>
       )}
@@ -236,7 +243,9 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
 
       {payError && (
         <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3">
-          <p className="text-sm text-red-700 font-[var(--font-poppins)]">{payError}</p>
+          <p className="text-sm text-red-700 font-[var(--font-poppins)]">
+            {payError.kind === "stripe" ? payError.msg : t.payment[payError.kind]}
+          </p>
         </div>
       )}
 
@@ -247,10 +256,10 @@ export default function EmbeddedPayment({ clientSecret, publishableKey, stripeAc
             disabled={paying}
             className="w-full mt-6 flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-[var(--font-poppins)] font-bold text-base bg-tp-red text-white hover:bg-tp-red-dark shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {paying ? "Processing..." : `Pay $${booking.totalPrice.toFixed(2)} & confirm booking`}
+            {paying ? t.payment.processing : t.payment.pay(money(lang, booking.totalPrice, true))}
           </button>
           <p className="flex items-center justify-center gap-1.5 text-[11px] text-[#999] mt-3 font-[var(--font-poppins)]">
-            <FaLock className="text-[10px]" /> Secure payment by Stripe · You never leave tpdumpsters.com
+            <FaLock className="text-[10px]" /> {t.payment.secure}
           </p>
         </>
       )}

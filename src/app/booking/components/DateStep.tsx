@@ -2,18 +2,41 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import type { BookingData } from "./BookingWizard";
-import { isDateBlocked, blockedReason } from "@/lib/availability";
+import { isDateBlocked, blockedReason, blockedReasonKind } from "@/lib/availability";
 import { MAX_EXTRA_DAYS } from "@/lib/rental-limits";
 import { IconCalendar, IconReceipt } from "@/components/MaterialIcons";
+import { useBookingLang, rich } from "@/lib/i18n/useBookingLang";
+import {
+  formatBookingDate,
+  money,
+  serviceName,
+  sizeName,
+  windowLabel,
+  windowName,
+  windowTime,
+  type BookingDict,
+  type Lang,
+} from "@/lib/i18n/booking";
 
-const DELIVERY_WINDOWS = [
-  { id: "morning", label: "Morning", time: "7:00 AM - 12:00 PM" },
-  { id: "afternoon", label: "Afternoon", time: "1:00 PM - 6:00 PM" },
-] as const;
+// Labels/times live in the dictionary helpers (windowName / windowTime).
+const DELIVERY_WINDOWS = [{ id: "morning" }, { id: "afternoon" }] as const;
 
-function getWindowLabel(windowId: string): string {
-  const w = DELIVERY_WINDOWS.find((w) => w.id === windowId);
-  return w ? `${w.label} (${w.time})` : "";
+// What the delivery-date error is about, so it re-renders in the current
+// language. "server" = the /api/day-capacity message, shown as sent (English).
+type DeliveryError =
+  | { kind: "blocked"; iso: string; size?: string }
+  | { kind: "server"; msg: string }
+  | null;
+
+function deliveryErrorText(err: DeliveryError, lang: Lang, t: BookingDict): string {
+  if (!err) return "";
+  if (err.kind === "server") return err.msg;
+  // English keeps the exact original text (including per-date custom notes).
+  if (lang === "en") return blockedReason(err.iso, err.size);
+  const kind = blockedReasonKind(err.iso, err.size);
+  if (kind === "size") return t.date.blocked.size(sizeName(lang, err.size));
+  if (kind === "") return "";
+  return t.date.blocked[kind];
 }
 
 interface Props {
@@ -25,10 +48,11 @@ interface Props {
 
 /* Marca de campo obligatorio (mismo criterio que AddressStep). */
 function Req() {
+  const { t } = useBookingLang();
   return (
     <>
       <span className="text-tp-red font-bold" aria-hidden="true"> *</span>
-      <span className="sr-only"> (required)</span>
+      <span className="sr-only">{t.common.required}</span>
     </>
   );
 }
@@ -39,17 +63,6 @@ function addDays(dateStr: string, days: number): string {
   return date.toISOString().split("T")[0];
 }
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const date = new Date(dateStr + "T12:00:00");
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function daysBetween(start: string, end: string): number {
   const s = new Date(start + "T12:00:00");
   const e = new Date(end + "T12:00:00");
@@ -57,6 +70,7 @@ function daysBetween(start: string, end: string): number {
 }
 
 export default function DateStep({ booking, updateBooking, onNext, onBack }: Props) {
+  const { lang, t } = useBookingLang();
   const baseDays = booking.service?.baseDays || 7;
 
   // Minimum delivery date = tomorrow
@@ -80,7 +94,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     : "";
 
   // Inline error for unavailable delivery dates (yard fully booked).
-  const [deliveryError, setDeliveryError] = useState("");
+  const [deliveryError, setDeliveryError] = useState<DeliveryError>(null);
   // Last date the customer picked — a slow capacity answer for an older pick
   // must not wipe a newer one.
   const lastPickedRef = useRef("");
@@ -91,7 +105,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
   // rejects this too, but catching it here avoids a dead-end at payment.
   useEffect(() => {
     if (booking.deliveryDate && isDateBlocked(booking.deliveryDate, booking.service?.size)) {
-      setDeliveryError(blockedReason(booking.deliveryDate, booking.service?.size));
+      setDeliveryError({ kind: "blocked", iso: booking.deliveryDate, size: booking.service?.size });
       updateBooking({ deliveryDate: "", deliveryWindow: "", pickupDate: "" });
     }
     // Only re-check when the selected size changes — handleDeliveryChange
@@ -102,12 +116,12 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
   // When delivery date changes, auto-set pickup to minimum and reset window
   const handleDeliveryChange = (date: string) => {
     if (date && isDateBlocked(date, booking.service?.size)) {
-      setDeliveryError(blockedReason(date, booking.service?.size));
+      setDeliveryError({ kind: "blocked", iso: date, size: booking.service?.size });
       // Don't propagate the blocked date; force the user to pick again.
       updateBooking({ deliveryDate: "", deliveryWindow: "", pickupDate: "" });
       return;
     }
-    setDeliveryError("");
+    setDeliveryError(null);
     // Daily online cap (6 deliveries + swaps): ask the server, since only it
     // can read the calendar. Fails open — the checkout API re-checks anyway.
     if (date) {
@@ -117,7 +131,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         .then((r) => (r.ok ? r.json() : null))
         .then((res) => {
           if (res?.full && lastPickedRef.current === picked) {
-            setDeliveryError(res.message);
+            setDeliveryError({ kind: "server", msg: res.message });
             updateBooking({ deliveryDate: "", deliveryWindow: "", pickupDate: "" });
           }
         })
@@ -134,7 +148,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     });
   };
 
-  const [pickupError, setPickupError] = useState("");
+  const [pickupError, setPickupError] = useState(false);
 
   const handlePickupChange = (date: string) => {
     if (!booking.deliveryDate) return;
@@ -144,13 +158,11 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
     // deja pasar. Se recorta al tope y se DICE por qué, en vez de mover la
     // fecha en silencio.
     if (extra > MAX_EXTRA_DAYS) {
-      setPickupError(
-        `The longest rental we can book online is ${baseDays} days plus ${MAX_EXTRA_DAYS} extra. Call (510) 650-2083 for anything longer.`
-      );
+      setPickupError(true);
       updateBooking({ pickupDate: maxPickupDate, extraDays: MAX_EXTRA_DAYS });
       return;
     }
-    setPickupError("");
+    setPickupError(false);
     updateBooking({
       pickupDate: date,
       extraDays: extra,
@@ -168,10 +180,10 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
   // sigue de largo y el botón quedaba gris sin decir por qué.
   const [attempted, setAttempted] = useState(false);
   const missing: string[] = [];
-  if (!booking.deliveryDate) missing.push("a delivery date");
-  else if (!booking.deliveryWindow) missing.push("a delivery time window");
+  if (!booking.deliveryDate) missing.push(t.date.missDelivery);
+  else if (!booking.deliveryWindow) missing.push(t.date.missWindow);
   if (booking.deliveryDate && (!booking.pickupDate || totalDays < 1))
-    missing.push("a valid pickup date");
+    missing.push(t.date.missPickup);
 
   const handleNext = () => {
     if (canProceed) {
@@ -184,22 +196,25 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
   return (
     <div>
       <h2 className="font-[var(--font-poppins)] text-2xl font-bold text-[#333] mb-2">
-        Choose your dates
+        {t.date.title}
       </h2>
       <p className="text-sm text-[#888] mb-4 font-[var(--font-poppins)]">
-        {booking.service?.serviceType} — {booking.service?.size} includes{" "}
-        <strong>{baseDays} days</strong> of rental.
+        {rich(
+          t.date.includes(
+            `${serviceName(lang, booking.service?.serviceType)} — ${sizeName(lang, booking.service?.size)}`,
+            baseDays
+          ),
+          ""
+        )}
       </p>
       <p className="text-xs text-[#888] mb-4 font-[var(--font-poppins)]">
-        Fields marked <span className="text-tp-red font-bold">*</span> are required.
+        {t.common.requiredPrefix} <span className="text-tp-red font-bold">*</span> {t.date.requiredSuffix}
       </p>
 
       {/* Info banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
         <p className="text-sm text-blue-800 font-[var(--font-poppins)]">
-          ℹ <strong>Pickup date is set automatically</strong> based on your rental period ({baseDays} days).
-          Done early? You can pick an <strong>earlier pickup date</strong> — same price, the {baseDays} days are always included.
-          Need more time? Pick a later date — extra days are <strong>$49/day</strong>.
+          {rich(t.date.infoBanner(baseDays), "")}
         </p>
       </div>
 
@@ -207,7 +222,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         {/* Delivery date */}
         <div>
           <label className="block text-sm font-semibold text-[#333] mb-2 font-[var(--font-poppins)]">
-            <IconCalendar size={17} className="text-[#4b5156]" /> Delivery date<Req />
+            <IconCalendar size={17} className="text-[#4b5156]" /> {t.date.deliveryDate}<Req />
           </label>
           <input
             type="date"
@@ -223,31 +238,29 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
           />
           {attempted && !booking.deliveryDate && (
             <p className="text-xs text-red-500 mt-1.5 font-[var(--font-poppins)]">
-              Pick the day you want the dumpster delivered
+              {t.date.deliveryMissing}
             </p>
           )}
           {booking.deliveryDate && (
             <p className="text-xs text-[#888] mt-1.5">
-              {formatDate(booking.deliveryDate)}
+              {formatBookingDate(lang, booking.deliveryDate)}
               {booking.deliveryWindow && (
                 <span className="text-tp-red font-semibold ml-1">
-                  — {getWindowLabel(booking.deliveryWindow)}
+                  — {windowLabel(lang, booking.deliveryWindow)}
                 </span>
               )}
             </p>
           )}
           {deliveryError && (
             <p className="text-xs text-tp-red font-semibold mt-1.5 font-[var(--font-poppins)]">
-              {deliveryError}
+              {deliveryErrorText(deliveryError, lang, t)}
             </p>
           )}
           {/* Asaí, 9-sep-2026: el dumpster llega a cualquier hora del día y el
               driver no puede esperar; si el lugar está obstruido, $149. */}
           <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <p className="text-xs text-amber-800 leading-relaxed font-[var(--font-poppins)]">
-              We deliver <strong>any time during the day</strong>. Have the spot
-              clear and accessible — our driver can&apos;t wait. Blocked spot:
-              <strong> $149 fee</strong>.
+              {rich(t.date.deliveryNote, "")}
             </p>
           </div>
         </div>
@@ -255,8 +268,8 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
         {/* Pickup date */}
         <div>
           <label className="block text-sm font-semibold text-[#333] mb-2 font-[var(--font-poppins)]">
-            <IconCalendar size={17} className="text-[#4b5156]" /> Pickup date
-            <span className="text-xs text-green-600 font-normal ml-2">Auto-set</span>
+            <IconCalendar size={17} className="text-[#4b5156]" /> {t.date.pickupDate}
+            <span className="text-xs text-green-600 font-normal ml-2">{t.date.autoSet}</span>
           </label>
           <input
             type="date"
@@ -273,15 +286,15 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
           />
           {pickupError && (
             <p className="text-xs text-tp-red font-semibold mt-1.5 font-[var(--font-poppins)]">
-              {pickupError}
+              {t.date.maxRental(baseDays, MAX_EXTRA_DAYS)}
             </p>
           )}
           {booking.pickupDate && (
             <p className="text-xs text-[#888] mt-1.5">
-              {formatDate(booking.pickupDate)}
+              {formatBookingDate(lang, booking.pickupDate)}
               {booking.extraDays > 0 && (
                 <span className="text-amber-600 font-semibold ml-1">
-                  (+{booking.extraDays} extra day{booking.extraDays > 1 ? "s" : ""} = +${booking.extraDays * booking.extraDayFee})
+                  {t.date.extraDaysNote(booking.extraDays, money(lang, booking.extraDays * booking.extraDayFee))}
                 </span>
               )}
             </p>
@@ -290,9 +303,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
               debe estar libre ($149 si no), y los días extra se avisan 24h antes. */}
           <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <p className="text-xs text-amber-800 leading-relaxed font-[var(--font-poppins)]">
-              We pick up <strong>any time during the day</strong>. Keep the area
-              clear or a <strong>$149 fee</strong> applies. Need more days? Tell us
-              <strong> 24 hours ahead</strong>.
+              {rich(t.date.pickupNote, "")}
             </p>
           </div>
         </div>
@@ -302,11 +313,10 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {booking.deliveryDate && (
         <div className="mb-8">
           <label className="block text-sm font-semibold text-[#333] mb-1 font-[var(--font-poppins)]">
-            <IconCalendar size={17} className="text-[#4b5156]" /> Choose a delivery time window<Req />
+            <IconCalendar size={17} className="text-[#4b5156]" /> {t.date.windowTitle}<Req />
           </label>
           <p className="text-xs text-[#888] mb-3 font-[var(--font-poppins)]">
-            Time windows are a guide, not a guaranteed hour — the exact time can
-            shift with routing, logistics and traffic.
+            {t.date.windowHelp}
           </p>
           <div
             className={`grid grid-cols-1 sm:grid-cols-3 gap-3 ${
@@ -330,10 +340,10 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
                 >
                   <span className="text-2xl mb-1"></span>
                   <span className={`font-semibold text-sm ${isSelected ? "text-tp-red" : "text-[#333]"}`}>
-                    {w.label}
+                    {windowName(lang, w.id)}
                   </span>
                   <span className={`text-xs mt-0.5 ${isSelected ? "text-tp-red/70" : "text-[#888]"}`}>
-                    {w.time}
+                    {windowTime(lang, w.id)}
                   </span>
                 </button>
               );
@@ -341,7 +351,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
           </div>
           {attempted && !booking.deliveryWindow && (
             <p className="text-xs text-red-500 mt-1.5 font-[var(--font-poppins)]">
-              Pick a time window — morning or afternoon
+              {t.date.windowMissing}
             </p>
           )}
         </div>
@@ -351,55 +361,55 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {booking.deliveryDate && booking.pickupDate && (
         <div className="bg-gray-50 rounded-xl p-5 mb-8">
           <h3 className="font-[var(--font-poppins)] font-semibold text-[#333] mb-3">
-            <IconReceipt size={17} className="text-[#4b5156]" /> Price breakdown
+            <IconReceipt size={17} className="text-[#4b5156]" /> {t.date.breakdown}
           </h3>
           <div className="space-y-2 text-sm font-[var(--font-poppins)]">
             <div className="flex justify-between">
               <span className="text-[#666]">
-                {booking.service?.serviceType} — {booking.service?.size}
+                {serviceName(lang, booking.service?.serviceType)} — {sizeName(lang, booking.service?.size)}
               </span>
-              <span className="font-semibold">${booking.service?.basePrice}</span>
+              <span className="font-semibold">{money(lang, booking.service?.basePrice ?? 0)}</span>
             </div>
             <div className="flex justify-between text-[#888]">
-              <span>Included rental: {baseDays} days</span>
-              <span>Included</span>
+              <span>{t.date.includedRental(baseDays)}</span>
+              <span>{t.date.included}</span>
             </div>
             {booking.extraDays > 0 && (
               <div className="flex justify-between text-amber-600">
                 <span>
-                  Extra days: {booking.extraDays} × ${booking.extraDayFee}/day
+                  {t.date.extraDaysLine(booking.extraDays, money(lang, booking.extraDayFee))}
                 </span>
                 <span className="font-semibold">
-                  +${booking.extraDays * booking.extraDayFee}
+                  +{money(lang, booking.extraDays * booking.extraDayFee)}
                 </span>
               </div>
             )}
             {booking.onlineDiscount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Online booking discount ($50 OFF)</span>
-                <span className="font-semibold">-${booking.onlineDiscount.toFixed(2)}</span>
+                <span>{t.date.onlineDiscount}</span>
+                <span className="font-semibold">-{money(lang, booking.onlineDiscount, true)}</span>
               </div>
             )}
             {booking.rescueDiscount > 0 && (
               <div className="flex justify-between text-green-600">
-                <span>Book-now bonus from your email ($15 OFF)</span>
-                <span className="font-semibold">-${booking.rescueDiscount.toFixed(2)}</span>
+                <span>{t.date.rescueBonus}</span>
+                <span className="font-semibold">-{money(lang, booking.rescueDiscount, true)}</span>
               </div>
             )}
             <div className="border-t pt-2 mt-2 flex justify-between">
-              <span className="font-bold text-[#333] text-base">Total</span>
+              <span className="font-bold text-[#333] text-base">{t.date.total}</span>
               <div className="text-right">
                 {booking.onlineDiscount > 0 && (
-                  <span className="text-sm text-[#999] line-through mr-2">${booking.subtotal}</span>
+                  <span className="text-sm text-[#999] line-through mr-2">{money(lang, booking.subtotal)}</span>
                 )}
                 <span className="font-bold text-tp-red text-xl font-[var(--font-oswald)]">
-                  ${booking.totalPrice.toFixed(2)}
+                  {money(lang, booking.totalPrice, true)}
                 </span>
               </div>
             </div>
           </div>
           <p className="text-[10px] text-[#aaa] mt-3">
-            Total rental: {totalDays} days. Extra weight charged at $179/ton (prorated).
+            {t.date.totalRental(totalDays)}
           </p>
         </div>
       )}
@@ -407,7 +417,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
       {!canProceed && attempted && (
         <div role="alert" aria-live="polite" className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3 mb-4">
           <p className="text-sm font-semibold text-amber-800 font-[var(--font-poppins)]">
-            Before you continue, please choose: {missing.join(" and ")}.
+            {t.date.beforeContinue(missing)}
           </p>
         </div>
       )}
@@ -417,7 +427,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
           onClick={onBack}
           className="px-6 py-3 rounded-lg font-[var(--font-poppins)] font-semibold text-sm text-[#666] bg-gray-100 hover:bg-gray-200 transition-colors"
         >
-          ← Back
+          {t.common.back}
         </button>
         {/* Sin `disabled`: si falta algo, el clic lo dice (ver AddressStep). */}
         <button
@@ -429,7 +439,7 @@ export default function DateStep({ booking, updateBooking, onNext, onBack }: Pro
               : "bg-gray-200 text-gray-500 hover:bg-gray-300"
           }`}
         >
-          Next: Delivery address →
+          {t.date.next}
         </button>
       </div>
     </div>

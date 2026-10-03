@@ -4,6 +4,17 @@ import { useState } from "react";
 import { FaCreditCard } from "react-icons/fa6";
 import type { BookingData } from "./BookingWizard";
 import { IconCalendar, IconReceipt, IconAlert, IconPin } from "@/components/MaterialIcons";
+import { useBookingLang, rich } from "@/lib/i18n/useBookingLang";
+import {
+  dimensionsName,
+  formatBookingDate,
+  money,
+  serviceName,
+  sizeName,
+  weightIncluded,
+  weightPhrase,
+  windowLabel,
+} from "@/lib/i18n/booking";
 
 interface Props {
   booking: BookingData;
@@ -13,26 +24,12 @@ interface Props {
   isSubmitting: boolean;
 }
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const date = new Date(dateStr + "T12:00:00");
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-// Display lookup: includes midday for legacy bookings made before the
-// 2-window switch, even though new bookings can only select morning/afternoon.
-const WINDOW_LABELS: Record<string, string> = {
-  morning: "Morning (7:00 AM - 12:00 PM)",
-  midday: "Midday (11:00 AM - 3:00 PM)",
-  afternoon: "Afternoon (1:00 PM - 6:00 PM)",
-};
+// Window labels (incl. legacy "midday") come from windowLabel() in the
+// booking dictionary.
 
 export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, isSubmitting }: Props) {
+  const { lang, t } = useBookingLang();
+  const formatDate = (iso: string) => formatBookingDate(lang, iso, "short");
   // Mirrors booking.authorizedCharges so the consent actually reaches
   // /api/checkout and lands in the Stripe metadata as dispute evidence —
   // before (Hermes A4, 4-ago) this lived only in local state and every
@@ -71,57 +68,57 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
        botón sigue explicando qué falta en vez de quedarse muerto. */
     <div className="pb-40">
       <h2 className="font-[var(--font-oswald)] uppercase text-[24px] font-semibold text-[#1d2329] mb-1">
-        Review &amp; pay
+        {t.summary.title}
       </h2>
       <p className="text-[13.5px] text-[#4b5156] mb-5 font-[var(--font-poppins)]">
-        Delivery, pickup and disposal are included in the price.
+        {t.summary.subtitle}
       </p>
 
       {/* ── Total, arriba y a la vista ── */}
       <div className="rounded-xl border border-[#d7dadd] bg-white p-4 mb-3">
         <div className="flex items-baseline justify-between">
           <span className="font-[var(--font-poppins)] text-[13px] font-medium text-[#4b5156]">
-            Total today
+            {t.summary.totalToday}
           </span>
           <span className="text-right">
             {booking.onlineDiscount > 0 && (
-              <s className="text-[13px] text-[#9aa0a6] mr-2">${booking.subtotal}</s>
+              <s className="text-[13px] text-[#9aa0a6] mr-2">{money(lang, booking.subtotal)}</s>
             )}
             <span className="font-[var(--font-oswald)] text-[30px] font-semibold text-[#1d2329]">
-              ${booking.totalPrice.toFixed(2)}
+              {money(lang, booking.totalPrice, true)}
             </span>
           </span>
         </div>
 
         <details className="mt-3 group">
           <summary className="cursor-pointer list-none font-[var(--font-poppins)] text-[13px] font-medium text-[#4b5156] underline decoration-[#c9ccd0]">
-            See price breakdown
+            {t.summary.seeBreakdown}
           </summary>
           <div className="mt-3 space-y-1.5 font-[var(--font-poppins)] text-[13.5px]">
             <div className="flex justify-between">
               <span className="text-[#4b5156]">
-                {booking.service?.size} · {booking.service?.serviceType}
+                {sizeName(lang, booking.service?.size)} · {serviceName(lang, booking.service?.serviceType)}
               </span>
-              <span className="text-[#1d2329]">${booking.service?.basePrice}</span>
+              <span className="text-[#1d2329]">{money(lang, booking.service?.basePrice ?? 0)}</span>
             </div>
             {extra > 0 && (
               <div className="flex justify-between">
                 <span className="text-[#4b5156]">
-                  {booking.extraDays} extra day{booking.extraDays > 1 ? "s" : ""} × ${booking.extraDayFee}
+                  {t.summary.extraDaysLine(booking.extraDays, money(lang, booking.extraDayFee))}
                 </span>
-                <span className="text-[#1d2329]">+${extra}</span>
+                <span className="text-[#1d2329]">+{money(lang, extra)}</span>
               </div>
             )}
             {booking.onlineDiscount > 0 && (
               <div className="flex justify-between">
-                <span className="text-[#4b5156]">Online booking discount</span>
-                <span className="text-[#1a7f37] font-medium">−${booking.onlineDiscount.toFixed(2)}</span>
+                <span className="text-[#4b5156]">{t.summary.onlineDiscount}</span>
+                <span className="text-[#1a7f37] font-medium">−{money(lang, booking.onlineDiscount, true)}</span>
               </div>
             )}
             {booking.rescueDiscount > 0 && (
               <div className="flex justify-between">
-                <span className="text-[#4b5156]">Book-now bonus (from your email)</span>
-                <span className="text-[#1a7f37] font-medium">−${booking.rescueDiscount.toFixed(2)}</span>
+                <span className="text-[#4b5156]">{t.summary.rescueBonus}</span>
+                <span className="text-[#1a7f37] font-medium">−{money(lang, booking.rescueDiscount, true)}</span>
               </div>
             )}
           </div>
@@ -131,10 +128,13 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
       {/* ── Lo que incluye: mismo dato que antes, en positivo ── */}
       <div className="rounded-xl border-l-[3px] border-tp-gold bg-[#fffdf5] px-4 py-3 mb-3">
         <p className="font-[var(--font-poppins)] text-[13px] text-[#1d2329] leading-relaxed">
-          <strong className="font-semibold">Your rental includes</strong>{" "}
-          {booking.service?.weightLimit || "the weight allowance"} and {baseDays} days.
-          Need more? Extra weight is <strong className="font-semibold">$179</strong>/ton and each
-          extra day <strong className="font-semibold">${booking.extraDayFee}</strong>.
+          {rich(
+            t.summary.includes(
+              weightPhrase(lang, booking.service?.weightLimit) || t.summary.weightFallback,
+              baseDays,
+              money(lang, booking.extraDayFee)
+            )
+          )}
         </p>
       </div>
 
@@ -143,33 +143,34 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
         <summary className="cursor-pointer list-none px-4 py-3 font-[var(--font-poppins)] text-[13.5px] font-medium text-[#1d2329] flex items-center justify-between">
           <span className="flex items-center gap-2">
             <IconReceipt size={16} className="text-[#4b5156]" />
-            {booking.service?.size} · {formatDate(booking.deliveryDate)}
+            {sizeName(lang, booking.service?.size)} · {formatDate(booking.deliveryDate)}
           </span>
-          <span className="text-[#4b5156] underline decoration-[#c9ccd0]">Review</span>
+          <span className="text-[#4b5156] underline decoration-[#c9ccd0]">{t.summary.review}</span>
         </summary>
         <div className="px-4 pb-4 pt-1 font-[var(--font-poppins)] text-[13.5px] space-y-3">
           <div>
-            <p className="text-[11.5px] uppercase tracking-wider text-[#8a8f94] font-semibold mb-1">Dumpster</p>
+            <p className="text-[11.5px] uppercase tracking-wider text-[#8a8f94] font-semibold mb-1">{t.summary.dumpster}</p>
             <p className="text-[#1d2329]">
-              {booking.service?.serviceType} · {booking.service?.size} · {booking.service?.dimensions}
+              {serviceName(lang, booking.service?.serviceType)} · {sizeName(lang, booking.service?.size)} ·{" "}
+              {dimensionsName(lang, booking.service?.dimensions)}
             </p>
-            <p className="text-[#4b5156]">{booking.service?.weightLimit} included</p>
+            <p className="text-[#4b5156]">{weightIncluded(lang, booking.service?.weightLimit)}</p>
           </div>
           <div>
             <p className="text-[11.5px] uppercase tracking-wider text-[#8a8f94] font-semibold mb-1 flex items-center gap-1.5">
-              <IconCalendar size={14} /> Dates
+              <IconCalendar size={14} /> {t.summary.dates}
             </p>
             <p className="text-[#1d2329]">
-              Drop-off {formatDate(booking.deliveryDate)}
+              {t.summary.dropOff} {formatDate(booking.deliveryDate)}
               {booking.deliveryWindow && (
-                <span className="text-[#4b5156]"> · {WINDOW_LABELS[booking.deliveryWindow] || booking.deliveryWindow}</span>
+                <span className="text-[#4b5156]"> · {windowLabel(lang, booking.deliveryWindow)}</span>
               )}
             </p>
-            <p className="text-[#1d2329]">Pick-up {formatDate(booking.pickupDate)}</p>
+            <p className="text-[#1d2329]">{t.summary.pickUp} {formatDate(booking.pickupDate)}</p>
           </div>
           <div>
             <p className="text-[11.5px] uppercase tracking-wider text-[#8a8f94] font-semibold mb-1 flex items-center gap-1.5">
-              <IconPin size={14} /> Delivery to
+              <IconPin size={14} /> {t.summary.deliveryTo}
             </p>
             <p className="text-[#1d2329] font-medium">{booking.customerName}</p>
             <p className="text-[#4b5156]">{booking.address}, {booking.city} {booking.zipCode}</p>
@@ -181,7 +182,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
             onClick={onBack}
             className="font-[var(--font-poppins)] text-[13px] font-medium text-[#4b5156] underline decoration-[#c9ccd0]"
           >
-            Something to fix? Go back
+            {t.summary.fixBack}
           </button>
         </div>
       </details>
@@ -204,40 +205,32 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
             className="mt-0.5 w-[18px] h-[18px] accent-tp-red flex-shrink-0"
           />
           <span className="text-[13px] text-[#1d2329] font-[var(--font-poppins)] leading-relaxed">
-            I agree to pay today’s total and authorize charges for extra weight, extra days or
-            prohibited items, per the{" "}
-            <span className="underline decoration-[#c9ccd0]">rental terms</span>.
+            {t.summary.consentBefore}
+            <span className="underline decoration-[#c9ccd0]">{t.summary.consentLink}</span>
+            {t.summary.consentAfter}
           </span>
         </label>
 
         <details className="mt-2 ml-[30px]">
           <summary className="cursor-pointer list-none font-[var(--font-poppins)] text-[12px] text-[#4b5156] underline decoration-[#c9ccd0]">
-            Read the rental terms
+            {t.summary.readTerms}
           </summary>
           <div className="mt-2 font-[var(--font-poppins)] text-[12px] text-[#4b5156] leading-relaxed space-y-2">
+            <p>{t.summary.terms1(money(lang, booking.extraDayFee))}</p>
             <p>
-              I authorize TP Dumpsters to charge my card for any additional fees incurred during the
-              rental period, including but not limited to: extra weight ($179/ton prorated),
-              additional rental days (${booking.extraDayFee}/day), and prohibited or hazardous items
-              found in the dumpster ($20–$60 per item). I understand these charges may be processed
-              after the dumpster is picked up.
+              <strong className="font-semibold text-[#1d2329]">{t.summary.cancelLabel}</strong>
+              {t.summary.cancelText}
             </p>
             <p>
-              <strong className="font-semibold text-[#1d2329]">Cancellation:</strong> 24-hour notice
-              required; a $150 cancellation fee applies. Overloaded loads (above the top edge) add a
-              $149 fee, charged at pickup.
-            </p>
-            <p>
-              <strong className="font-semibold text-[#1d2329]">What happens next:</strong> once the
-              booking is confirmed, someone from our team contacts you within 24 hours to confirm
-              delivery details and placement.
+              <strong className="font-semibold text-[#1d2329]">{t.summary.nextLabel}</strong>
+              {t.summary.nextText}
             </p>
           </div>
         </details>
 
         {attempted && !authorizedCharges && (
           <p role="alert" aria-live="polite" className="text-[12.5px] text-[#8a1c14] font-semibold mt-2 ml-[30px] font-[var(--font-poppins)]">
-            Check the box to authorize the charges — we can’t take the payment without it.
+            {t.summary.consentMissing}
           </p>
         )}
       </div>
@@ -266,16 +259,14 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
             className="mt-0.5 w-[18px] h-[18px] accent-tp-red flex-shrink-0"
           />
           <span className="text-[13px] text-[#1d2329] font-[var(--font-poppins)] leading-relaxed">
-            <strong className="font-semibold">Text me about my rental (optional).</strong> I agree to
-            receive text messages from TP Dumpsters at the number I provided, about my delivery,
-            pickup and account. Message frequency varies. Message and data rates may apply. Reply
-            STOP to cancel or HELP for help. Consent is not a condition of purchase. See our{" "}
+            <strong className="font-semibold">{t.summary.smsBold}</strong>
+            {t.summary.smsText}
             <a href="/sms-policy" target="_blank" rel="noopener noreferrer" className="underline decoration-[#c9ccd0]">
-              SMS Terms
-            </a>{" "}
-            and{" "}
+              {t.summary.smsTerms}
+            </a>
+            {t.summary.and}
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline decoration-[#c9ccd0]">
-              Privacy Policy
+              {t.summary.privacy}
             </a>
             .
           </span>
@@ -287,10 +278,10 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <div className="flex-none">
             <p className="font-[var(--font-poppins)] text-[11px] text-[#8a8f94] leading-none mb-0.5">
-              Total today
+              {t.summary.totalToday}
             </p>
             <p className="font-[var(--font-oswald)] text-[22px] font-semibold text-[#1d2329] leading-none">
-              ${booking.totalPrice.toFixed(2)}
+              {money(lang, booking.totalPrice, true)}
             </p>
           </div>
           <button
@@ -304,7 +295,7 @@ export default function SummaryStep({ booking, updateBooking, onBack, onSubmit, 
             }`}
           >
             <FaCreditCard />
-            {isSubmitting ? "Preparing payment…" : "Pay & confirm"}
+            {isSubmitting ? t.summary.preparing : t.summary.pay}
           </button>
         </div>
       </div>

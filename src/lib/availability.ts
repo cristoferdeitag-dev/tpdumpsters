@@ -96,3 +96,19 @@ export function blockedReason(iso: string, size?: string): string {
   }
   return "";
 }
+
+/**
+ * Which rule blocks a date, for showing the reason in the customer's language
+ * (booking EN/ES, 2-oct-2026). Same checks and order as blockedReason(); the
+ * custom per-date English messages above have no Spanish copy, so Spanish
+ * shows the generic "full" text for those dates.
+ */
+export type BlockedReasonKind = "past" | "sunday" | "full" | "size" | "";
+
+export function blockedReasonKind(iso: string, size?: string): BlockedReasonKind {
+  if (isSameDayOrPast(iso)) return "past";
+  if (!ALLOW_SUNDAY_DELIVERY && isSunday(iso)) return "sunday";
+  if (BLOCKED_DATES.has(iso)) return "full";
+  if (size && SIZE_BLOCKED_DATES.get(iso)?.has(size)) return "size";
+  return "";
+}
