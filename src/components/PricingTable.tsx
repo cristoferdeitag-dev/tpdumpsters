@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FaCalendarDays, FaRuler, FaWeightHanging, FaCalendarCheck } from "react-icons/fa6";
+import { ONLINE_PRICES, LIST_PREMIUM } from "@/lib/pricing";
 
 /* ───────── Data types ───────── */
 // basePrice = list/sticker price; price = online-booking price (basePrice - $50).
@@ -22,7 +23,12 @@ interface ServiceCategory {
   sizes: SizeOption[];
 }
 
-const ONLINE_DISCOUNT = 50;
+const ONLINE_DISCOUNT = LIST_PREMIUM;
+
+// Prices come from the single source of truth in src/lib/pricing.ts (the same
+// table /api/checkout charges), so this table can never drift from checkout.
+const online = (service: string, yd: string) => ONLINE_PRICES[service][yd];
+const list = (service: string, yd: string) => ONLINE_PRICES[service][yd] + LIST_PREMIUM;
 
 /* ───────── Pricing data (same for all cities) ───────── */
 const services: ServiceCategory[] = [
@@ -34,24 +40,24 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        basePrice: 649,
-        price: 599,
+        basePrice: list("General Debris", "10"),
+        price: online("General Debris", "10"),
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "1 ton",
         rentalDays: "3 days",
       },
       {
         size: "20 Yard",
-        basePrice: 699,
-        price: 649,
+        basePrice: list("General Debris", "20"),
+        price: online("General Debris", "20"),
         dimensions: "16' L × 8' W × 4' H",
         weightLimit: "2 tons",
         rentalDays: "7 days",
       },
       {
         size: "30 Yard",
-        basePrice: 799,
-        price: 749,
+        basePrice: list("General Debris", "30"),
+        price: online("General Debris", "30"),
         dimensions: "16' L × 8' W × 6' H",
         weightLimit: "3 tons",
         rentalDays: "7 days",
@@ -65,8 +71,8 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        basePrice: 649,
-        price: 599,
+        basePrice: list("Clean Soil", "10"),
+        price: online("Clean Soil", "10"),
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",
@@ -80,8 +86,8 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        basePrice: 649,
-        price: 599,
+        basePrice: list("Clean Concrete", "10"),
+        price: online("Clean Concrete", "10"),
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",
@@ -95,8 +101,8 @@ const services: ServiceCategory[] = [
     sizes: [
       {
         size: "10 Yard",
-        basePrice: 949,
-        price: 899,
+        basePrice: list("Mixed Materials", "10"),
+        price: online("Mixed Materials", "10"),
         dimensions: "12' L × 8' W × 2.5' H",
         weightLimit: "No weight limit",
         rentalDays: "3 days",

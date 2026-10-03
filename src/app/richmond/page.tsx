@@ -5,135 +5,117 @@ import PricingTable from "@/components/PricingTable";
 import FaqsSection from "@/components/FaqsSection";
 import CityFaqsSection from "@/components/CityFaqsSection";
 import AboutCitySection from "@/components/AboutCitySection";
+import CityLocalGuide from "@/components/CityLocalGuide";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import DynamicReviews from "@/components/DynamicReviews";
 import WhyUsSection from "@/components/WhyUsSection";
 import DynamicGallery from "@/components/DynamicGallery";
 import FloatingButtons from "@/components/FloatingButtons";
 import Footer from "@/components/Footer";
+import DynamicServiceAreaMap from "@/components/DynamicServiceAreaMap";
+import { toFaqItems } from "@/components/cityFaqItems";
+import {
+  type CityFaqText,
+  faqJsonLd,
+  localBusinessJsonLd,
+  pricingFaqAnswer,
+  prohibitedFaqAnswer,
+  sizeInfo,
+  usd,
+} from "@/lib/cityLanding";
 import RichmondHero from "./components/RichmondHero";
-import DynamicServiceAreaMap from '@/components/DynamicServiceAreaMap';
-import RichmondLocation from "./components/RichmondLocation";
+import RichmondLocation, { RICHMOND_ZIPS, RICHMOND_NEARBY } from "./components/RichmondLocation";
 
-const richmondFaqs = [
+// Facts on this page come from /root/reports/tp-ciudades-tanda1/hechos.json
+// (City of Richmond encroachment permit application and C&D recycling form,
+// Golden Bear Transfer Station 2026 published info, Wikipedia for history and
+// neighborhoods). Prices come from src/lib/pricing.ts.
+
+const s10 = sizeInfo("10");
+const s20 = sizeInfo("20");
+const s30 = sizeInfo("30");
+
+const streetPermit =
+  "Anything placed on a Richmond street or sidewalk needs an encroachment permit from the Public Works Department's Encroachment Services Division at 450 Civic Center Plaza. The city's application has its own line for debris boxes, and Richmond does not issue public right-of-way permits for POD-style storage containers. Check with the city for current requirements and fees before you plan on street placement.";
+
+const richmondFaqs: CityFaqText[] = [
   {
-    question: "Do I need a permit for a dumpster on the street in Richmond?",
-    answer: (
-      <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        If you&apos;re placing the dumpster on a public street in Richmond, you&apos;ll likely need a
-        temporary encroachment permit from the City of Richmond Public Works department. On your own
-        private driveway or property, no permit is usually required. We can advise you on the process.
-      </p>
-    ),
+    question: "Do I need a permit to put a dumpster on the street in Richmond?",
+    answer: [
+      streetPermit,
+      "If you have room on your own driveway or property, placing the dumpster there keeps it out of the public right-of-way.",
+    ],
   },
   {
-    question: "How fast can I get a dumpster delivered in Richmond?",
-    answer: (
-      <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Richmond is one of our fastest delivery zones since our base is in nearby Pinole.
-        We offer <strong>same-day delivery</strong> for most Richmond neighborhoods when you call
-        before noon. Point Richmond, Hilltop, and Marina Bay are all within 15 minutes of our yard.
-      </p>
-    ),
+    question: "Where is the nearest dump or transfer station in Richmond?",
+    answer: [
+      "Golden Bear Transfer Station is at 1 Parr Blvd. in Richmond, roughly 4 miles from City Hall. It is open Monday to Friday 7 a.m. to 5 p.m. and weekends 9 a.m. to 5 p.m., and closed on major holidays.",
+      "If you would rather not make trips with a pickup, a roll-off lets you load at your own pace and we haul it away at the end of the rental.",
+    ],
   },
   {
-    question: "What size dumpster do I need for a home cleanout in Richmond?",
-    answer: (
-      <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        For a typical garage or house cleanout in Richmond, a <strong>20-yard dumpster</strong> handles
-        most jobs. For small bathroom/kitchen remodels or concrete removal, the 10-yard is perfect.
-        For full home renovations or estate cleanouts, go with the 30-yard.
-      </p>
-    ),
+    question: "Which Richmond ZIP codes do you deliver to?",
+    answer: [
+      "We deliver to addresses in Richmond's 94801, 94804 and 94805 ZIP codes, from Point Richmond and Marina Bay to the Iron Triangle, Hilltop, Richmond Annex, Atchison Village and Parchester Village.",
+    ],
   },
   {
-    question: "What areas near Richmond do you also serve?",
-    answer: (
-      <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        We serve all of West Contra Costa County including <strong>El Cerrito, San Pablo, Hercules,
-        Pinole, Rodeo,</strong> and <strong>North Richmond</strong>. We also deliver to nearby Oakland,
-        Berkeley, and Albany. One call covers the entire area.
-      </p>
-    ),
-  },
-  {
-    question: "What materials can I put in the dumpster?",
-    answer: (
-      <>
-        <p className="text-sm text-[#666] leading-[1.7] mb-2.5">We accept most common waste types:</p>
-        <ul className="list-disc pl-5 mb-2.5">
-          <li className="text-sm text-[#666] leading-[1.7] mb-1">General household debris and junk</li>
-          <li className="text-sm text-[#666] leading-[1.7] mb-1">Construction and demolition waste</li>
-          <li className="text-sm text-[#666] leading-[1.7] mb-1">Concrete, dirt, and soil (10-yard only)</li>
-          <li className="text-sm text-[#666] leading-[1.7] mb-1">Yard waste and landscaping debris</li>
-          <li className="text-sm text-[#666] leading-[1.7] mb-1">Furniture, appliances, mattresses (extra fee)</li>
-        </ul>
-        <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-          <strong>Not accepted:</strong> Hazardous materials, paint, chemicals, tires (except with extra fee), batteries, or electronics.
-        </p>
-      </>
-    ),
+    question: "What size dumpster do I need for a Richmond remodel?",
+    answer: [
+      `A bathroom remodel or a load of concrete or soil usually fits the 10-yard (${s10.days}-day rental, ${s10.tons} ton included; heavy materials go in the 10-yard only). A kitchen remodel or garage cleanout is typically a 20-yard job (${s20.tons} tons included). For a whole-house renovation or a large estate cleanout, the 30-yard gives you the most room (${s30.tons} tons included).`,
+    ],
   },
   {
     question: "How much does a dumpster rental cost in Richmond?",
-    answer: (
-      <p className="text-sm text-[#666] leading-[1.7] mb-2.5">
-        Our Richmond dumpster rental prices start at <strong>$599 for a 10-yard</strong> dumpster
-        (3-day rental, 1 ton included). 20-yard starts at $649 and 30-yard at $749.
-        We have transparent pricing with no hidden fees. Call <strong>(510) 650-2083</strong> for
-        an exact quote based on your project.
-      </p>
-    ),
+    answer: pricingFaqAnswer("Richmond"),
+  },
+  {
+    question: "What can't I put in the dumpster?",
+    answer: prohibitedFaqAnswer(),
   },
 ];
 
 const richmondAbout = {
   cityName: "Richmond",
   intro:
-    "Richmond is one of the most dynamic cities in the East Bay, with a rich industrial history and a booming wave of residential renovations and new development. From waterfront projects along Marina Bay to home remodels in Point Richmond and the Hilltop area, there's constant demand for reliable waste removal. TP Dumpsters is based just minutes away in Pinole, making Richmond our fastest delivery zone. We know the city's streets, permit requirements, and the unique challenges of working in this diverse community.",
+    "Richmond grew up around its shipyards: during World War II, Kaiser's Richmond yards built 747 ships and the city's population reached roughly 120,000 by 1945. The city has kept changing since. Marina Bay was built on the former Shipyard No. 2 starting in the late 1980s, Hilltop grew up around Hilltop Mall in the 1970s, and since the 2000s Richmond has added new tract homes, condominiums and a transit village. That mix of older homes and newer construction keeps remodels, cleanouts and building projects going across the city.",
   highlights: [
-    "Based in nearby Pinole — Richmond is our fastest delivery zone",
-    "Experienced with Richmond's street placement and permit requirements",
-    "Serve all of West Contra Costa County from one location",
-    "Trusted by Richmond contractors, flippers, and homeowners",
-    "Bilingual team (English & Spanish) for clear communication",
+    `Online prices from ${usd(s10.online)} for a 10-yard, ${usd(s20.online)} for a 20-yard and ${usd(s30.online)} for a 30-yard`,
+    `Rental time included: ${s10.days} days on the 10-yard, ${s20.days} days on the 20- and 30-yard`,
+    "Same-day delivery is often available when you call early in the day",
+    "Bilingual team (English & Spanish)",
+    "Quotes by text or call at (510) 650-2083",
   ],
   commonProjects: [
-    "Home renovations and flips in Point Richmond & Iron Triangle",
-    "Construction debris removal for new developments near Marina Bay",
-    "Estate cleanouts and garage cleanups across Hilltop District",
-    "Landscaping and yard debris removal in Richmond Annex",
-    "Concrete and soil removal for foundation and driveway projects",
-    "Roofing tear-offs and siding replacement on older Richmond homes",
+    "Remodels and repairs on older Richmond homes",
+    "Garage, estate and move-out cleanouts",
+    "New construction and townhome builds",
+    "Concrete and soil removal (10-yard)",
+    "Roofing tear-offs",
+    "Yard and landscaping cleanups",
   ],
   closingText:
-    "Whether you're a contractor working on a major project or a homeowner tackling a weekend cleanout, TP Dumpsters makes waste removal in Richmond easy and affordable. We offer transparent pricing, same-day delivery, and the local expertise you need. Call us at (510) 650-2083 for a free quote.",
+    "Book online to lock in the online price, or call (510) 650-2083 if you want help choosing a size for your Richmond project.",
 };
 
 export const metadata: Metadata = {
-  title: "Dumpster Rental in Richmond, CA | Same-Day Delivery - TP Dumpsters",
-  description:
-    "Affordable dumpster rentals in Richmond, CA. 10, 20 & 30 yard roll-off dumpsters. Same-day delivery to Point Richmond, Hilltop, Marina Bay & all neighborhoods. Bilingual support. Call (510) 650-2083",
+  title: "Dumpster Rental in Richmond, CA | 10, 20 & 30 Yard - TP Dumpsters",
+  description: `Roll-off dumpster rental in Richmond, CA from ${usd(s10.online)} online. 10, 20 & 30 yard sizes for Point Richmond, Marina Bay, Hilltop & ZIPs 94801, 94804, 94805. Call (510) 650-2083.`,
   keywords: [
     "dumpster rental Richmond CA",
     "Richmond dumpster rental",
     "roll-off dumpster Richmond",
     "construction dumpster Richmond",
-    "Richmond waste removal",
     "dumpster rental 94801",
     "dumpster rental 94804",
+    "dumpster rental 94805",
     "dumpster rental Point Richmond",
-    "Hilltop dumpster rental",
     "Marina Bay dumpster rental",
-    "El Cerrito dumpster rental",
-    "San Pablo dumpster rental",
-    "cheap dumpster Richmond CA",
-    "junk removal Richmond",
+    "Hilltop dumpster rental",
   ],
   openGraph: {
     title: "Dumpster Rental in Richmond, CA - TP Dumpsters",
-    description:
-      "Fast, affordable dumpster rentals in Richmond. 10, 20 & 30 yard dumpsters. Same-day delivery. Call (510) 650-2083",
+    description: `10, 20 & 30 yard roll-off dumpsters in Richmond from ${usd(s10.online)} online. Call (510) 650-2083.`,
     url: "https://tpdumpsters.com/richmond",
     siteName: "TP Dumpsters",
     locale: "en_US",
@@ -143,74 +125,46 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://tpdumpsters.com/richmond" },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  name: "TP Dumpsters - Richmond",
+const jsonLd = localBusinessJsonLd({
+  cityName: "Richmond",
+  slug: "richmond",
   description:
-    "Affordable, reliable dumpster rentals in Richmond, CA. Same-day delivery to all Richmond neighborhoods and West Contra Costa County.",
-  url: "https://tpdumpsters.com/richmond",
-  telephone: "+1-510-650-2083",
-  email: "contact@tpdumpsters.com",
-  image: "/images/logo/TP.png",
-  logo: "/images/logo/TP.png",
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: "Richmond",
-    addressRegion: "CA",
-    addressCountry: "US",
-  },
-  areaServed: [
-    { "@type": "City", name: "Richmond" },
-    { "@type": "City", name: "El Cerrito" },
-    { "@type": "City", name: "San Pablo" },
-    { "@type": "City", name: "Hercules" },
-  ],
-  priceRange: "$$",
-  openingHoursSpecification: {
-    "@type": "OpeningHoursSpecification",
-    dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    opens: "07:00",
-    closes: "18:00",
-  },
-  hasOfferCatalog: {
-    "@type": "OfferCatalog",
-    name: "Dumpster Rental Sizes",
-    itemListElement: [
-      {
-        "@type": "Offer",
-        itemOffered: { "@type": "Service", name: "10 Yard Dumpster Rental", description: "Compact dumpster for tight spaces, soil, concrete, and small cleanups. 3-day rental, 1 ton included." },
-        price: "599",
-        priceCurrency: "USD",
-      },
-      {
-        "@type": "Offer",
-        itemOffered: { "@type": "Service", name: "20 Yard Dumpster Rental", description: "Versatile mid-size dumpster for remodels, roofing, and medium cleanouts. 7-day rental, 2 tons included." },
-        price: "649",
-        priceCurrency: "USD",
-      },
-      {
-        "@type": "Offer",
-        itemOffered: { "@type": "Service", name: "30 Yard Dumpster Rental", description: "Large dumpster for full renovations, construction debris, and estate cleanouts. 7-day rental, 3 tons included." },
-        price: "749",
-        priceCurrency: "USD",
-      },
-    ],
-  },
-};
+    "Roll-off dumpster rentals in Richmond, CA: 10, 20 and 30 yard containers for remodels, cleanouts and construction projects.",
+  zips: RICHMOND_ZIPS,
+  nearbyCities: RICHMOND_NEARBY.map((c) => c.name),
+});
 
 export default function RichmondPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(richmondFaqs)) }} />
       <Header />
       <RichmondHero />
       <div className="h-[60px] bg-tp-red w-full" />
       <PricingTable cityName="Richmond" />
       <SizesSection />
       <AboutCitySection {...richmondAbout} />
+      <CityLocalGuide
+        cityName="Richmond"
+        lead="A few Richmond-specific facts from the city's own permit documents and the local transfer station, so you can plan before the truck shows up."
+        disposal={{
+          name: "Golden Bear Transfer Station",
+          location: "1 Parr Blvd. in Richmond, roughly 4 miles from City Hall",
+          note: "Open seven days a week: weekdays 7 a.m.–5 p.m., weekends 9 a.m.–5 p.m. (closed on major holidays).",
+        }}
+        placement={[
+          "On your own driveway or private property, the container stays out of the public right-of-way.",
+          streetPermit,
+        ]}
+        cdRule={[
+          "Projects with a building permit that fall under California's CALGreen code (all new construction, residential additions that add floor area or volume, and larger commercial work) must recycle their construction and demolition debris and turn in a C&D recycling form with disposal receipts before final inspection. CALGreen sets a 50% minimum; local rules can be stricter.",
+          "If your job is permitted, ask the city's Building division how these rules apply before you order any container.",
+        ]}
+        sourceNote="Sources: City of Richmond Encroachment Permit Application and C&D Waste Recycling Form; Golden Bear Transfer Station published information (2026). Rules and fees change, so confirm with the city before placing a container on the street."
+      />
       <ErrorBoundary>
-        <CityFaqsSection cityName="Richmond" faqs={richmondFaqs} />
+        <CityFaqsSection cityName="Richmond" faqs={toFaqItems(richmondFaqs)} />
       </ErrorBoundary>
       <FaqsSection />
       <DynamicReviews />
@@ -218,25 +172,6 @@ export default function RichmondPage() {
       <DynamicGallery />
       <DynamicServiceAreaMap />
       <RichmondLocation />
-      {/* SEO Content Section */}
-      <section className="py-16 bg-white">
-        <div className="w-[85%] max-w-[900px] mx-auto">
-          <h2 className="font-[var(--font-poppins)] text-[24px] md:text-[30px] font-bold text-[#1a1a1a] mb-6 text-center">
-            Why Rent a Dumpster in Richmond, California?
-          </h2>
-          <div className="space-y-4 text-[#555] text-base leading-[1.8] font-[var(--font-poppins)]">
-            <p>
-              Richmond is a city of transformation, with neighborhoods like Point Richmond, the Iron Triangle, and Hilltop undergoing continuous renovation and development. Whether you&apos;re clearing out a property near Marina Bay, renovating a historic home in Atchison Village, or managing debris from a commercial project along Macdonald Avenue, a reliable dumpster rental makes the job easier and more efficient.
-            </p>
-            <p>
-              From backyard cleanups in El Cerrito Hills to large-scale construction waste removal near Richmond Annex, homeowners and contractors throughout the area rely on convenient roll-off dumpster service. TP Dumpsters offers 10, 20, and 30 yard containers with transparent pricing, same-day delivery, and bilingual support to serve Richmond&apos;s diverse community.
-            </p>
-            <p>
-              Ready to get started on your Richmond project? Book online for an instant $50 discount or call us at <a href="tel:+15106502083" className="text-tp-red font-semibold hover:underline">(510) 650-2083</a> for a free quote. We&apos;re proud to serve the Richmond community with affordable, hassle-free dumpster rentals.
-            </p>
-          </div>
-        </div>
-      </section>
       <FloatingButtons />
       <Footer />
     </>
