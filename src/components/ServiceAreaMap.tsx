@@ -12,6 +12,7 @@ interface CityInfo {
   lng: number;
   slug: string;
   description: string;
+  // Search-volume tags like "70/mo" are internal planning data and are hidden in the popup.
   tag: string;
 }
 
@@ -230,7 +231,7 @@ export default function ServiceAreaMap() {
         content: `
           <div style="padding:10px;max-width:240px;font-family:sans-serif;">
             <h3 style="margin:0 0 4px 0;font-size:16px;color:#1a1a1a;">${city.name}</h3>
-            <span style="display:inline-block;background:${isActive ? '#E02B20' : '#ccc'};color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;margin-bottom:6px;">${city.tag}</span>
+            ${/\/mo$/.test(city.tag) ? '' : `<span style="display:inline-block;background:${isActive ? '#E02B20' : '#ccc'};color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;margin-bottom:6px;">${city.tag}</span>`}
             <p style="margin:6px 0;font-size:13px;color:#555;line-height:1.4;">${city.description}</p>
             ${linkHtml}
           </div>

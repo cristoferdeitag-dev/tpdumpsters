@@ -68,7 +68,7 @@ const CITIES = [
   { name: "Danville", slug: "danville", tagline: "Historic Town" },
   { name: "Martinez", slug: "martinez", tagline: "County Seat" },
   { name: "Pleasant Hill", slug: "pleasant-hill", tagline: "Central County" },
-  { name: "Pinole", slug: "pinole", tagline: "Home Base 🏠" },
+  { name: "Pinole", slug: "pinole", tagline: "Bayside Town" },
   { name: "Hercules", slug: "hercules", tagline: "Waterfront City" },
   { name: "Lafayette", slug: "lafayette", tagline: "Lamorinda" },
   { name: "El Cerrito", slug: "el-cerrito", tagline: "West County" },
